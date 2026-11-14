@@ -50,8 +50,8 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Runs, death and saving *(2026-11-14T04:24:39+00:00 — History #17)*
 - **Endless waves.** A run goes on until you die; the score is how far you got. *(2026-11-14T04:24:39+00:00 — History #18)*
 - **Dying ends the run, and that's the only way to lose it.** You start again fully from scratch: wave 1, no upgrades, no weapons.
-- **A run survives closing the browser.** The run is saved between waves; come back (even days later) and you're on the **upgrade screen before the wave you left**. Leaving mid-wave restarts that wave, with what you had at the start of it.
-- **Local high scores** kept in IndexedDB (Dexie): e.g. enemies killed and wave reached.
+- **A run survives closing the browser.** The run is saved between waves; come back (even days later) and you're in the **shop** (was: upgrade screen, #53) **before the wave you left**. Leaving mid-wave restarts that wave, with what you had at the start of it.
+- **Local high scores** kept in IndexedDB (Dexie): **the run's final cumulative score** (#53), plus e.g. wave reached.
 
 ### Scope *(2026-11-14T04:17:36+00:00 — History #15)*
 - One playable character.
@@ -136,8 +136,18 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Spawning:** a **marker appears briefly first** as a warning, then it **fades in** there.
 - **Crowds:** they **bump and push** each other, so a group spreads out rather than stacking.
 
-### Upgrades *(2026-11-14T04:17:36+00:00 — History #12)*
-- **Four upgrades; three offered at random between waves; the player picks exactly one.**
+### Shop and currency (replaces the three-card offer) *(2026-11-14T06:52:12+00:00 — History #53)*
+- **Enemies drop currency when killed.** Drops scatter from the kill and **fly to you once you're close** (magnet). *(2026-11-14T06:52:12+00:00 — History #54)*
+- **Between waves there's a shop.** Spend as much or as little as you like on **stat upgrades, new weapons and improvements to weapons you own**, or save it for later waves.
+- **Rotating selection:** each shop offers a random handful of items, so runs play out differently. *(2026-11-14T06:52:12+00:00 — History #54)*
+- **Escalating prices:** buying the same thing again costs more (pairs with diminishing returns, #19). *(2026-11-14T06:52:12+00:00 — History #54)*
+- **The shop sells healing** too, so heal-or-upgrade is a choice. *(2026-11-14T06:52:12+00:00 — History #54)*
+- **Score = everything you've earned this run**, including currency already spent; spending never lowers it.
+- **Dying resets currency, weapons and upgrades**; the final score is recorded as a high score.
+- Aim: more freedom and meaningful decisions between waves.
+
+### Upgrades *(2026-11-14T04:17:36+00:00 — History #12; how you get them changed by #53)*
+- ~~**Four upgrades; three offered at random between waves; the player picks exactly one.**~~ *(Replaced by the shop, #53.)* The four stat upgrades remain.
 - **Upgrades can be picked repeatedly and stack.**
 
 | Upgrade | Effect |
@@ -175,9 +185,9 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Dash: has a cooldown, damages enemies it hits, and makes you invulnerable while dashing**, so it's how you get through enemies without the contact damage (#23). Numbers tuned in play. *(2026-11-14T04:27:30+00:00 — History #24)*
 - **Several weapons: pistol, automatic, shotgun, maybe others.** *(2026-11-14T04:24:39+00:00 — History #22)*
 - **Three weapons for now, deliberately.** Others may be considered later (§D). *(2026-11-14T04:28:58+00:00 — History #28)*
-- **Weapons are offered between waves in the same three-card pool as the stat upgrades**; you still pick exactly one. *(2026-11-14T04:24:39+00:00 — History #22)*
+- ~~**Weapons are offered between waves in the same three-card pool as the stat upgrades**; you still pick exactly one.~~ *(Replaced by the shop, #53.)* *(2026-11-14T04:24:39+00:00 — History #22)*
 - **You carry every weapon you've picked and switch between them** (#9 for inputs). *(2026-11-14T04:24:39+00:00 — History #22)*
-- **Picking a weapon you already own improves it.** *(2026-11-14T04:24:39+00:00 — History #22)*
+- **Improving a weapon you own** (now bought in the shop, #53). *(2026-11-14T04:24:39+00:00 — History #22)*
 - **Improving a weapon raises its damage.** There's no damage upgrade among the four stat upgrades, so this is how damage goes up. *(2026-11-14T04:27:30+00:00 — History #26)*
 
 ### Waves *(2026-11-14T04:17:36+00:00 — History #13)*
@@ -185,7 +195,7 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - Enemy numbers increase as waves progress.
 - New enemy types can be introduced in later waves.
 - **Enemy stats are placeholders**, set relative to each other (the tank much tougher, ranged keeps its distance) and tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #20)*
-- Upgrade selection happens between waves (#12).
+- The shop opens between waves (#53).
 
 ### Technical architecture / platform
 - **Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js**, the same as Lyra's previous project. *(2026-11-14T04:12:26+00:00 — History #4)*
@@ -289,6 +299,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1c. **Shop (#53, #54), open:** how many items per shop; whether you can reroll the selection; prices and how fast they escalate; what healing costs and whether it escalates; how much currency each enemy drops (per type?); whether weapons and improvements share the rotation with stat upgrades; shop UI.
 1b. **Melee enemy (#40), open:** numbers (hop speed and height, health, damage, wind-up length, dizzy length, lunge speed), and whether "properly navigates" means planning routes across several platforms or one platform at a time.
 1a. **Aim modes (#36–#38):** ~~line of sight~~ (yes), ~~range~~ (placeholder), ~~no target~~ (straight ahead), ~~stickiness~~ (locked until it dies). ~~Defaults~~ (mobile: auto aim + manual shooting; desktop: Manual, #39). Nothing left open here. To watch in testing: a locked target that goes behind a platform keeps the lock (#38), so shots would hit the platform until it comes back into view or dies.
 2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). The items left open in the original conversation:
@@ -444,6 +455,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 50 | 2026-11-14T06:44:50+00:00 | Enemies | Melee enemy is 1.1× the player's size (was ¾). |
 | 51 | 2026-11-14T06:44:50+00:00 | UI | Enemy health bars: small segments above each enemy, shown once it's been hit. |
 | 52 | 2026-11-14T06:47:26+00:00 | Combat | After playtesting: contact damage removed entirely; touching enemies never hurts, only their attacks do (melee: a roll or leap, one pip). Applies to all enemies going forward. Supersedes #23 and the contact part of #48. |
+| 53 | 2026-11-14T06:52:12+00:00 | Upgrades / economy | Replace the three-card upgrade offer with a currency shop between waves: enemies drop currency; spend any amount on stat upgrades, new weapons and weapon improvements, or save it. Score = total earned in the run (spending never lowers it). Death resets currency, weapons and upgrades; the final score is the high score. Supersedes the offer mechanics of #12 and #22. |
+| 54 | 2026-11-14T06:52:12+00:00 | Upgrades / economy | Shop details: rotating selection each shop; drops fly to you when close (magnet); escalating prices on repeat purchases; the shop sells healing. |
 
 ---
 
