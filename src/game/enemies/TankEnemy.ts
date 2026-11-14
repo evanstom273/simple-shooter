@@ -5,6 +5,7 @@ import { GRAVITY, STOMP, TANK } from '../tuning.ts'
 import { firstMove, platformAt, type NavGraph } from './nav.ts'
 import { drawBar, lerpColour } from './RangedEnemy.ts'
 import type { Enemy, Hazard, PlayerInfo, Turns } from './types.ts'
+import type { HitSource } from '../targets.ts'
 
 // The tank (#58): a big red pentagon (2× the player). Walks slowly, climbs with
 // heavy jumps. Attack: a ground slam. Crouches and glows, a marker shows where
@@ -117,6 +118,7 @@ export class TankEnemy implements Enemy {
   private rumble = 0
   /** Seconds left flattened by a stomp (#59). */
   private flat = 0
+  lastHitSource: HitSource = 'dash'
 
   constructor(
     scene: Phaser.Scene,
@@ -172,7 +174,7 @@ export class TankEnemy implements Enemy {
   }
 
   /** Stomped: 1 damage and flattened, but it doesn't move; the player is knocked away instead (#59). */
-  stomp() {
+  stomp(_fromX: number, damage: number = STOMP.damage) {
     if (!this.hittable) return
     if (this.state === 'windup') {
       this.state = 'walk'
@@ -180,7 +182,7 @@ export class TankEnemy implements Enemy {
       this.turns.release(this)
       this.cooldown = TANK.slamCooldown
     }
-    this.hit(STOMP.damage)
+    this.hit(damage, { x: 0, y: 0 }, 'stomp')
     if (this.alive) this.flat = STOMP.flatten
   }
 
@@ -198,8 +200,9 @@ export class TankEnemy implements Enemy {
     return this.body.blocked.down || this.body.touching.down
   }
 
-  hit(damage: number) {
+  hit(damage: number, _dir?: { x: number; y: number }, source: HitSource = 'dash') {
     if (!this.alive || this.flat > 0) return
+    this.lastHitSource = source
     this.hp -= damage
     this.flash = 0.08
     this.sx = 1.12

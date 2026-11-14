@@ -57,6 +57,8 @@ export const DASH = {
   duration: 0.15,
   /** Seconds from the start of one dash until the next is allowed. */
   cooldown: 1.6,
+  /** Damage per dash hit (raised by the dash/stomp upgrade, #69). */
+  damage: 1,
   /** Fraction of dash speed kept when it ends, so it doesn't stop dead. */
   carry: 0.35,
   /** Seconds of invulnerability after a dash ends, so ending inside an enemy doesn't hurt. */
@@ -120,7 +122,7 @@ export const WEAPONS: Record<
   {
     label: string
     colour: number
-    /** Damage per bullet / pellet (enemy HP: melee 3, ranged 1, tank 8). */
+    /** Damage per bullet / pellet (enemy HP: melee 3, ranged 1, tank 8). Lowered to ~40% by #69 so guns support rather than replace dash and stomp. */
     damage: number
     /** Shots per second while the trigger is held. */
     fireRate: number
@@ -143,7 +145,7 @@ export const WEAPONS: Record<
   pistol: {
     label: 'Pistol',
     colour: 0xfff2b0,
-    damage: 1,
+    damage: 0.4,
     fireRate: 4,
     magazine: 8,
     reload: 1.0,
@@ -157,7 +159,7 @@ export const WEAPONS: Record<
   automatic: {
     label: 'Automatic',
     colour: 0xffd27a,
-    damage: 0.5,
+    damage: 0.2,
     fireRate: 10,
     magazine: 24,
     reload: 1.6,
@@ -171,7 +173,7 @@ export const WEAPONS: Record<
   shotgun: {
     label: 'Shotgun',
     colour: 0xffb38a,
-    damage: 0.5,
+    damage: 0.2,
     fireRate: 1.2,
     magazine: 4,
     reload: 1.4,

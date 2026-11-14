@@ -210,10 +210,11 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 | **Health** | Increases player health. |
 | **Jump Height** | Increases jump height. |
 | **Movement Speed** | Increases movement speed. |
-| **Fire Rate** | Increases shooting speed. |
+| ~~**Fire Rate**~~ | ~~Increases shooting speed.~~ *Removed by #69.* |
+| **Dash & stomp damage** *(name TBD)* | Increases the damage of dashes and stomps. Added by #69. |
 
 - **Diminishing returns:** each repeat of the same upgrade adds a bit less than the last. Actual amounts are placeholders, tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #19)*
-- **Fire Rate applies to every weapon you carry** (a player stat, not per gun). *(2026-11-14T04:24:39+00:00 — History #22)*
+- ~~**Fire Rate applies to every weapon you carry**~~ *(Fire Rate removed, #69.)* *(2026-11-14T04:24:39+00:00 — History #22)*
 
 ### Health, revised again *(2026-11-14T06:58:51+00:00 — History #57)*
 - **20 health: 5 pips × 4 stages** (was 5 × 5).
@@ -244,6 +245,13 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **The stomp knocks the enemy away and flattens it** for about a second, during which **it can't be hit**, so you can't stomp it repeatedly. **Stomping the tank knocks you away instead** (it's too heavy to move, #58).
 - **You bounce up and your double jump is refreshed.**
 - **An attacking enemy wins:** landing on one mid-attack (a rolling or leaping melee, a slamming tank) hurts you as normal. Stomping is only safe on enemies that aren't attacking.
+
+### Melee first: rebalancing guns *(2026-11-14T21:39:33+00:00 — History #69)*
+After playtesting the guns (Lyra: they made it too easy; the dash and stomp are the heart of the combat):
+- **Fire Rate upgrade removed**; replaced in the shop by a **combined dash and stomp damage upgrade**. The four upgrades are now Health, Jump Height, Movement Speed and Dash & stomp damage.
+- **Gun damage lowered** (to ~40%: pistol 0.4, automatic 0.2, shotgun 0.2 per pellet), so guns support rather than replace the dash and stomp.
+- **Only kills by dashing or stomping heal you** (amends #48). Gun kills still drop gold but don't heal.
+- Guns should also be **expensive** in the shop (pricing still open).
 
 ### Weapons, ammo and reloading *(2026-11-14T21:30:44+00:00 — History #68)*
 - **The classic split:** **pistol** accurate and steady; **automatic** fast, weaker per bullet, slight spread; **shotgun** slow, short-range burst of pellets, big recoil shove.
@@ -463,8 +471,9 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Motes | Tested | 45 faint drifting squares under the darkness layer, so they mostly show near the player's light. *(2026-11-14T05:08:55+00:00)* |
 | Aim modes (#36–#39, #41) | Tested | `settingsStore` (plain TS, shared by React and Phaser) holds the mode; settings panel (gear button) with Manual / Auto aim / Full auto; saved in Dexie with mute. Defaults from `pointer: coarse`: touch → Auto aim, desktop → Manual. *(2026-11-14T05:45:20+00:00)* |
 | Shooting (`Shooter.ts`) | Tested | Hold the trigger to fire at the weapon's rate (pistol 4/s, exact). Desktop: left mouse button; mouse aims in Manual (system cursor replaced by a crosshair). Touch: hold anywhere right of the joystick zone that isn't JUMP/DASH; in Manual shots go towards the thumb. No target in range: shots go straight ahead (direction last moved). Full auto fires only at a locked target in line of sight. Can't fire mid-dash. Bullets: 1900 px/s, sub-stepped so they can't skip thin platforms; pass through platforms (#42) and stop at the floor with sparks. *(2026-11-14T05:45:20+00:00)* |
-| Weapons (#68) | Tested | `WEAPONS` in `tuning.ts`. Pistol: 1 dmg, 4/s, mag 8, reload 1.0 s, long range. Automatic: 0.5 dmg, 10/s, mag 24, reload 1.6 s, ±0.07 rad spread. Shotgun: 6 pellets × 0.5 dmg in a ±0.28 rad fan, 1.2/s, mag 4, reload 1.4 s, pellets live 0.32 s (short range), 460 px/s recoil shove + small shake. Empty magazine → reload (gun greys and spins once, ring around the gun, bar under the player in the gun's colour, HUD icon refills, click when done); no firing or switching meanwhile. Switching: 1–3, mouse wheel, touch SWAP button (shown with 2+ guns). Barrel per gun: pistol short, automatic long and thin, shotgun short double. HUD: an icon per owned gun under the health, current highlighted, ammo bar. Buying a gun you own (later, the shop) adds +25% damage (#26, placeholder); a fire-rate multiplier is ready for the Fire Rate upgrade. Checked: unarmed can't fire; pistol fired exactly 8 then reloaded; switching refused mid-reload; wheel and keys switch; shotgun fires 6 pellets; touch SWAP and touch firing work. *(2026-11-14T21:30:44+00:00)* |
+| Weapons (#68) | Tested | *(Damage lowered by #69: pistol 0.4, automatic 0.2, shotgun pellet 0.2; checked: 8 pistol shots kill a melee.)* `WEAPONS` in `tuning.ts`. Pistol: 1 dmg, 4/s, mag 8, reload 1.0 s, long range. Automatic: 0.5 dmg, 10/s, mag 24, reload 1.6 s, ±0.07 rad spread. Shotgun: 6 pellets × 0.5 dmg in a ±0.28 rad fan, 1.2/s, mag 4, reload 1.4 s, pellets live 0.32 s (short range), 460 px/s recoil shove + small shake. Empty magazine → reload (gun greys and spins once, ring around the gun, bar under the player in the gun's colour, HUD icon refills, click when done); no firing or switching meanwhile. Switching: 1–3, mouse wheel, touch SWAP button (shown with 2+ guns). Barrel per gun: pistol short, automatic long and thin, shotgun short double. HUD: an icon per owned gun under the health, current highlighted, ammo bar. Buying a gun you own (later, the shop) adds +25% damage (#26, placeholder); (the fire-rate multiplier was removed with the Fire Rate upgrade, #69). Checked: unarmed can't fire; pistol fired exactly 8 then reloaded; switching refused mid-reload; wheel and keys switch; shotgun fires 6 pellets; touch SWAP and touch firing work. *(2026-11-14T21:30:44+00:00)* |
 | Pushes carry | Tested | After getting hit, a shotgun blast, bouncing off the tank or being knocked off it by a stomp, your run input only steers gently for 0.18–0.3 s, so the push actually moves you (the shotgun kick went from ~0 to ~76 px). *(2026-11-14T21:30:44+00:00)* |
+| Melee-first rebalance (#69) | Tested | Each enemy remembers what last hit it; a kill heals a stage only if that was a dash or stomp (checked: shot kill +0, dash kill +1, stomp kill +1). Dash damage (`DASH.damage`) and stomp damage are multiplied by `impactBonus`, ready for the shop's dash/stomp upgrade. *(2026-11-14T21:39:33+00:00)* |
 | Auto-aim | Tested | *(Updated 2026-11-14T05:50:22+00:00, #42–#43.)* Nearest living target within 700 px, re-checked every frame; keeps the current target unless another is ≥15% closer (`AIM.switchMargin`); drops it when it dies or leaves range. Platforms ignored. Checked: a 6% difference kept the old target, 33% switched. *Previously:* line of sight + locked until death. Rotating corner bracket on the locked target. *(2026-11-14T05:45:20+00:00)* |
 | Shot feel | Tested | Muzzle star flash, additive glow, barrel kicks back, small recoil push (sideways; lift when firing down in the air), tiny squash, shot sound; impact sparks + tick. *(2026-11-14T05:45:20+00:00)* |
 | Off-screen markers (#44) | Tested | `MarkersScene` (screen space, drawn under the touch controls): for each living target outside the view, an arrowhead where the line from screen centre to the target meets the edge (inset 26 CSS px). Size 9–15 px and opacity by distance (fades out to 1600 px). Auto-aim target: yellow, 16–19 px pulsing, with a pulsing ring. Each target supplies its marker colour. *(2026-11-14T06:06:53+00:00)* |
@@ -606,6 +615,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 66 | 2026-11-14T21:20:38+00:00 | Structure | Four sections per world, each with its own unique boss (16 bosses across the first four worlds). Designed through question rounds like the enemies. |
 | 67 | 2026-11-14T21:22:41+00:00 | Structure / priorities | Section platforms are randomly generated each time you enter (replays differ); you start wave 1 by walking into the room. Priorities before worlds or art: player shooting, the hub + shop, random platform generation. |
 | 68 | 2026-11-14T21:30:44+00:00 | Weapons | Classic split (pistol / automatic / shotgun). Magazines that reload automatically only once empty, no reload button; can't switch while reloading; reload shown as a ring on the gun, a bar under the player and the HUD icon. Weapons shown as HUD icons and a distinct gun on the character. Testing buttons give weapons until the shop exists. |
+| 69 | 2026-11-14T21:39:33+00:00 | Balance | Melee first: Fire Rate upgrade replaced by a dash & stomp damage upgrade; gun damage lowered (~40%); only dash/stomp kills heal; guns should be expensive. |
 
 ---
 

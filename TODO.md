@@ -24,6 +24,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Melee-first rebalance: gun damage ~40%, only dash/stomp kills heal, Fire Rate → dash & stomp damage upgrade (design; hook in code) (#69). *(2026-11-14T21:39:33+00:00)*
 - [x] Step 12: player shooting: pistol / automatic / shotgun, magazines + auto-reload, switching (keys, wheel, SWAP), HUD icons, testing Give buttons (#68). *(2026-11-14T21:30:44+00:00)*
 - [x] Step 11: basic endless waves, gold drops + magnet, score, wave HUD + intermission count-up, run over + Play again, local high scores (#60). *(2026-11-14T14:52:38+00:00)*
 - [x] Step 10: stomp (#59). *(2026-11-14T14:38:46+00:00)*

@@ -10,7 +10,7 @@ import { TankEnemy } from './enemies/TankEnemy.ts'
 import type { Enemy, Hazard, PlayerInfo, Turns } from './enemies/types.ts'
 import { buildNav, platformAt, platformBelow, type NavGraph } from './enemies/nav.ts'
 import { Shooter } from './Shooter.ts'
-import type { Target } from './targets.ts'
+import type { HitSource, Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
 import { debugBus } from '../state/debug.ts'
@@ -78,6 +78,8 @@ export class GameScene extends Phaser.Scene {
    * push (getting hit, the shotgun's kick, bouncing off the tank) actually carries.
    */
   private pushTime = 0
+  /** Dash and stomp damage multiplier: the shop's new dash/stomp upgrade (#69) raises it. */
+  impactBonus = 1
   /** Health in stages (#48). */
   private health: number = PLAYER.pips * PLAYER.stagesPerPip
   /** Seconds of post-hit invulnerability left (#27). */
@@ -571,11 +573,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** A kill: gold drops (#53) worth more in later waves, and you heal a stage (#48). */
-  private onEnemyKilled(kind: EnemyKind, x: number, y: number) {
+  private onEnemyKilled(kind: EnemyKind, x: number, y: number, source: HitSource) {
     const run = runStore.get()
     this.gold.drop(x, y, goldFor(kind, Math.max(1, run.wave)))
     runStore.set({ kills: run.kills + 1 })
-    this.onKill()
+    // Only dash and stomp kills heal (#69): the risky play keeps you alive; guns don't.
+    if (source !== 'shot') this.onKill()
   }
 
   /** Health hit zero: the run is over (#17). Everything resets; the score is recorded. */
@@ -600,7 +603,7 @@ export class GameScene extends Phaser.Scene {
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]
     let me: Enemy | null = null
     const kill = () => {
-      if (me) this.onEnemyKilled(kind, me.x, me.y)
+      if (me) this.onEnemyKilled(kind, me.x, me.y, me.lastHitSource)
     }
     if (kind === 'ranged') {
       const x = Phaser.Math.Between(100, ARENA.width - 100)
@@ -646,7 +649,7 @@ export class GameScene extends Phaser.Scene {
       if (this.dashing) {
         if (this.dashHits.has(t) || !e.hittable) continue
         this.dashHits.add(t)
-        t.hit(1, { x: this.dashDir.x, y: this.dashDir.y }, 'dash')
+        t.hit(DASH.damage * this.impactBonus, { x: this.dashDir.x, y: this.dashDir.y }, 'dash')
         if ((t as Enemy).heavy) {
           // Too heavy to move (#58): you bounce off it.
           this.endDash(0)
@@ -703,7 +706,7 @@ export class GameScene extends Phaser.Scene {
   /** Landed on an enemy from above (#59): it's hit and flattened, you bounce up with your double jump back. */
   private stompOn(e: Enemy) {
     const b = this.body_
-    e.stomp(this.player.x)
+    e.stomp(this.player.x, STOMP.damage * this.impactBonus)
     if (e.heavy) {
       // The tank doesn't budge: you're knocked away instead.
       const away = Math.sign(this.player.x - e.x) || this.facing

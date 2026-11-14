@@ -54,6 +54,7 @@ export class MeleeEnemy implements Enemy {
   private look = { x: 0, y: 0 }
   /** Seconds left flattened by a stomp (#59). */
   private flat = 0
+  lastHitSource: HitSource = 'dash'
 
   constructor(scene: Phaser.Scene, x: number, y: number, nav: NavGraph, onKill: () => void, turns: Turns) {
     this.scene = scene
@@ -92,7 +93,7 @@ export class MeleeEnemy implements Enemy {
     return this.o.y - this.radius
   }
 
-  stomp(fromX: number) {
+  stomp(fromX: number, damage: number = STOMP.damage) {
     if (!this.hittable) return
     // Cancels a wind-up (attacks themselves win, #59, so we're never mid-lunge here).
     if (this.state === 'windup') {
@@ -101,7 +102,7 @@ export class MeleeEnemy implements Enemy {
     }
     const away = Math.sign(this.x - fromX) || 1
     this.body.setVelocity(away * STOMP.knock.x, -STOMP.knock.y)
-    this.hit(STOMP.damage, { x: 0, y: 0 }, 'stomp')
+    this.hit(damage, { x: 0, y: 0 }, 'stomp')
     if (this.alive) this.flat = STOMP.flatten
   }
 
@@ -123,6 +124,7 @@ export class MeleeEnemy implements Enemy {
 
   hit(damage: number, dir: { x: number; y: number }, source: HitSource = 'dash') {
     if (!this.alive || this.flat > 0) return
+    this.lastHitSource = source
     this.hp -= damage
     this.flash = 0.07
     this.kick(source === 'shot' ? 1.15 : 1.35, source === 'shot' ? 0.88 : 0.7)

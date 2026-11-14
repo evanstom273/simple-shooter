@@ -1,5 +1,5 @@
 import type Phaser from 'phaser'
-import type { Target } from '../targets.ts'
+import type { HitSource, Target } from '../targets.ts'
 
 /** What enemies know about the player each frame. */
 export interface PlayerInfo {
@@ -42,7 +42,9 @@ export interface Enemy extends Target {
   readonly hittable: boolean
   /** Top of its body (for judging a stomp from above). */
   readonly top: number
-  /** Stomped from above (#59): 1 damage, knocked away (except the tank), flattened ~1 s. */
-  stomp(fromX: number): void
+  /** What last hit it: only dash and stomp kills heal you (#69). */
+  readonly lastHitSource: HitSource
+  /** Stomped from above (#59): knocked away (except the tank), flattened ~1 s. `damage` includes the dash/stomp upgrade (#69). */
+  stomp(fromX: number, damage: number): void
   update(dt: number, player: PlayerInfo): void
 }

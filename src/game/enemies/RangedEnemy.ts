@@ -3,6 +3,7 @@ import { sfx } from '../../audio/sfx.ts'
 import { burst, ring } from '../fx.ts'
 import { ARENA, RANGED, STOMP } from '../tuning.ts'
 import type { Enemy, Hazard, PlayerInfo, Turns } from './types.ts'
+import type { HitSource } from '../targets.ts'
 
 // The ranged enemy (#56): a small green flying triangle. Keeps a vantage point,
 // darts away when you get close, and fires a single fast leading shot after a
@@ -79,6 +80,7 @@ export class RangedEnemy implements Enemy {
   private side = Math.random() < 0.5 ? -1 : 1
   /** Seconds left flattened by a stomp (#59). */
   private flat = 0
+  lastHitSource: HitSource = 'dash'
 
   private body: Phaser.GameObjects.Triangle
   private line: Phaser.GameObjects.Graphics
@@ -116,17 +118,18 @@ export class RangedEnemy implements Enemy {
     return this.y - this.radius
   }
 
-  stomp(fromX: number) {
+  stomp(fromX: number, damage: number = STOMP.damage) {
     if (!this.hittable) return
     if (this.state === 'charge' || this.state === 'lock') this.turns.release(this)
     if (this.state !== 'dead') this.state = 'hover'
     const away = Math.sign(this.x - fromX) || 1
-    this.hit(STOMP.damage, { x: away * 0.7, y: 0.7 })
+    this.hit(damage, { x: away * 0.7, y: 0.7 }, 'stomp')
     if (this.alive) this.flat = STOMP.flatten
   }
 
-  hit(damage: number, dir: { x: number; y: number }) {
+  hit(damage: number, dir: { x: number; y: number }, source: HitSource = 'dash') {
     if (!this.alive || this.flat > 0) return
+    this.lastHitSource = source
     this.hp -= damage
     this.flash = 0.07
     this.vx = dir.x * 600 * Math.min(1, damage)

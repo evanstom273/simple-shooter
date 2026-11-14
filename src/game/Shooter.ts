@@ -68,8 +68,6 @@ export class Shooter {
   /** Seconds left reloading the current weapon (0 = not reloading). */
   private reloadLeft = 0
 
-  /** Fire-rate multiplier from upgrades (#12, applies to every weapon, #22). */
-  fireRateBonus = 1
   /** Damage multiplier per weapon from buying it again (#26). */
   damageBonus: Partial<Record<WeaponId, number>> = {}
 
@@ -186,7 +184,7 @@ export class Shooter {
     let fired: { x: number; y: number; recoil: number } | null = null
     if (id && wantFire && !s.dashing && !this.reloading && this.cooldown <= 0) {
       const w = WEAPONS[id]
-      this.cooldown = Math.max(0, this.cooldown + 1 / (w.fireRate * this.fireRateBonus))
+      this.cooldown = Math.max(0, this.cooldown + 1 / w.fireRate)
       this.aimAngle = angle
       this.fire(s.x, s.y, angle, id)
       fired = { x: Math.cos(angle), y: Math.sin(angle), recoil: w.recoil }
