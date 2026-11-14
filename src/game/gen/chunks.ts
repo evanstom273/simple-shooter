@@ -51,6 +51,8 @@ export interface Chunk {
   pieces: Piece[]
   /** Made in the chunk editor. */
   custom?: boolean
+  /** Left out of the generator's pool (editor toggle). */
+  off?: boolean
 }
 
 const p = (t: PieceType, x: number, y: number, w: number, h: number, extra: Partial<Piece> = {}): Piece => ({ t, x, y, w, h, ...extra })

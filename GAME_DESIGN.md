@@ -363,6 +363,19 @@ From Lyra (built while she was at work, so the details marked *Claude* are inter
 **Next:** the hub with the shop (#62, #63), then random platform layouts (#67).
 
 
+### Step 13: Walls, generation, hazards, chunk editor — **BUILT** *(2026-11-14T23:55:09+00:00)*
+- **Wall jumping (#82).**
+  - Hold towards a wall in the air to slide slowly, with both hands on the wall.
+  - Jump off it up and away; a very short steering lock lets you steer back, so a single wall can be climbed.
+  - A wall jump gives the double jump back.
+- **Generator (#79).** Story sections get a new generated room every time.
+  - Room shapes: wide, standard or tall, closed with walls and a ceiling.
+  - A row of ground chunks sits along the floor; air chunks float in bands above.
+  - Anything the base kit can't reach is removed.
+- **Hazards and environment pieces (#81):** spikes, saws, jets, bottomless pits, moving, crumbling, bounce, conveyor and wind, all working, and hazards hurt enemies too.
+- **Chunk editor:** opened from Testing, full screen, works with mouse and touch.
+- **Testing buttons:** Test room (wall jumping), Random room, Chunk editor.
+
 ### Next, in this order of priority (Lyra, 2026-11-14T21:22:41+00:00, History #67)
 Before worlds, art or anything else: **(1) player shooting** (the three weapons, switching), **(2) the hub with the shop**, **(3) randomly generated platform layouts**.
 
@@ -570,6 +583,22 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - No tests yet (Heat & Handle used Vitest; not added here until there's logic to test).
 
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
+- **Generator and hazard numbers (#79–#82), all placeholders to tune.**
+  - Grid: tiles are 20 px; air bands sit 290 px apart.
+  - Reach the generator assumes for the base kit: 350 px up, 430 px across, wall climbing anywhere.
+  - Hazards: 1 stage of damage and a 760 px/s bounce. Bounce pads launch at 1500 px/s (a jump is 980).
+  - Jets: 1.8 s idle, 0.7 s warning, 1 s firing, 300 px reach.
+  - Crumbling platforms: shake for 0.5 s, back after 3 s.
+  - Conveyors run at 220 px/s; moving platforms at 130 px/s; saws at 220 px/s.
+  - Wall jump: kick-off 430 sideways / 940 up; slide speed 170 px/s; 0.1 s steering lock.
+- **Gradual ramp, for now:** each starter chunk has a "from section" number. Section 1 has spikes and bounce pads; section 2 adds pits, jets, conveyors, lifts and crumbling platforms; section 3 adds saws, wind and crumble bridges. All worlds share the starter set until worlds have identities (step 6).
+- **Endless is unchanged** (the fixed arena) until step 5.
+- **Bullets still pass through walls and blocks** (they already passed through platforms, #42).
+- **Wind and conveyors only push the player.** Enemies are hurt by spikes, saws and jets, launched by bounce pads and killed by pits.
+- **Hazard kills don't heal**, like gun kills (#69).
+- **Pit knockback rule:** for 0.8 s after a hit, if knockback would carry you into a pit near floor level, you stop at the edge instead.
+- **Chunk editor storage:** chunks save on the device (Dexie) and join the generator's pool unless switched off. Copy / Paste moves them between devices or to Claude.
+- **Claude's starter chunks** can be opened in the editor but not changed; "Copy to edit" makes your own copy.
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
 - **Placeholder platform layout for #35** (four tiers, each a single jump apart) is Claude's, not designed.
 - **16:9 arena** as a middle ground between desktop, the Fold's very wide cover screen and its near-square inner screen. Camera follow is slightly smoothed.
@@ -682,6 +711,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 80 | 2026-11-14T23:33:06+00:00 | Generation | Boss arenas are not generated: mostly empty space, just the boss and maybe a few platforms (bosses will be big). |
 | 81 | 2026-11-14T23:33:06+00:00 | Hazards | Spikes, saw blades, fire/energy jets and pits; moving, crumbling, bounce and conveyor/wind pieces. Hazards take 1 stage plus a bounce and hurt enemies too. Pits are bottomless death, but enemy hits can't push you in. Enemies dying in pits count as kills, with their gold at the edge. |
 | 82 | 2026-11-14T23:33:06+00:00 | Movement | Wall jump: you can climb the same wall; a slow slide while holding towards it; it refreshes the double jump, not the dash. |
+| 83 | 2026-11-14T23:55:09+00:00 | Build | Steps 1–4 of the generation plan built: wall jumping, the generator with the starter chunks, all hazards and environment pieces, and the in-game chunk editor. |
 
 ---
 

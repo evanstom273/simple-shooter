@@ -64,7 +64,7 @@ export function generate(o: GenOptions): Level {
   const between = (lo: number, hi: number) => lo + r() * (hi - lo)
 
   const pool = (o.only ?? [...STARTER_CHUNKS, ...(o.extra ?? [])]).filter(
-    (c) => (!c.worlds?.length || c.worlds.includes(o.world)) && (c.minSection ?? 1) <= o.section,
+    (c) => !c.off && (!c.worlds?.length || c.worlds.includes(o.world)) && (c.minSection ?? 1) <= o.section,
   )
   const ground = pool.filter((c) => c.kind === 'ground')
   const air = pool.filter((c) => c.kind === 'air')
@@ -165,6 +165,60 @@ export function generate(o: GenOptions): Level {
     env: keptEnv.map(strip),
     pits,
     spawn: { x: W / 2, y: floorY - 40 },
+  }
+}
+
+/**
+ * A small room with just one chunk in it, for play-testing in the editor (#79).
+ * Ground chunks sit on the floor; air chunks float a jump above it. Nothing is
+ * removed: `unreachable` counts platforms the base kit can't get to.
+ */
+export function chunkTestLevel(c: Chunk): Level & { unreachable: number } {
+  const cw = c.w * TILE
+  const ch = c.h * TILE
+  const W = Math.max(1600, Math.ceil((cw + 900) / TILE) * TILE)
+  const H = Math.max(1000, Math.ceil((ch + 600) / TILE) * TILE)
+  const floorY = H - FLOOR_H
+  const x = Math.round((W - cw) / 2 / TILE) * TILE
+  const y = c.kind === 'ground' ? floorY - ch : floorY - 240 - ch
+  const pl: Placed = { chunk: c, x, y, id: 0 }
+  const platforms: LevelPlat[] = []
+  const env: LevelEnv[] = []
+  const pits: { x: number; w: number }[] = []
+  for (const pc of c.pieces) addPiece(pc, pl, platforms, env, pits)
+  const floorPieces: LevelPlat[] = []
+  let fx = 0
+  for (const pit of [...pits].sort((a, b) => a.x - b.x)) {
+    if (pit.x > fx) floorPieces.push({ x: fx, y: floorY, w: pit.x - fx, h: FLOOR_H, solid: true, floor: true })
+    fx = Math.max(fx, pit.x + pit.w)
+  }
+  if (fx < W) floorPieces.push({ x: fx, y: floorY, w: W - fx, h: FLOOR_H, solid: true, floor: true })
+  const edges: LevelPlat[] = [
+    { x: 0, y: 0, w: WALL, h: floorY, solid: true, edge: true },
+    { x: W - WALL, y: 0, w: WALL, h: floorY, solid: true, edge: true },
+    { x: WALL, y: 0, w: W - WALL * 2, h: WALL, solid: true, edge: true },
+  ]
+  const all = [...floorPieces, ...platforms]
+  const reached = reachable(all, edges, W)
+  const clean = platforms.map((p) => {
+    const { from: _f, ...rest } = p as LevelPlat & { from?: number }
+    void _f
+    return rest
+  })
+  const cleanEnv = env.map((e) => {
+    const { from: _f, ...rest } = e as LevelEnv & { from?: number }
+    void _f
+    return rest
+  })
+  return {
+    width: W,
+    height: H,
+    floorY,
+    platforms: [...floorPieces, ...edges, ...clean],
+    env: cleanEnv,
+    pits,
+    spawn: { x: Math.min(x - 160, 300), y: floorY - 40 },
+    unreachable: platforms.length - platforms.filter((_, i) => reached.has(floorPieces.length + i)).length,
   }
 }
 

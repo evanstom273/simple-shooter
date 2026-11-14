@@ -170,7 +170,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    const dest = navStore.get()
+    // The editor never runs the game (App shows the editor instead); fall back to the hub.
+    const nav = navStore.get()
+    const dest = nav.mode === 'editor' ? ({ mode: 'hub' } as const) : nav
     this.mode = dest.mode
     if (dest.mode === 'section') {
       this.world = dest.world

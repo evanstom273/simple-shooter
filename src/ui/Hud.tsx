@@ -273,6 +273,9 @@ export function Hud() {
             <button type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'sandbox', level: generate({ world: 1, section: 4, extra: customChunks() }), title: 'Random room' }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
               Random room
             </button>
+            <button type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'editor' }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
+              Chunk editor
+            </button>
           </div>
           <div className="mb-1.5 flex items-center gap-1">
             <span className="mr-1 w-10 text-xs text-neutral-400">Give</span>
@@ -355,9 +358,15 @@ function SandboxBar() {
   return (
     <div className="pointer-events-auto absolute top-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 py-1 pr-1 pl-3 ring-1 ring-white/10">
       <span className="text-xs font-semibold text-neutral-300">{dest.title}</span>
-      <button type="button" onClick={() => navStore.go({ mode: 'hub' })} className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-neutral-100 hover:bg-white/20">
-        Back to hub
-      </button>
+      {dest.back === 'editor' ? (
+        <button type="button" onClick={() => navStore.go({ mode: 'editor', chunkId: dest.chunkId })} className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-neutral-100 hover:bg-white/20">
+          Back to editor
+        </button>
+      ) : (
+        <button type="button" onClick={() => navStore.go({ mode: 'hub' })} className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-neutral-100 hover:bg-white/20">
+          Back to hub
+        </button>
+      )}
     </div>
   )
 }

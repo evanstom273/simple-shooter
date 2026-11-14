@@ -13,13 +13,10 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 **Priority (Lyra, #67):** ~~1. player shooting~~ (done) · ~~2. hub + shop~~ (done, #74) · 3. randomly generated platforms (designed: #79–#82). Then worlds and art.
 
 - Tune the ranged enemy and tank in play.
-- Random generation, hazards and wall jumping (#79–#82), proposed build order:
-  1. Walls + wall jump / slide, in a hand-built test room.
-  2. Chunk format + generator (per section, varying size, closed rooms, reachability) with a drafted starter set, no hazards yet.
-  3. Hazards one at a time: spikes, pits, saws, jets; then moving, crumbling, bounce, conveyor/wind.
-  4. The chunk editor (in game, from Testing).
+- Generation, remaining steps (#79):
   5. Endless: a new layout every wave, sliding into place.
   6. World palettes and the per-section ramp, once worlds have identities.
+- Lyra to play: wall jump feel, generated sections, each hazard, the chunk editor (Testing → Test room / Random room / Chunk editor).
 - Grapple, bought in the shop (#77, #78): design it. Never gating: the platform generator builds for the base kit only (base jump, double jump, dash, wall jump).
 - Hub part 3: the short tutorial room on first launch (#70).
 - Lyra to play the hub and story loop: section length, gold per section, shop prices, the wave offset per section (#74).
@@ -33,6 +30,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Step 13: wall jumping, level generator + starter chunks, hazards and environment pieces, in-game chunk editor (#79–#83). *(2026-11-14T23:55:09+00:00)*
 - [x] Portals need a press to enter, with a prompt and an ENTER touch button (#76). *(2026-11-14T23:21:05+00:00)*
 - [x] Transitions: fades between places, player beam-in on arrival, portal pull and beam-out on leaving (#75). *(2026-11-14T23:04:37+00:00)*
 - [x] Hub in the game as the main menu: portals to story sections (5 waves), shop on pedestals with reroll, training dummy, endless portal, death/clear rules, progress saved, W / ↑ and touch BUY (#70, #72, #74). *(2026-11-14T22:06:39+00:00)*

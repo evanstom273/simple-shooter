@@ -5,6 +5,7 @@ import { loadProgress } from './state/progress.ts'
 import { loadChunks } from './state/chunks.ts'
 import { restartBus } from './state/run.ts'
 import { Hud } from './ui/Hud.tsx'
+import { ChunkEditor } from './ui/ChunkEditor.tsx'
 
 // Phaser renders the game; React draws UI panels on top of it (GAME_DESIGN #5).
 export default function App() {
@@ -16,6 +17,8 @@ export default function App() {
   // Going anywhere (hub, a section, endless) or restarting remounts the game,
   // so every system starts fresh (#17, #72). A short fade covers the swap.
   const [mount, setMount] = useState(0)
+  /** The chunk editor replaces the game entirely while it's open (#79). */
+  const [editing, setEditing] = useState(navStore.get().mode === 'editor')
   const [fade, setFade] = useState(false)
   useEffect(() => {
     const swap = () => {
@@ -23,6 +26,7 @@ export default function App() {
       // Fade to black, swap, fade back in; the player beams in a second later (#75).
       window.setTimeout(() => {
         setMount((m) => m + 1)
+        setEditing(navStore.get().mode === 'editor')
         window.setTimeout(() => setFade(false), 150)
       }, 450)
     }
@@ -36,8 +40,9 @@ export default function App() {
   }, [])
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#0d0e18]">
-      {ready && <PhaserView key={mount} />}
-      {ready && <Hud />}
+      {ready && !editing && <PhaserView key={mount} />}
+      {ready && !editing && <Hud />}
+      {ready && editing && <ChunkEditor key={mount} />}
       <div className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-[450ms] ${fade || !ready ? 'opacity-100' : 'opacity-0'}`} />
     </div>
   )
