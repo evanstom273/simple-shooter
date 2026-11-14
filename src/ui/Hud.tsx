@@ -106,7 +106,7 @@ export function Hud() {
       </div>
       <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
         A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Land on enemies to stomp · Left-click shoot · 1–3 / wheel switch gun
-        {run.mode === 'hub' && ' · W / ↑ buy · walk into a portal to enter'}
+        {run.mode === 'hub' && ' · W / ↑ buy or enter a portal'}
       </p>
 
       {/* Wave readout (#13, #18). */}

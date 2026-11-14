@@ -25,6 +25,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Portals need a press to enter, with a prompt and an ENTER touch button (#76). *(2026-11-14T23:21:05+00:00)*
 - [x] Transitions: fades between places, player beam-in on arrival, portal pull and beam-out on leaving (#75). *(2026-11-14T23:04:37+00:00)*
 - [x] Hub in the game as the main menu: portals to story sections (5 waves), shop on pedestals with reroll, training dummy, endless portal, death/clear rules, progress saved, W / ↑ and touch BUY (#70, #72, #74). *(2026-11-14T22:06:39+00:00)*
 - [x] Character art in the game: player, melee, ranged, tank (#73). *(2026-11-14T22:06:39+00:00)*

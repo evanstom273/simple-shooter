@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { touchInput } from './controls.ts'
 import { sfx } from '../audio/sfx.ts'
 import { OFFER_INFO, progressStore, type Offer } from '../state/progress.ts'
 import { burst, ring } from './fx.ts'
@@ -50,6 +51,20 @@ export class Hub {
   private entering = false
   /** Which pedestal you're at (for the touch BUY button and prompts), or -1. */
   near = -1
+  /** Which portal you're standing in front of (world 1–4, or 'endless'), or null. Entering takes a press (#76). */
+  nearPortal: 1 | 2 | 3 | 4 | 'endless' | null = null
+  private portalPrompts: Phaser.GameObjects.Text[] = []
+  private endlessPrompt: Phaser.GameObjects.Text
+
+  /** Something to press for here? (Shows the touch button.) */
+  get canUse() {
+    return this.near >= 0 || this.nearPortal !== null
+  }
+
+  /** What the touch button should say here. */
+  get useLabel() {
+    return this.nearPortal !== null ? 'ENTER' : this.near === 3 ? 'REROLL' : 'BUY'
+  }
   readonly dummy: TrainingDummy
 
   constructor(scene: Phaser.Scene, events: HubEvents) {
@@ -65,7 +80,9 @@ export class Hub {
       const t = scene.add.text(p.x, HUB.floor - 400, '', { fontFamily: FONT, fontSize: '30px', fontStyle: 'bold', color: hex(p.colour), align: 'center' }).setOrigin(0.5).setDepth(7)
       const n = scene.add.text(p.x, HUB.floor - 362, '', { fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#e6e6f2', align: 'center' }).setOrigin(0.5).setDepth(7)
       this.labels.push(t, n)
+      this.portalPrompts.push(scene.add.text(p.x, HUB.floor - 286, '', { fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(7))
     }
+    this.endlessPrompt = scene.add.text(HUB.endless.x, HUB.lower - 258, '', { fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(7)
     const endlessTitle = scene.add.text(HUB.endless.x, HUB.lower - 330, 'Endless', { fontFamily: FONT, fontSize: '30px', fontStyle: 'bold', color: '#f2f2f2' }).setOrigin(0.5).setDepth(7)
     this.endlessText = scene.add.text(HUB.endless.x, HUB.lower - 298, '', { fontFamily: FONT, fontSize: '18px', fontStyle: 'bold', color: '#ffcf4a', align: 'center' }).setOrigin(0.5).setDepth(7)
     void endlessTitle
@@ -123,7 +140,9 @@ export class Hub {
     g.clear()
     const prog = progressStore.get()
 
-    // World portals.
+    // World portals: stand in front and press to enter (#76), so you can walk past.
+    this.nearPortal = null
+    const press = touchInput.controlsShown ? 'Tap ENTER' : 'W / ↑ to enter'
     HUB.portals.forEach((p, i) => {
       this.drawPortal(g, p.x, HUB.floor - 150, p.shape, p.colour, 95, t)
       const done = prog.cleared[p.world]
@@ -135,7 +154,11 @@ export class Hub {
         g.fillStyle(k < done ? p.colour : 0xffffff, k < done ? 1 : 0.12)
         g.fillRect(x - 8, y, 16, 16)
       }
-      if (!this.entering && Math.abs(player.x - p.x) < 60 && player.bottom > HUB.floor - 260 && player.bottom <= HUB.floor + 2) {
+      const here = !this.entering && Math.abs(player.x - p.x) < 60 && player.bottom > HUB.floor - 260 && player.bottom <= HUB.floor + 2
+      if (here) this.nearPortal = p.world
+      this.portalPrompts[i].setText(here ? press : '').setAlpha(0.75 + Math.sin(t * 4) * 0.25)
+      if (here && usePressed) {
+        usePressed = false
         this.entering = true
         this.pullInto(p.colour, p.x, HUB.floor - 150, () => this.events.enterWorld(p.world))
       }
@@ -144,7 +167,11 @@ export class Hub {
     // Endless portal (below).
     this.drawPortal(g, HUB.endless.x, HUB.lower - 150, 'square', 0xf2f2f2, 80, t)
     this.endlessText.setText(this.endlessBest > 0 ? `Best ${this.endlessBest.toLocaleString('en-GB')} · wave ${this.endlessWave}\nstart from nothing` : 'start from nothing')
-    if (!this.entering && Math.abs(player.x - HUB.endless.x) < 55 && player.bottom > HUB.lower - 230) {
+    const atEndless = !this.entering && Math.abs(player.x - HUB.endless.x) < 55 && player.bottom > HUB.lower - 230
+    if (atEndless) this.nearPortal = 'endless'
+    this.endlessPrompt.setText(atEndless ? press : '').setAlpha(0.75 + Math.sin(t * 4) * 0.25)
+    if (atEndless && usePressed) {
+      usePressed = false
       this.entering = true
       this.pullInto(0xffffff, HUB.endless.x, HUB.lower - 150, () => this.events.enterEndless())
     }
@@ -240,7 +267,7 @@ export class Hub {
     txt.price.setText('◆ ' + price).setY(F - 186 + bob).setColor(gold >= price ? '#ffcf4a' : '#8a6a6a')
     const near = this.near === i
     txt.name.setText(near ? info.label : '')
-    txt.note.setText(near ? `${info.note} · W / ↑ to ${isReroll ? 'reroll' : 'buy'}` : '')
+    txt.note.setText(near ? `${info.note} · ${touchInput.controlsShown ? `tap ${isReroll ? 'REROLL' : 'BUY'}` : `W / ↑ to ${isReroll ? 'reroll' : 'buy'}`}` : '')
   }
 }
 

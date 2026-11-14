@@ -216,6 +216,7 @@ export class TouchControlsScene extends Phaser.Scene {
     const use = this.dashBtn.visible && touchInput.useAvailable
     this.useBtn.setVisible(use)
     this.useLabel.setVisible(use)
+    if (use && this.useLabel.text !== touchInput.useLabel) this.useLabel.setText(touchInput.useLabel)
     if (!this.dashBtn.visible) return
     // Cooldown: the ring fills back up; the button lights up when ready.
     const ready = touchInput.dashReady

@@ -663,7 +663,8 @@ export class GameScene extends Phaser.Scene {
       const use = !this.cine && (Phaser.Input.Keyboard.JustDown(this.keys.use) || Phaser.Input.Keyboard.JustDown(this.keys.useAlt) || touchInput.useQueued)
       touchInput.useQueued = false
       this.hub.update(dt, { ...this.playerInfo, bottom: this.body_.bottom }, use)
-      touchInput.useAvailable = this.hub.near >= 0
+      touchInput.useAvailable = this.hub.canUse && !this.cine
+      touchInput.useLabel = this.hub.useLabel
     }
     this.gold.update(dt, this.player.x, this.player.y)
   }
