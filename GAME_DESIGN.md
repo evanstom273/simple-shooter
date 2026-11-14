@@ -73,7 +73,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
   - **Manual:** aim and shoot yourself (desktop: mouse aim, left-click; touch: tap/hold on the right side, as in #9).
   - **Auto aim, manual shooting:** the game picks the target; you choose when to fire.
   - **Full auto:** the game aims and fires.
-  **Default on mobile: Auto aim, manual shooting.** *(2026-11-14T05:22:58+00:00 — History #39)*
+  **Defaults: Auto aim, manual shooting on mobile; Manual on desktop.** *(2026-11-14T05:22:58+00:00 / 2026-11-14T05:23:10+00:00 — History #39)*
   Motivation: manual aiming on a phone, especially the Fold's cover screen, is awkward with the right thumb already on jump and dash.
 - **Auto-aim targets the nearest enemy**, with a visible indicator on the current target. No facing-based targeting: the square has no front.
   - **The target stays locked until it dies**; then the next nearest is picked. *(2026-11-14T05:22:06+00:00 — History #38)*
@@ -204,7 +204,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
-1a. **Aim modes (#36–#38):** ~~line of sight~~ (yes), ~~range~~ (placeholder), ~~no target~~ (straight ahead), ~~stickiness~~ (locked until it dies). ~~Default on mobile~~ (auto aim + manual shooting, #39). Still open: **default on desktop**. To watch in testing: a locked target that goes behind a platform keeps the lock (#38), so shots would hit the platform until it comes back into view or dies.
+1a. **Aim modes (#36–#38):** ~~line of sight~~ (yes), ~~range~~ (placeholder), ~~no target~~ (straight ahead), ~~stickiness~~ (locked until it dies). ~~Defaults~~ (mobile: auto aim + manual shooting; desktop: Manual, #39). Nothing left open here. To watch in testing: a locked target that goes behind a platform keeps the lock (#38), so shots would hit the platform until it comes back into view or dies.
 2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). The items left open in the original conversation:
    - ~~**Wave count.**~~ Endless (#18).
    - ~~**Upgrade amounts.**~~ Diminishing returns; values tuned in play (#19).
@@ -315,7 +315,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 36 | 2026-11-14T05:20:16+00:00 | Controls | Aiming is a player setting: Manual / Auto aim + manual shooting / Full auto. Prompted by manual aiming being awkward on the phone's cover screen. |
 | 37 | 2026-11-14T05:20:16+00:00 | Controls | Auto-aim picks the nearest enemy and shows an indicator on the target (the square has no facing). |
 | 38 | 2026-11-14T05:22:06+00:00 | Controls | Auto-aim: lock on the target until it dies; with no target in range, shoot straight ahead (direction last moved); line of sight required (platforms block); range a placeholder to tune in play. |
-| 39 | 2026-11-14T05:22:58+00:00 | Controls | Default aim mode on mobile: Auto aim, manual shooting. |
+| 39 | 2026-11-14T05:22:58+00:00 | Controls | Default aim mode: mobile Auto aim + manual shooting; desktop Manual (desktop part confirmed 2026-11-14T05:23:10+00:00). |
 
 ---
 
