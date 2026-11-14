@@ -9,7 +9,7 @@ import { Shooter } from './Shooter.ts'
 import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
-import { ARENA, DASH, DUMMY, GRAVITY, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
+import { ARENA, DASH, DUMMY, GRAVITY, HEAL, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -70,6 +70,9 @@ export class GameScene extends Phaser.Scene {
   private dashHits = new Set<Target>()
   /** Seconds of invulnerability left after a dash ended. */
   private dashGrace = 0
+  /** Heal on kills (#47): kills counted towards the next pip, and how many it needs. */
+  private healKills = 0
+  private healNeeded = Phaser.Math.Between(HEAL.minKills, HEAL.maxKills)
   /** Zoom that fills the screen (#35); the target zoom-out (#44) scales it down. */
   private baseZoom = 1
   private minZoom = 0.1
@@ -126,7 +129,7 @@ export class GameScene extends Phaser.Scene {
     const floorY = PLATFORMS.find((p) => p.solid)?.y ?? ARENA.height
     // Temporary practice dummies until enemies exist: one floating above some platforms.
     const spots = [1, 3, 5, 7, 9].map((i) => PLATFORMS[i]).filter(Boolean).map((p) => ({ x: p.x + p.w / 2, y: p.y - DUMMY.radius - 70 }))
-    this.targets = createPracticeTargets(this, spots)
+    this.targets = createPracticeTargets(this, spots, () => this.onKill())
     this.shooter = new Shooter(this, floorY, () => this.targets)
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
     this.body_.setCollideWorldBounds(true)
@@ -395,6 +398,30 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** A kill counts towards healing one pip, unless you're already at full health (#47). */
+  private onKill() {
+    if (this.health >= PLAYER.maxHealth) return // wasted at full health
+    this.healKills++
+    if (this.healKills >= this.healNeeded) {
+      this.health += 1
+      this.healKills = 0
+      this.healNeeded = Phaser.Math.Between(HEAL.minKills, HEAL.maxKills)
+      this.healEffect()
+      hudStore.set({ health: this.health, healProgress: 0, healCount: hudStore.get().healCount + 1, healedPip: this.health - 1 })
+    } else {
+      hudStore.set({ healProgress: this.healKills / this.healNeeded })
+    }
+  }
+
+  private healEffect() {
+    const { x, y } = this.player
+    this.view.pulse(0.25)
+    ring(this, x, y, PLAYER.size * 1.3, PLAYER.size * 1.3, 0xffffff, { grow: 2.4, life: 420, alpha: 0.8 })
+    burst(this, x, y + PLAYER.size * 0.3, { count: 10, colour: 0xffffff, angle: -DOWN, spread: 0.7, speed: [80, 200], size: [4, 7], life: 520, gravity: -150 })
+    sfx.heal()
+    buzz(20)
+  }
+
   private freeze(seconds: number) {
     this.hitStop = Math.max(this.hitStop, seconds)
     this.physics.world.pause()
@@ -404,6 +431,8 @@ export class GameScene extends Phaser.Scene {
   private takeHit(fromX: number) {
     this.health -= 1
     this.hurtTime = PLAYER.hurtInvulnerability
+    // Getting hit resets the heal progress (#47).
+    this.healKills = 0
     const away = Math.sign(this.player.x - fromX) || -this.facing
     this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
     this.view.kick(1.35, 0.7)
@@ -420,9 +449,9 @@ export class GameScene extends Phaser.Scene {
       this.hurtTime = PLAYER.hurtInvulnerability * 1.5
       ring(this, this.player.x, this.player.y, PLAYER.size * 2, PLAYER.size * 2, 0xffffff, { grow: 4, life: 600, line: 5 })
       this.time.delayedCall(120, () => sfx.revive())
-      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
+      hudStore.set({ health: this.health, healProgress: 0, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
     } else {
-      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1 })
+      hudStore.set({ health: this.health, healProgress: 0, hurtCount: hud.hurtCount + 1 })
     }
   }
 

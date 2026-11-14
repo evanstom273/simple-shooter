@@ -116,6 +116,11 @@ export const sfx = {
     tone('square', vary(200), 70, 0.1, 0.18)
     noise('bandpass', 1800, 600, 0.08, 0.2, 1.2)
   },
+  heal: () => {
+    tone('sine', vary(660), vary(880), 0.18, 0.12)
+    tone('sine', vary(990), vary(1320), 0.22, 0.09, 0.07)
+    tone('triangle', vary(1320), vary(1760), 0.25, 0.05, 0.14)
+  },
   targetPop: () => {
     tone('sine', vary(600), 120, 0.2, 0.2)
     noise('bandpass', 2000, 400, 0.15, 0.12, 1)

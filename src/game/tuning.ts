@@ -126,5 +126,8 @@ export const AIM = {
   switchMargin: 0.15,
 } as const
 
+/** Heal on kills (#47): one pip back after a random number of kills in this range. */
+export const HEAL = { minKills: 3, maxKills: 5 } as const
+
 /** Practice dummies for testing aim, until enemies exist. */
 export const DUMMY = { radius: 22, health: 3, respawn: 2.5 } as const

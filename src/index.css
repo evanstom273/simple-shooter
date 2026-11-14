@@ -39,3 +39,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hurt-pulse, .revive-flash { animation-duration: 1ms; }
 }
+
+/* Heal: the restored pip pops in. */
+@keyframes heal-pop {
+  0% { transform: scale(1.8); box-shadow: 0 0 16px rgba(255, 255, 255, 0.9); }
+  100% { transform: scale(1); }
+}
+.heal-pop {
+  animation: heal-pop 380ms ease-out;
+}

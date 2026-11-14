@@ -20,7 +20,10 @@ class Dummy implements Target {
   readonly x: number
   readonly y: number
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  private onKill: () => void
+
+  constructor(scene: Phaser.Scene, x: number, y: number, onKill: () => void) {
+    this.onKill = onKill
     this.scene = scene
     this.x = x
     this.y = y
@@ -41,6 +44,7 @@ class Dummy implements Target {
 
     if (this.hp <= 0) {
       this.alive = false
+      this.onKill()
       o.setVisible(false)
       burst(this.scene, this.x, this.y, { count: 12, colour: GREY, angle: 0, spread: Math.PI, speed: [120, 320], size: [5, 10], life: 360 })
       ring(this.scene, this.x, this.y, this.radius * 2, this.radius * 2, 0xffffff, { grow: 2, life: 260 })
@@ -58,6 +62,6 @@ class Dummy implements Target {
 }
 
 /** One dummy floating above each of the given platforms. */
-export function createPracticeTargets(scene: Phaser.Scene, spots: { x: number; y: number }[]): Target[] {
-  return spots.map((s) => new Dummy(scene, s.x, s.y))
+export function createPracticeTargets(scene: Phaser.Scene, spots: { x: number; y: number }[], onKill: () => void): Target[] {
+  return spots.map((s) => new Dummy(scene, s.x, s.y, onKill))
 }

@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T06:17:03+00:00):**
+**Where the project stands (as of 2026-11-14T06:23:49+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Heal on kills built** (#47) (2026-11-14T06:23:49+00:00).
 - **Player health built; gun removed (start unarmed); dash damages dummies; dash auto-aims in the auto modes** (2026-11-14T06:17:03+00:00).
 - **Off-screen enemy markers and target zoom-out** (2026-11-14T06:06:53+00:00).
 - **After testing: bullets pass through platforms; auto-aim re-picks the nearest target continuously** (2026-11-14T05:50:22+00:00).
@@ -313,6 +314,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Dash grace | Tested | 0.12 s of invulnerability after a dash ends (`DASH.grace`), added after testing showed a dash ending just inside a dummy hurt the player. *(2026-11-14T06:17:03+00:00)* |
 | Dash auto-aim (#46) | Tested | Auto modes, no movement input: dash direction = towards the auto-aim target (checked: mouse ignored, dash went to the target); with A held it went straight left. *(2026-11-14T06:17:03+00:00)* |
 | Unarmed start (#21) | Tested | Gun switched off (`armed = false`): no shooting, no barrel; auto-aim still runs (bracket and markers show the dash target). Shooting code kept for the weapons step. *(2026-11-14T06:17:03+00:00)* |
+| Heal on kills (#47) | Tested | Each kill while hurt counts towards the next pip; the number needed is rolled 3–5 (`HEAL`) and re-rolled after each heal. Kills at full health are ignored; a hit resets the count. HUD: the first empty pip fills from the bottom (kills ÷ needed); the restored pip pops in; in game a ring, rising white sparks, a chime and a short buzz. Dummy pops count as kills. *(2026-11-14T06:23:49+00:00)* |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
 | Practice dummies | Temporary | Five grey circles floating above platforms; 3 hits (dash or shot) to pop, respawn after 2.5 s; touching one hurts (to test health). Removed when the melee enemy goes in. |

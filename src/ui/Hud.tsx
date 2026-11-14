@@ -45,12 +45,19 @@ export function Hud() {
       {hud.deathCount > 0 && <div key={`d${hud.deathCount}`} className="revive-flash absolute inset-0" />}
 
       <div className="relative flex items-center gap-1.5" aria-label={`Health ${hud.health} of ${hud.maxHealth}`} role="img">
-        {Array.from({ length: hud.maxHealth }, (_, i) => (
-          <span
-            key={i}
-            className={`h-3.5 w-3.5 rounded-[3px] transition-all duration-200 ${i < hud.health ? 'bg-neutral-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]' : 'scale-75 bg-white/10 ring-1 ring-white/20'}`}
-          />
-        ))}
+        {Array.from({ length: hud.maxHealth }, (_, i) => {
+          const full = i < hud.health
+          // The first empty pip fills from the bottom as kills build towards a heal (#47).
+          const filling = i === hud.health ? hud.healProgress : 0
+          return (
+            <span
+              key={i === hud.healedPip ? `p${i}-${hud.healCount}` : `p${i}`}
+              className={`relative h-3.5 w-3.5 overflow-hidden rounded-[3px] transition-all duration-200 ${full ? 'bg-neutral-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]' : 'scale-75 bg-white/10 ring-1 ring-white/20'} ${full && i === hud.healedPip ? 'heal-pop' : ''}`}
+            >
+              {!full && <span className="absolute inset-x-0 bottom-0 bg-white/60 transition-[height] duration-300" style={{ height: `${filling * 100}%` }} />}
+            </span>
+          )
+        })}
       </div>
       <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
         A / D move · Space jump (twice to double jump) · S drop through · Right-click dash
