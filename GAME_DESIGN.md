@@ -29,6 +29,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - The creative director (Lyra) makes design decisions; recommendations are not decisions until approved.
 - **Small scope, with the aim of actually finishing the game** (History #7, #15).
 - **Built methodically, step by step, not one-shotted** (History #16).
+- **Depth, not breadth** (Lyra, 2026-11-14): add depth to the existing mechanics so nothing is shallow, rather than adding new mechanics. This is what separates this project's growth from scope creep.
 
 ---
 
