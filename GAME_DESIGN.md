@@ -66,6 +66,19 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
 - **Death: you lose all the currency you're carrying, with no way to recover it.** Levels, upgrades and weapons are kept. (Souls-like progression; the unrecoverable currency keeps a roguelike edge.)
 - **Endless waves and the high score stay as a separate mode.**
 
+### The hub *(2026-11-14T21:46:15+00:00 — History #70)*
+Designed with Lyra through rounds of questions.
+- **A place you walk around, not a menu, and it's the main menu too:** the game starts there (after the first-time tutorial), and endless mode is entered from it rather than from a separate button.
+- **Layout: a central area with wings.** The **shop is in the centre**; the **world portals are split across both wings**; **endless mode is below**, reached by dropping down beneath the hub.
+- **Doorways are geometric portals:** big glowing shapes, each world its own shape and colour.
+- **Over each portal:** the **world's name**, the **next section number** (e.g. "1-2"), and **four section pips** lit for bosses beaten. Over the endless portal: **best score and wave**.
+- **The shop is items on pedestals** in the room: the random 3–4 offers (#63) float on pedestals with price tags. **Fresh stock on every visit**, plus a **paid reroll** pedestal whose fee rises each use.
+- **Interacting:** walk into a portal to go through it; **buying needs a deliberate press** so you can't buy by accident.
+- **A training dummy** to practise dashes, stomps and new guns on (harmless).
+- **Health:** returning after **dying** fully heals you; returning after **clearing a section** keeps your damage (buy healing at the shop, #54, or push on).
+- **Mood: an eerie liminal space**, quiet and strange (like Demon's Souls' Nexus).
+- **First time you play: a short tutorial room** teaching move, jump, dash and stomp, then out into the hub.
+
 ### Runs, death and saving *(2026-11-14T04:24:39+00:00 — History #17)*
 - **Endless waves.** A run goes on until you die; the score is how far you got. *(2026-11-14T04:24:39+00:00 — History #18)*
 - *(For story mode, superseded by #62: death costs only your currency and returns you to the hub. The rules below now describe the endless mode.)*
@@ -249,7 +262,7 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ### Melee first: rebalancing guns *(2026-11-14T21:39:33+00:00 — History #69)*
 After playtesting the guns (Lyra: they made it too easy; the dash and stomp are the heart of the combat):
 - **Fire Rate upgrade removed**; replaced in the shop by a **combined dash and stomp damage upgrade**. The four upgrades are now Health, Jump Height, Movement Speed and Dash & stomp damage.
-- **Gun damage lowered** (to ~40%: pistol 0.4, automatic 0.2, shotgun 0.2 per pellet), so guns support rather than replace the dash and stomp.
+- **Gun damage lowered** (to ~40%: pistol 0.4, automatic 0.2, shotgun 0.2 per pellet), then **raised ~25% after testing** (pistol 0.5, automatic 0.25, shotgun 0.25) *(2026-11-14T21:46:15+00:00 — History #71)*, so guns support rather than replace the dash and stomp.
 - **Only kills by dashing or stomping heal you** (amends #48). Gun kills still drop gold but don't heal.
 - Guns should also be **expensive** in the shop (pricing still open).
 
@@ -418,6 +431,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1i. **Hub (#70), open:** the interact key on desktop (W / ↑ suggested) and the touch button; tutorial room contents and whether it can be replayed; how the drop down to endless works (a hole in the floor?); the training dummy's look; reroll and healing prices; where settings/testing live once the hub is the menu.
 1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; ~~unique enemies per world~~ (fully unique, #65); whether the existing melee/ranged/tank become world 1's roster, endless mode's, or both; how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
 1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
@@ -616,6 +630,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 67 | 2026-11-14T21:22:41+00:00 | Structure / priorities | Section platforms are randomly generated each time you enter (replays differ); you start wave 1 by walking into the room. Priorities before worlds or art: player shooting, the hub + shop, random platform generation. |
 | 68 | 2026-11-14T21:30:44+00:00 | Weapons | Classic split (pistol / automatic / shotgun). Magazines that reload automatically only once empty, no reload button; can't switch while reloading; reload shown as a ring on the gun, a bar under the player and the HUD icon. Weapons shown as HUD icons and a distinct gun on the character. Testing buttons give weapons until the shop exists. |
 | 69 | 2026-11-14T21:39:33+00:00 | Balance | Melee first: Fire Rate upgrade replaced by a dash & stomp damage upgrade; gun damage lowered (~40%); only dash/stomp kills heal; guns should be expensive. |
+| 70 | 2026-11-14T21:46:15+00:00 | Hub | Walkable hub that is also the main menu: centre shop (items on pedestals, fresh stock each visit + rising-price reroll), world portals across both wings (geometric, each its own shape/colour, showing name, next section and 4 boss pips), endless mode below (best score shown); walk into portals, deliberate press to buy; a training dummy; full heal only after dying; eerie liminal mood; first launch starts in a short tutorial room. |
+| 71 | 2026-11-14T21:46:15+00:00 | Balance | Gun damage +25% after testing: pistol 0.5, automatic 0.25, shotgun 0.25 per pellet. |
 
 ---
 

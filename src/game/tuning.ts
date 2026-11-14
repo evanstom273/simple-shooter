@@ -122,7 +122,7 @@ export const WEAPONS: Record<
   {
     label: string
     colour: number
-    /** Damage per bullet / pellet (enemy HP: melee 3, ranged 1, tank 8). Lowered to ~40% by #69 so guns support rather than replace dash and stomp. */
+    /** Damage per bullet / pellet (enemy HP: melee 3, ranged 1, tank 8). Lowered to ~40% by #69 so guns support rather than replace dash and stomp, then +25% after testing (#71). */
     damage: number
     /** Shots per second while the trigger is held. */
     fireRate: number
@@ -145,7 +145,7 @@ export const WEAPONS: Record<
   pistol: {
     label: 'Pistol',
     colour: 0xfff2b0,
-    damage: 0.4,
+    damage: 0.5,
     fireRate: 4,
     magazine: 8,
     reload: 1.0,
@@ -159,7 +159,7 @@ export const WEAPONS: Record<
   automatic: {
     label: 'Automatic',
     colour: 0xffd27a,
-    damage: 0.2,
+    damage: 0.25,
     fireRate: 10,
     magazine: 24,
     reload: 1.6,
@@ -173,7 +173,7 @@ export const WEAPONS: Record<
   shotgun: {
     label: 'Shotgun',
     colour: 0xffb38a,
-    damage: 0.2,
+    damage: 0.25,
     fireRate: 1.2,
     magazine: 4,
     reload: 1.4,
