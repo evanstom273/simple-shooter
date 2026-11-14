@@ -69,7 +69,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - **"Stylised Geometry"** (Lyra's term): every character is still a recognisable simple shape, but **bright, bold characters** with features: **eyes, faces, floating hands, feet**.
 - **The player:** the square with **two oval eyes and a smile**, **floating circle hands** (not attached), and **L-shaped feet**, from Lyra's sketch. Concept sheet: `concepts/player-concept.svg` (idle, running, dash, hurt, stomp). Approved by Lyra.
 - Art is drawn as **SVG**. Hands, feet and faces are visual only: hitboxes stay as they are.
-- **Enemy concepts** (Claude, awaiting Lyra's verdict): `concepts/enemies-concept.svg`, five poses each matching their in-game states. Melee: orange ball, one big eye, little floating hands. Ranged: long green arrowhead, one narrow browed eye, tiny floating fins. Tank: red pentagon, one heavy-browed eye, big floating square fists, block feet.
+- **Enemy concepts** (Claude; approved by Lyra, 2026-11-14): `concepts/enemies-concept.svg`, five poses each matching their in-game states. Melee: orange ball, one big eye, little floating hands. Ranged: long green arrowhead, one narrow browed eye, tiny floating fins. Tank: red pentagon, one heavy-browed eye, big floating square fists, block feet.
 
 ### Graphics *(2026-11-14T04:17:36+00:00 — History #8)*
 - **Minimalist geometric shapes** instead of traditional sprites.
