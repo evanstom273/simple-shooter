@@ -1,6 +1,8 @@
 import Phaser from 'phaser'
 import { touchInput, type Controls } from './controls.ts'
+import { sfx } from '../audio/sfx.ts'
 import { burst, ring } from './fx.ts'
+import { buzz } from './haptics.ts'
 import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
 import { ARENA, DASH, GRAVITY, PLATFORMS, PLAYER, SCREEN } from './tuning.ts'
 
@@ -19,7 +21,7 @@ const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle
   private body_!: Phaser.Physics.Arcade.Body
-  private keys!: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key; jump: Phaser.Input.Keyboard.Key }
+  private keys!: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key; jump: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key }
 
   private facing = 1
   private airJumpsLeft: number = PLAYER.airJumps
@@ -41,6 +43,19 @@ export class GameScene extends Phaser.Scene {
   private skidCooldown = 0
   private darkness!: Phaser.GameObjects.Image
 
+  /** Seconds since last on the ground (for coyote time). */
+  private sinceGrounded = 0
+  /** Seconds left on a remembered jump press (jump buffering). */
+  private jumpBuffered = 0
+  /** Rising from a jump that can still be cut short by letting go. */
+  private jumpCuttable = false
+  /** Seconds left falling through platforms after pressing down. */
+  private dropTime = 0
+  private standingOn: Phaser.GameObjects.Rectangle | null = null
+  private lookAhead = 0
+  private stepTimer = 0
+  private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
+
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
   get invulnerable() {
     return this.dashTime > 0
@@ -59,10 +74,21 @@ export class GameScene extends Phaser.Scene {
 
     this.add.rectangle(0, 0, ARENA.width, ARENA.height, COLOURS.arena).setOrigin(0)
 
+    this.createMotes()
+
     const platforms = this.physics.add.staticGroup()
     for (const p of PLATFORMS) {
       const r = this.add.rectangle(p.x, p.y, p.w, p.h, COLOURS.platform).setOrigin(0)
       platforms.add(r)
+      r.setData('baseY', p.y)
+      if (!p.solid) {
+        // One-way: only the top is solid, so you can jump up through from below.
+        const pb = r.body as Phaser.Physics.Arcade.StaticBody
+        pb.checkCollision.down = false
+        pb.checkCollision.left = false
+        pb.checkCollision.right = false
+        r.setData('oneWay', true)
+      }
     }
 
     // Physics box: invisible. What you see is PlayerView, which squashes and stretches.
@@ -77,13 +103,22 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.existing(this.player)
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
     this.body_.setCollideWorldBounds(true)
-    this.physics.add.collider(this.player, platforms)
+    this.physics.add.collider(
+      this.player,
+      platforms,
+      (_pl, plat) => {
+        if (this.body_.touching.down) this.standingOn = plat as Phaser.GameObjects.Rectangle
+      },
+      // While dropping through, one-way platforms don't collide.
+      (_pl, plat) => !(this.dropTime > 0 && (plat as Phaser.GameObjects.Rectangle).getData('oneWay')),
+    )
 
     const kb = this.input.keyboard!
     this.keys = {
       left: kb.addKey(Phaser.Input.Keyboard.KeyCodes.A),
       right: kb.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       jump: kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
+      down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
     }
 
     // Right-click dashes towards the mouse (#21).
@@ -127,7 +162,9 @@ export class GameScene extends Phaser.Scene {
       dash = Math.hypot(touchInput.stickX, touchInput.stickY) > 0.3 ? { x: touchInput.stickX, y: touchInput.stickY } : { x: 0, y: 0 }
       touchInput.dashQueued = false
     }
-    return { moveX, jump, dash }
+    const jumpHeld = this.keys.jump.isDown || touchInput.jumpHeld
+    const down = this.keys.down.isDown || touchInput.stickY > 0.6
+    return { moveX, jump, jumpHeld, down, dash }
   }
 
   update(_time: number, deltaMs: number) {
@@ -139,15 +176,40 @@ export class GameScene extends Phaser.Scene {
     const b = this.body_
     const grounded = b.blocked.down || b.touching.down
     const feetY = b.bottom
+    if (!grounded) this.standingOn = null
 
     if (grounded && !this.wasGrounded && !this.dashing) this.onLand(this.lastVelY)
     if (grounded) this.airJumpsLeft = PLAYER.airJumps
+    this.sinceGrounded = grounded ? 0 : this.sinceGrounded + dt
+    this.jumpBuffered = c.jump ? PLAYER.jumpBuffer : Math.max(0, this.jumpBuffered - dt)
+    this.dropTime = Math.max(0, this.dropTime - dt)
+
+    // Down (or down + jump) on a one-way platform: drop through it.
+    if (c.down && grounded && this.standingOn?.getData('oneWay') && !this.dashing) {
+      this.dropTime = PLAYER.dropThrough
+      this.jumpBuffered = 0
+      this.sinceGrounded = PLAYER.coyoteTime // no coyote jump off the platform you just left
+      b.setVelocityY(Math.max(b.velocity.y, 120))
+      this.view.kick(1.15, 0.85)
+    }
 
     // Skid: turning round at speed on the ground kicks up dust.
     this.skidCooldown = Math.max(0, this.skidCooldown - dt)
     if (grounded && !this.dashing && c.moveX !== 0 && Math.sign(c.moveX) !== Math.sign(b.velocity.x) && Math.abs(b.velocity.x) > PLAYER.runSpeed * 0.6 && this.skidCooldown === 0) {
       this.skidCooldown = 0.25
       burst(this, this.player.x, feetY - 3, { count: 5, colour: COLOURS.dust, angle: b.velocity.x > 0 ? -0.4 : Math.PI + 0.4, spread: 0.3, speed: [120, 260], size: [5, 9], gravity: -60 })
+      sfx.skid()
+    }
+
+    // Footstep ticks while running on the ground.
+    if (grounded && !this.dashing && Math.abs(b.velocity.x) > PLAYER.runSpeed * 0.5) {
+      this.stepTimer -= dt
+      if (this.stepTimer <= 0) {
+        this.stepTimer = 0.26
+        sfx.step()
+      }
+    } else {
+      this.stepTimer = 0.1
     }
     if (c.moveX !== 0) this.facing = Math.sign(c.moveX)
 
@@ -163,18 +225,35 @@ export class GameScene extends Phaser.Scene {
       const t = Math.min(1, dt * PLAYER.responsiveness)
       b.setVelocityX(b.velocity.x + (target - b.velocity.x) * t)
 
-      if (c.jump) {
-        if (grounded) {
+      // Ground jump: on the ground, or just after leaving it (coyote time); a press
+      // just before landing also counts (buffer). Otherwise a fresh press in the air double jumps.
+      const canGroundJump = grounded || this.sinceGrounded < PLAYER.coyoteTime
+      const wantsJump = this.jumpBuffered > 0 && !(c.down && this.dropTime > 0)
+      if (wantsJump && (canGroundJump || c.jump)) {
+        this.jumpBuffered = 0
+        if (canGroundJump) {
+          this.sinceGrounded = PLAYER.coyoteTime
+          this.jumpCuttable = true
+          sfx.jump()
           b.setVelocityY(-PLAYER.jumpSpeed)
           this.view.kick(0.72, 1.32)
           burst(this, this.player.x, feetY - 3, { count: 6, colour: COLOURS.dust, angle: -DOWN, spread: 1.2, speed: [60, 160], size: [5, 9], gravity: 200 })
         } else if (this.airJumpsLeft > 0) {
           this.airJumpsLeft--
+          this.jumpCuttable = true
+          sfx.airJump()
           b.setVelocityY(-PLAYER.jumpSpeed * PLAYER.airJumpScale)
           this.view.kick(0.8, 1.22)
           ring(this, this.player.x, feetY, PLAYER.size * 1.2, PLAYER.size * 0.35, 0xffffff)
         }
       }
+
+      // Short hops: let go while rising and the jump is cut.
+      if (this.jumpCuttable && !c.jumpHeld && b.velocity.y < 0) {
+        b.setVelocityY(b.velocity.y * PLAYER.jumpCut)
+        this.jumpCuttable = false
+      }
+      if (b.velocity.y >= 0) this.jumpCuttable = false
     }
 
     touchInput.dashReady = 1 - this.dashCooldown / DASH.cooldown
@@ -200,7 +279,64 @@ export class GameScene extends Phaser.Scene {
     this.wasGrounded = grounded
     this.lastVelY = b.velocity.y
 
+    this.updateLookAhead(dt)
     this.updateDarkness()
+    this.updateMotes(dt)
+  }
+
+  /** The camera leads a little in the direction you're running. */
+  private updateLookAhead(dt: number) {
+    const cam = this.cameras.main
+    const v = this.body_.velocity.x / PLAYER.runSpeed
+    const target = Phaser.Math.Clamp(v, -1, 1) * (cam.width / cam.zoom) * SCREEN.lookAhead
+    this.lookAhead += (target - this.lookAhead) * Math.min(1, dt * SCREEN.lookAheadSpeed)
+    // followOffset is subtracted from the target, so negative looks ahead to the right.
+    cam.setFollowOffset(-this.lookAhead, 0)
+  }
+
+  /** Faint specks drifting in the air, under the darkness so they only show near the light. */
+  private createMotes() {
+    for (let i = 0; i < SCREEN.motes; i++) {
+      const s = Phaser.Math.FloatBetween(3, 7)
+      const o = this.add
+        .rectangle(Phaser.Math.Between(0, ARENA.width), Phaser.Math.Between(0, ARENA.height), s, s, 0xdcdcf0, Phaser.Math.FloatBetween(0.12, 0.35))
+        .setDepth(3)
+        .setAngle(Phaser.Math.Between(0, 90))
+      this.motes.push({ o, vx: Phaser.Math.FloatBetween(-12, 12), vy: Phaser.Math.FloatBetween(-22, -6), phase: Math.random() * Math.PI * 2 })
+    }
+  }
+
+  private updateMotes(dt: number) {
+    const t = this.time.now / 1000
+    for (const m of this.motes) {
+      m.o.x += (m.vx + Math.sin(t * 0.7 + m.phase) * 10) * dt
+      m.o.y += m.vy * dt
+      m.o.angle += m.vx * dt
+      if (m.o.y < -10) m.o.y = ARENA.height + 10
+      if (m.o.x < -10) m.o.x = ARENA.width + 10
+      else if (m.o.x > ARENA.width + 10) m.o.x = -10
+    }
+  }
+
+  /** Landing on a platform: it dips and brightens for a moment (visual only). */
+  private platformReact(k: number) {
+    const plat = this.standingOn
+    if (!plat || plat.getData('busy')) return
+    const baseY = plat.getData('baseY') as number
+    plat.setData('busy', true)
+    const flash = this.add.rectangle(plat.x, baseY, plat.width, plat.height, 0xffffff, 0.12 + 0.18 * k).setOrigin(0).setDepth(1)
+    this.tweens.add({ targets: flash, alpha: 0, duration: 260, onComplete: () => flash.destroy() })
+    this.tweens.add({
+      targets: [plat, flash],
+      y: baseY + 2 + 4 * k,
+      duration: 70,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        plat.y = baseY
+        plat.setData('busy', false)
+      },
+    })
   }
 
   /**
@@ -243,6 +379,9 @@ export class GameScene extends Phaser.Scene {
   private onLand(impactVelY: number) {
     const k = Phaser.Math.Clamp((impactVelY - 200) / 1400, 0, 1)
     if (k <= 0) return
+    sfx.land(k)
+    buzz(8 + 22 * k)
+    this.platformReact(k)
     this.view.kick(1 + 0.4 * k, 1 - 0.4 * k)
     const feetY = this.body_.bottom
     const n = Math.round(3 + 6 * k)
@@ -259,6 +398,7 @@ export class GameScene extends Phaser.Scene {
   /** The dash is back: flash and a ring, so you notice without looking for the bar. */
   private onDashReady() {
     this.view.pulse()
+    sfx.dashReady()
     ring(this, this.player.x, this.player.y, PLAYER.size * 1.1, PLAYER.size * 1.1, COLOURS.dash, { grow: 1.7, life: 280, alpha: 0.7 })
   }
 
@@ -272,6 +412,8 @@ export class GameScene extends Phaser.Scene {
     this.dashCooldown = DASH.cooldown
     this.body_.setAllowGravity(false)
     this.trailTimer = 0
+    this.jumpCuttable = false
+    sfx.dash()
     burst(this, this.player.x, this.player.y, {
       count: 10, colour: COLOURS.dash, angle: this.dashDir.angle() + Math.PI, spread: 0.6, speed: [180, 420], size: [5, 10], life: 280,
     })
@@ -284,6 +426,8 @@ export class GameScene extends Phaser.Scene {
     if (hit && this.dashTime < DASH.duration - 0.02) {
       this.endDash(0)
       this.shake(SCREEN.dashImpactShake.duration, SCREEN.dashImpactShake.intensity)
+      sfx.dashImpact()
+      buzz(35)
       if (bl.left || bl.right) this.view.kick(0.6, 1.3)
       else this.view.kick(1.4, 0.65)
       const x = bl.left ? this.body_.left : bl.right ? this.body_.right : this.player.x

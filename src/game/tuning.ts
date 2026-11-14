@@ -15,6 +15,14 @@ export const PLAYER = {
   airJumps: 1,
   /** Upward speed of an air jump, as a fraction of jumpSpeed. */
   airJumpScale: 0.9,
+  /** Let go of jump while rising and upward speed is cut to this fraction (short hops). */
+  jumpCut: 0.45,
+  /** Seconds after running off a ledge that a jump still counts as a ground jump. */
+  coyoteTime: 0.1,
+  /** Seconds a jump press is remembered before landing. */
+  jumpBuffer: 0.12,
+  /** Seconds that platforms ignore you after pressing down to drop through. */
+  dropThrough: 0.22,
 } as const
 
 export const DASH = {
@@ -31,8 +39,8 @@ export const DASH = {
 export const GRAVITY = 2400
 
 /** Placeholder layout so there's something to jump on. Not a designed arena. */
-export const PLATFORMS: ReadonlyArray<{ x: number; y: number; w: number; h: number }> = [
-  { x: 0, y: 860, w: 1600, h: 40 }, // floor
+export const PLATFORMS: ReadonlyArray<{ x: number; y: number; w: number; h: number; solid?: boolean }> = [
+  { x: 0, y: 860, w: 1600, h: 40, solid: true }, // floor: can't drop through it
   { x: 180, y: 680, w: 320, h: 24 },
   { x: 1100, y: 680, w: 320, h: 24 },
   { x: 620, y: 520, w: 360, h: 24 },
@@ -44,6 +52,12 @@ export const PLATFORMS: ReadonlyArray<{ x: number; y: number; w: number; h: numb
 export const SCREEN = {
   /** Camera follow smoothing per 60 Hz frame (1 = locked to the player). */
   followLerp: 0.2,
+  /** How far the camera leads in the direction you're running, as a fraction of the visible width. */
+  lookAhead: 0.15,
+  /** How quickly the look-ahead eases in and out (per second). */
+  lookAheadSpeed: 2.5,
+  /** Drifting specks that catch the light. */
+  motes: 45,
   /** Hard landing: shake scales with impact, nothing for small hops. */
   landShake: { duration: 110, intensity: 0.004 },
   /** Dashing into a wall, floor or ceiling. */

@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T05:00:48+00:00):**
+**Where the project stands (as of 2026-11-14T05:08:55+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Sound, short hops, coyote time, jump buffering, one-way platforms, vibration, camera look-ahead, platform reactions and motes** (2026-11-14T05:08:55+00:00).
 - **Lighting, screen shake and smoother movement** (2026-11-14T05:00:48+00:00).
 - **Squash, stretch and movement effects built; dash cooldown shown on desktop** (2026-11-14T04:55:00+00:00).
 - **Dash and double jump built** (2026-11-14T04:49:36+00:00).
@@ -61,8 +62,10 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - **A tiny amount of screen shake** on impacts (hard landings, dashing into walls), off when the device's reduce-motion setting is on. *(2026-11-14T05:00:48+00:00 — History #31)*
 
 ### Movement and controls *(2026-11-14T04:17:36+00:00 — History #9)*
-- **Desktop:** A/D move left and right; Space jumps; the mouse aims a full 360°; left-click shoots.
+- **Desktop:** A/D move left and right; Space jumps; S drops through platforms (#33); the mouse aims a full 360°; left-click shoots.
 - **Mobile:** landscape orientation; a virtual joystick on the left for movement; tap or hold on the right side to aim and shoot; an on-screen jump button.
+- **Short hops:** let go of jump early for a lower jump; holding gives the full height, which the Jump Height upgrade (#12) raises. Applies to the double jump too. *(2026-11-14T05:08:55+00:00 — History #32)*
+- **One-way platforms:** jump up through platforms from below; press down (S on desktop, joystick down on touch; down + jump also works) to drop through. The floor is solid. *(2026-11-14T05:08:55+00:00 — History #33)*
 - **Double jump:** press jump again in mid-air for one extra jump. *(2026-11-14T04:49:36+00:00 — History #30)*
 - **Dash:** right-click on desktop (towards the mouse); an on-screen dash button on mobile. *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Weapon switching (desktop):** number keys (1, 2, 3…) and the mouse wheel. *(2026-11-14T04:24:39+00:00 — History #22)*
@@ -132,6 +135,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ---
 
 ## C. Current Development Scope
+
+### Step 5: Juice and platform movement — **BUILT** *(2026-11-14T05:08:55+00:00)*
+**In scope (done):** synthesised sound effects with a remembered mute button; short hops (#32); coyote time and jump buffering; one-way platforms with drop-through (#33); phone vibration; camera look-ahead; platforms dip and brighten when landed on; ambient motes caught in the light.
+
+**Deferred until combat exists** (in `TODO.md`): hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash and recoil, damage feedback (bigger shake, red edge pulse, light dimming at low health), last-kill slow motion, wave banners, animated upgrade cards.
+
 
 ### Step 4: Lighting, shake, smoother movement — **BUILT** *(2026-11-14T05:00:48+00:00)*
 **In scope (done):** fix for the blur when moving (physics now steps once per drawn frame); refresh-rate-independent camera follow; tiny shake on hard landings and dash impacts; darkness around a pool of light that follows the player, under characters and effects (#31).
@@ -210,6 +219,14 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Smooth movement on fast screens | Tested | Blur when moving (reported by Lyra) was most likely 60 Hz physics on a 90/120 Hz screen, moving things only every other frame. Arcade physics now runs with `fixedStep: false` (one step per drawn frame), and the camera's follow smoothing is corrected for frame rate. Not yet confirmed on the Fold. *(2026-11-14T05:00:48+00:00)* |
 | Screen shake (#31) | Tested | Hard landings (only above ~a third of max impact; scales with it) and dash impacts. ~4 px, ~0.1 s. Respects `prefers-reduced-motion`. Numbers in `SCREEN` in `tuning.ts`. *(2026-11-14T05:00:48+00:00)* |
 | Lighting (#31) | Tested | A radial-gradient darkness image drawn between the arena (depth 0) and effects/player (5+), centred on the player and sized to the screen so it looks the same at every zoom. Lit core ~22% of its radius; ~92% dark at the radius (62% of the screen diagonal) and beyond. Touch controls are a separate scene, so unaffected. First tried as a camera vignette, which darkened the player too; Lyra liked the darkness, so it was kept but moved under the characters and centred on the player. *(2026-11-14T05:00:48+00:00)* |
+| Sound | Tested (plays without errors; not listened to by a person yet) | Web Audio synthesis, no files (`src/audio/sfx.ts`): jump, double jump, landing (scaled by impact), dash whoosh, dash impact, dash-ready ping, skid, footstep ticks while running. Slight random pitch variation. Starts on the first tap or key press (browser rule). Mute button top-right (React), saved in Dexie (`saves` record `settings`) and restored on load. *(2026-11-14T05:08:55+00:00)* |
+| Short hops (#32) | Tested | Releasing jump while rising cuts upward speed to 45%: a tap reached ~62 px, a full hold ~178 px. *(2026-11-14T05:08:55+00:00)* |
+| Coyote time / jump buffer | Tested | 0.1 s after leaving a ledge still counts as a ground jump (keeps the double jump); a press up to 0.12 s before landing jumps on landing. *(2026-11-14T05:08:55+00:00)* |
+| One-way platforms (#33) | Tested | Every platform but the floor only collides from above. Down on a one-way platform drops you through (0.22 s of ignoring platforms). *(2026-11-14T05:08:55+00:00)* |
+| Vibration | Implemented (not testable headless) | `navigator.vibrate` on touch play only: 8–30 ms on landings by impact, 35 ms on dash impacts. Android Chrome; iOS has no vibration API. *(2026-11-14T05:08:55+00:00)* |
+| Camera look-ahead | Tested | Leads up to 15% of the visible width in the running direction, easing in and out. Horizontal only. *(2026-11-14T05:08:55+00:00)* |
+| Platform reaction | Tested | Landing dips the platform's visible shape 2–6 px and flashes it; the collision box doesn't move. *(2026-11-14T05:08:55+00:00)* |
+| Motes | Tested | 45 faint drifting squares under the darkness layer, so they mostly show near the player's light. *(2026-11-14T05:08:55+00:00)* |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
@@ -227,7 +244,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
 - **Air jump doesn't reset on dash**, and dashing doesn't use up a jump.
-- **Jump is a fixed height** (no shorter hop for a tap), so the Jump Height upgrade (#12) has one clear number to change.
+- ~~**Jump is a fixed height.**~~ Replaced by short hops (#32).
 - Resuming at the upgrade screen (#17) means saving the run at the end of each wave, with health as it was then.
 
 ---
@@ -269,6 +286,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 29 | 2026-11-14T04:45:51+00:00 | Screen layout | Fill the whole screen on desktop, cover landscape, cover portrait and the inner screen; zoom in and follow the player where the shape doesn't match the arena (portrait is a narrower, zoomed-in view). |
 | 30 | 2026-11-14T04:49:36+00:00 | Movement | Double jump: one extra jump in mid-air. |
 | 31 | 2026-11-14T05:00:48+00:00 | Visuals | Dark arena edges with a pool of light following the player; characters and effects stay fully lit. Tiny screen shake on impacts (hard landings, dash impacts). |
+| 32 | 2026-11-14T05:08:55+00:00 | Movement | Variable jump height: release early for a short hop; works with the Jump Height upgrade (raises the full height). Supersedes the fixed-height interpretation. |
+| 33 | 2026-11-14T05:08:55+00:00 | Arena / controls | One-way platforms: jump up through from below; down (S / joystick down; down + jump also) drops through. Floor stays solid. |
 
 ---
 
@@ -278,6 +297,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute); `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` fits its camera to the 1600×900 arena on every resize. In dev, the game is on `window.__game` for poking at from the console.

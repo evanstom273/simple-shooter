@@ -10,12 +10,14 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
+- When combat exists, add its juice: hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash + recoil (shotgun shove), damage feedback (bigger shake, red edge pulse, light dims at low health), last-kill slow motion, wave banners, animated upgrade cards.
 - Title (Lyra, deferred).
 - Lyra to try it all on the Fold and desktop, especially whether the blur when moving is gone.
 - Plan the next step (#16).
 
 ## Done
 
+- [x] Step 5: sound + mute, short hops, coyote time, jump buffer, one-way platforms + drop-through, vibration, look-ahead, platform reactions, motes (History #32–#33). *(2026-11-14T05:08:55+00:00)*
 - [x] Step 4: movement blur fix (per-frame physics), tiny screen shake on impacts, player-centred lighting (History #31). *(2026-11-14T05:00:48+00:00)*
 - [x] Step 3: squash and stretch, dust and dash effects, desktop dash cooldown bar, dash-ready flash. *(2026-11-14T04:55:00+00:00)*
 - [x] Step 2: dash (right-click / touch button, cooldown, invulnerable, trail) and double jump (History #30). *(2026-11-14T04:49:36+00:00)*

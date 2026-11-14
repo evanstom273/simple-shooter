@@ -1,0 +1,101 @@
+// Synthesised sound effects (Web Audio): no audio files, small blips that
+// suit the geometric look. Plain TS so both React (mute) and Phaser can use it.
+
+let ctx: AudioContext | null = null
+let master: GainNode | null = null
+let noiseBuf: AudioBuffer | null = null
+let muted = false
+
+const VOLUME = 0.5
+
+/** Browsers only allow audio after a user gesture; call from the first tap/key. */
+export function unlockAudio() {
+  if (!ctx) {
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AC) return
+    ctx = new AC()
+    master = ctx.createGain()
+    master.gain.value = muted ? 0 : VOLUME
+    master.connect(ctx.destination)
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
+    const d = noiseBuf.getChannelData(0)
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+  }
+  if (ctx.state === 'suspended') void ctx.resume()
+}
+
+export function setMuted(m: boolean) {
+  muted = m
+  if (master && ctx) master.gain.setTargetAtTime(m ? 0 : VOLUME, ctx.currentTime, 0.02)
+}
+
+export function isMuted() {
+  return muted
+}
+
+function ready() {
+  return ctx && master && ctx.state === 'running' && !muted ? ctx : null
+}
+
+/** A pitched blip with a pitch sweep and a quick decay. */
+function tone(type: OscillatorType, from: number, to: number, dur: number, vol: number, delay = 0) {
+  const c = ready()
+  if (!c) return
+  const t = c.currentTime + delay
+  const o = c.createOscillator()
+  const g = c.createGain()
+  o.type = type
+  o.frequency.setValueAtTime(from, t)
+  o.frequency.exponentialRampToValueAtTime(Math.max(1, to), t + dur)
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.008)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  o.connect(g).connect(master!)
+  o.start(t)
+  o.stop(t + dur + 0.02)
+}
+
+/** Filtered noise burst, with the filter swept from → to. */
+function noise(filter: BiquadFilterType, from: number, to: number, dur: number, vol: number, q = 1) {
+  const c = ready()
+  if (!c || !noiseBuf) return
+  const t = c.currentTime
+  const src = c.createBufferSource()
+  src.buffer = noiseBuf
+  src.playbackRate.value = 0.8 + Math.random() * 0.4
+  const f = c.createBiquadFilter()
+  f.type = filter
+  f.Q.value = q
+  f.frequency.setValueAtTime(from, t)
+  f.frequency.exponentialRampToValueAtTime(Math.max(1, to), t + dur)
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  src.connect(f).connect(g).connect(master!)
+  src.start(t, Math.random() * 0.5)
+  src.stop(t + dur + 0.02)
+}
+
+const vary = (f: number) => f * (0.94 + Math.random() * 0.12)
+
+export const sfx = {
+  jump: () => tone('square', vary(260), vary(520), 0.12, 0.12),
+  airJump: () => {
+    tone('square', vary(420), vary(820), 0.1, 0.1)
+    tone('triangle', vary(840), vary(1200), 0.08, 0.06, 0.02)
+  },
+  /** k: 0 (soft) … 1 (hard). */
+  land: (k: number) => {
+    tone('sine', vary(140), 50, 0.12 + 0.08 * k, 0.15 + 0.35 * k)
+    noise('lowpass', 900, 200, 0.08 + 0.06 * k, 0.05 + 0.15 * k)
+  },
+  dash: () => noise('bandpass', 600, 3200, 0.18, 0.35, 1.5),
+  dashImpact: () => {
+    tone('sine', vary(120), 40, 0.18, 0.45)
+    noise('lowpass', 1500, 150, 0.12, 0.25)
+  },
+  dashReady: () => tone('triangle', vary(880), vary(1320), 0.09, 0.06),
+  skid: () => noise('highpass', 2500, 1200, 0.14, 0.08, 0.8),
+  step: () => noise('bandpass', vary(1800), 900, 0.03, 0.03, 2),
+}

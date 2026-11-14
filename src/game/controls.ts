@@ -5,6 +5,10 @@ export interface Controls {
   moveX: number
   /** True on the frame a jump was requested. */
   jump: boolean
+  /** Jump still held (let go early for a short hop). */
+  jumpHeld: boolean
+  /** Holding down (drop through platforms). */
+  down: boolean
   /** Set on the frame a dash was requested. A direction, or null to use the default (see GameScene). */
   dash: { x: number; y: number } | null
 }
@@ -16,6 +20,7 @@ export const touchInput = {
   stickX: 0,
   stickY: 0,
   jumpQueued: false,
+  jumpHeld: false,
   dashQueued: false,
   /** 0 … 1, how far through the dash cooldown (1 = ready). Written by GameScene, drawn by the touch controls. */
   dashReady: 1,
