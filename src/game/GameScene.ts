@@ -4,12 +4,13 @@ import { sfx } from '../audio/sfx.ts'
 import { burst, ring } from './fx.ts'
 import { buzz } from './haptics.ts'
 import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
-import { createPracticeTargets } from './PracticeTargets.ts'
+import { MeleeEnemy, type PlayerInfo } from './enemies/MeleeEnemy.ts'
+import { buildNav, platformAt, platformBelow, type NavGraph } from './enemies/nav.ts'
 import { Shooter } from './Shooter.ts'
 import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
-import { ARENA, DASH, DUMMY, GRAVITY, HEAL, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, HEAL, MELEE, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -77,7 +78,17 @@ export class GameScene extends Phaser.Scene {
   private baseZoom = 1
   private minZoom = 0.1
   private zoomFactor = 1
-  private targets: Target[] = []
+  private enemies: MeleeEnemy[] = []
+  private enemyGroup!: Phaser.Physics.Arcade.Group
+  private nav!: NavGraph
+  private playerInfo: PlayerInfo = { x: 0, y: 0, platform: -1 }
+  /** Temporary spawner until waves exist: seconds until the next spawn. */
+  private spawnTimer = 0.5
+  private spawnKey!: Phaser.Input.Keyboard.Key
+  /** Everything that can be hit or auto-aimed at. */
+  private get targets(): Target[] {
+    return this.enemies
+  }
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
   get invulnerable() {
@@ -127,10 +138,17 @@ export class GameScene extends Phaser.Scene {
 
     // Shooting. Bullets pass through platforms; only the floor stops them (#42).
     const floorY = PLATFORMS.find((p) => p.solid)?.y ?? ARENA.height
-    // Temporary practice dummies until enemies exist: one floating above some platforms.
-    const spots = [1, 3, 5, 7, 9].map((i) => PLATFORMS[i]).filter(Boolean).map((p) => ({ x: p.x + p.w / 2, y: p.y - DUMMY.radius - 70 }))
-    this.targets = createPracticeTargets(this, spots, () => this.onKill())
     this.shooter = new Shooter(this, floorY, () => this.targets)
+
+    // Enemies (#40): route-finding graph, a physics group so they bump each other,
+    // and platform collisions that let them drop through one-way platforms.
+    this.nav = buildNav(PLATFORMS)
+    this.enemyGroup = this.physics.add.group({ collideWorldBounds: true })
+    this.physics.add.collider(this.enemyGroup, this.enemyGroup)
+    this.physics.add.collider(this.enemyGroup, platforms, undefined, (eo, plat) => {
+      const e = (eo as Phaser.GameObjects.Arc).getData('enemy') as MeleeEnemy | undefined
+      return !(e && e.dropping > 0 && (plat as Phaser.GameObjects.Rectangle).getData('oneWay'))
+    })
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
     this.body_.setCollideWorldBounds(true)
     this.physics.add.collider(
@@ -150,6 +168,8 @@ export class GameScene extends Phaser.Scene {
       jump: kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
       down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
     }
+    // Temporary: E spawns an extra enemy (desktop), for testing crowds.
+    this.spawnKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.E)
 
     // Right-click dashes (#21): towards the mouse in Manual; auto modes decide in readControls.
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
@@ -324,6 +344,7 @@ export class GameScene extends Phaser.Scene {
     this.wasGrounded = grounded
     this.lastVelY = b.velocity.y
 
+    this.updateEnemies(dt)
     this.updateShooting(dt)
     this.checkContacts()
     this.updateTargetZoom(dt)
@@ -369,6 +390,41 @@ export class GameScene extends Phaser.Scene {
       if (!b.blocked.down) b.setVelocityY(b.velocity.y - shot.y * WEAPONS.pistol.recoil * 0.5)
       this.view.kick(1 - Math.abs(shot.x) * 0.06, 1 - Math.abs(shot.y) * 0.06)
     }
+  }
+
+  private updateEnemies(dt: number) {
+    const b = this.body_
+    const grounded = b.blocked.down || b.touching.down
+    const plat = grounded ? platformAt(this.nav, this.player.x, b.bottom) : -1
+    this.playerInfo.x = this.player.x
+    this.playerInfo.y = this.player.y
+    this.playerInfo.platform = plat >= 0 ? plat : platformBelow(this.nav, this.player.x, b.bottom)
+
+    for (const e of this.enemies) e.update(dt, this.playerInfo)
+    this.enemies = this.enemies.filter((e) => e.state !== 'dead')
+
+    // Temporary spawner (until waves): keep a couple in the arena; E adds one.
+    if (Phaser.Input.Keyboard.JustDown(this.spawnKey)) this.spawnEnemy()
+    if (this.enemies.length < MELEE.keepAlive) {
+      this.spawnTimer -= dt
+      if (this.spawnTimer <= 0) {
+        this.spawnEnemy()
+        this.spawnTimer = MELEE.respawnDelay
+      }
+    }
+  }
+
+  /** On a random platform, preferably well away from the player. */
+  private spawnEnemy() {
+    const far = PLATFORMS.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
+    const pool = far.length ? far : [...PLATFORMS]
+    const p = pool[Phaser.Math.Between(0, pool.length - 1)]
+    const x = Phaser.Math.Between(p.x + 40, p.x + p.w - 40)
+    const e = new MeleeEnemy(this, x, p.y - MELEE.radius - 2, this.nav, () => this.onKill())
+    this.enemyGroup.add(e.o)
+    ;(e.o.body as Phaser.Physics.Arcade.Body).setCircle(MELEE.radius).setCollideWorldBounds(true)
+    ;(e.o.body as Phaser.Physics.Arcade.Body).enable = false
+    this.enemies.push(e)
   }
 
   /**

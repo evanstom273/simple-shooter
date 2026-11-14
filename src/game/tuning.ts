@@ -129,5 +129,35 @@ export const AIM = {
 /** Heal on kills (#47): one pip back after a random number of kills in this range. */
 export const HEAL = { minKills: 3, maxKills: 5 } as const
 
-/** Practice dummies for testing aim, until enemies exist. */
-export const DUMMY = { radius: 22, health: 3, respawn: 2.5 } as const
+
+/** Melee enemy (#40). All placeholders, to tune in play. */
+export const MELEE = {
+  colour: 0xff8a2a,
+  hotColour: 0xfff0d8,
+  /** Radius: diameter ≈ ¾ of the player's square. */
+  radius: 18,
+  health: 3,
+  /** Quick little hops. */
+  hopSpeedX: 240,
+  hopSpeedY: 380,
+  hopPause: 0.06,
+  /** Starts a lunge when this close (px). */
+  attackRange: 300,
+  /** Seconds of wind-up (glow + whine). */
+  windup: 0.5,
+  rollSpeed: 880,
+  /** A roll ends after this many wall bounces or this many seconds. */
+  rollBounces: 2,
+  rollTime: 1.6,
+  /** Leap: seconds in the air to reach where you were. */
+  leapTime: 0.55,
+  dizzy: 1.0,
+  /** Seconds after dizziness before it can lunge again. */
+  attackCooldown: 0.8,
+  /** Knockback when hit, px/s. */
+  knockback: 520,
+  /** Temporary spawner (until waves): keep this many in the arena. */
+  keepAlive: 2,
+  respawnDelay: 2,
+  spawnWarning: 1,
+} as const

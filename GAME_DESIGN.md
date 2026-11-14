@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T06:23:49+00:00):**
+**Where the project stands (as of 2026-11-14T06:35:05+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Melee enemy built** (#40); practice dummies removed; a temporary spawner keeps two in the arena (2026-11-14T06:35:05+00:00).
 - **Heal on kills built** (#47) (2026-11-14T06:23:49+00:00).
 - **Player health built; gun removed (start unarmed); dash damages dummies; dash auto-aims in the auto modes** (2026-11-14T06:17:03+00:00).
 - **Off-screen enemy markers and target zoom-out** (2026-11-14T06:06:53+00:00).
@@ -186,6 +187,12 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 
 ## C. Current Development Scope
 
+### Step 8b: The melee enemy — **BUILT** *(2026-11-14T06:35:05+00:00)*
+**In scope (done):** everything in #40: look (orange circle, tracking eye), quick hops, platform route-finding, wind-up tell (glow + rising whine), roll on the same level / leap otherwise, dizzy afterwards with missed rolls bouncing off walls, 3 HP, dash damage and wind-up cancel, arc-shard death, spawn marker, bumping. Kills feed healing (#47). A temporary spawner (keeps 2; E spawns more). Practice dummies removed.
+
+**Out of scope:** weapons, waves, upgrades.
+
+
 ### Step 8a: Player health — **BUILT** *(2026-11-14T06:17:03+00:00)*
 **In scope (done):** health (#45) with HUD pips, hurt pulse and revive flash; contact damage, knockback and post-hit invulnerability (#23, #27); the gun removed so you start unarmed (#21); the dash damages targets once per dash with a freeze-frame (#24); dash auto-aim in the auto modes (#46); the practice dummies hurt on touch (temporary) so health can be tested.
 
@@ -315,9 +322,12 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Dash auto-aim (#46) | Tested | Auto modes, no movement input: dash direction = towards the auto-aim target (checked: mouse ignored, dash went to the target); with A held it went straight left. *(2026-11-14T06:17:03+00:00)* |
 | Unarmed start (#21) | Tested | Gun switched off (`armed = false`): no shooting, no barrel; auto-aim still runs (bracket and markers show the dash target). Shooting code kept for the weapons step. *(2026-11-14T06:17:03+00:00)* |
 | Heal on kills (#47) | Tested | Each kill while hurt counts towards the next pip; the number needed is rolled 3–5 (`HEAL`) and re-rolled after each heal. Kills at full health are ignored; a hit resets the count. HUD: the first empty pip fills from the bottom (kills ÷ needed); the restored pip pops in; in game a ring, rising white sparks, a chime and a short buzz. Dummy pops count as kills. *(2026-11-14T06:23:49+00:00)* |
+| Melee enemy (#40) | Tested | `enemies/MeleeEnemy.ts`. Radius 18 (¾ of the square), 3 HP. Invisible physics circle + a visible circle that squashes; eye tracks the player (spins with the body when rolling, wobbles when dizzy, with orbiting stars). States: spawning (1 s marker) → chase (hops 240×380 px/s, 0.06 s pause) → wind-up 0.5 s (heats orange→white, shivers, rising whine) → roll (880 px/s, ends after 2 wall bounces or 1.6 s) or leap (0.55 s ballistic arc to where you were) → dizzy 1 s → 0.8 s before it can lunge again. Lunges when within 300 px: roll if on your platform (or within 40 px vertically), else leap. Hit: white flash, squash, knockback; a hit in the wind-up, roll or leap makes it dizzy. Death: six curved orange arc shards, sparks, ring, shatter sound, counts as a kill (#47). Checked: spawn → drop to the floor → hop over → wind-up → roll hits you → wall bounce → dizzy; climbs to the top platform; leaps up from below. *(2026-11-14T06:35:05+00:00)* |
+| Enemy route-finding | Tested | `enemies/nav.ts`: graph of moves between platforms (jump straight up through a one-way platform above, drop through one below, hop across a gap up or down), shortest route by breadth-first search. Every platform reachable from the floor and back. Target = the platform you're on, or the one below you if you're in the air. *(2026-11-14T06:35:05+00:00)* |
+| Temporary spawner | Temporary | Keeps 2 enemies in the arena, a new one 2 s after a kill, on a random platform ≥600 px from you; E (desktop) spawns an extra. Until waves exist. *(2026-11-14T06:35:05+00:00)* |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
-| Practice dummies | Temporary | Five grey circles floating above platforms; 3 hits (dash or shot) to pop, respawn after 2.5 s; touching one hurts (to test health). Removed when the melee enemy goes in. |
+| ~~Practice dummies~~ | Removed (replaced by the melee enemy) | Five grey circles floating above platforms; 3 hits (dash or shot) to pop, respawn after 2.5 s; touching one hurts (to test health). Removed when the melee enemy goes in. |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
@@ -338,6 +348,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
 - ~~Platforms block bullets from every side.~~ Changed by #42: bullets pass through.
+- **A hit during a roll or leap also dizzies the enemy** (the design only says the wind-up). Otherwise a mid-roll hit's knockback would be overwritten by the roll.
+- **Rolls can carry an enemy off the end of a platform**; it falls and finds its way back.
 - **Post-dash grace (0.12 s)** is Claude's addition so a dash that ends inside something doesn't immediately hurt you.
 - **Health shown as pips** rather than a bar: five hit points read better as five squares.
 - **No firing during a dash** (the barrel hides while dashing).
@@ -409,6 +421,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `PracticeTargets.ts` temporary dummies; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/state/hud.ts` health for the HUD; `src/audio/sfx.ts` synthesised sound.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `enemies/` melee enemy and platform route-finding; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/state/hud.ts` health for the HUD; `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` sets its camera zoom on every resize (baseline 1600×900 view × `VIEW.zoom`, #35). In dev, the game is on `window.__game` for poking at from the console.

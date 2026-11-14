@@ -121,6 +121,40 @@ export const sfx = {
     tone('sine', vary(990), vary(1320), 0.22, 0.09, 0.07)
     tone('triangle', vary(1320), vary(1760), 0.25, 0.05, 0.14)
   },
+  enemyHop: () => tone('triangle', vary(300), vary(420), 0.04, 0.025),
+  /** Rising whine over the wind-up (#40 tell). */
+  windup: (seconds: number) => {
+    const c = ready()
+    if (!c) return
+    const t = c.currentTime
+    const o = c.createOscillator()
+    const g = c.createGain()
+    o.type = 'sawtooth'
+    o.frequency.setValueAtTime(220, t)
+    o.frequency.exponentialRampToValueAtTime(880, t + seconds)
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.06, t + seconds * 0.8)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + seconds + 0.05)
+    const f = c.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.value = 2200
+    o.connect(f).connect(g).connect(master!)
+    o.start(t)
+    o.stop(t + seconds + 0.1)
+  },
+  roll: () => noise('lowpass', 400, 120, 0.5, 0.18, 2),
+  leap: () => noise('bandpass', 500, 2400, 0.3, 0.2, 1.2),
+  bounce: () => tone('square', vary(160), 80, 0.08, 0.12),
+  dizzy: () => {
+    tone('sine', vary(700), vary(500), 0.15, 0.05)
+    tone('sine', vary(600), vary(800), 0.15, 0.04, 0.15)
+  },
+  enemyHit: () => tone('square', vary(400), vary(200), 0.06, 0.1),
+  shatter: () => {
+    noise('highpass', 3000, 800, 0.25, 0.25, 0.8)
+    tone('triangle', vary(900), 200, 0.25, 0.12)
+  },
+  spawn: () => tone('sine', vary(200), vary(500), 0.4, 0.06),
   targetPop: () => {
     tone('sine', vary(600), 120, 0.2, 0.2)
     noise('bandpass', 2000, 400, 0.15, 0.12, 1)
