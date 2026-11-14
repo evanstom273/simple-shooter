@@ -10,6 +10,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
+- Build the stomp (#59).
 - Tune the ranged enemy and tank in play.
 - Wave system, then the shop (#53, #54).
 - Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.

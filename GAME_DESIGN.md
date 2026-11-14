@@ -213,6 +213,13 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Getting hit knocks you back a bit and takes some of your health.**
 - **A short invulnerability after a hit**, so contact damage can't drain you in one go. Length tuned in play. *(2026-11-14T04:28:58+00:00 — History #27)*
 
+### Stomp *(2026-11-14T14:34:43+00:00 — History #59)*
+- **Landing on an enemy from above stomps it**, Goomba-style: a second attack that uses the jump you already have.
+- **1 damage**, same as a dash (so it kills the ranged enemy outright).
+- **The stomp knocks the enemy away and flattens it** for about a second, during which **it can't be hit**, so you can't stomp it repeatedly. **Stomping the tank knocks you away instead** (it's too heavy to move, #58).
+- **You bounce up and your double jump is refreshed.**
+- **An attacking enemy wins:** landing on one mid-attack (a rolling or leaping melee, a slamming tank) hurts you as normal. Stomping is only safe on enemies that aren't attacking.
+
 ### Weapons and dash
 - **The player starts unarmed, with only a dash that does damage.** *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Dash aims itself in the auto-aim modes** (Auto aim, Full auto): with no movement input it goes for the auto-aim target. Touch: joystick direction if pushed, else the target, else facing. Desktop: A/D direction if held, else the target, else facing (mouse ignored, as for shooting). Manual is unchanged (mouse / joystick). *(2026-11-14T06:17:03+00:00 — History #46)*
@@ -341,6 +348,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
 1d. **Ranged enemy (#56), open:** numbers (charge length, lock length, shot speed, how close before it darts, dart distance, time between shots, health if not one-hit), what "leading" predicts from (your current velocity), and whether a shot can be dashed through (dash invulnerability says yes).
 1c. **Shop (#53, #54), open:** how many items per shop; whether you can reroll the selection; prices and how fast they escalate; what healing costs and whether it escalates; how much currency each enemy drops (per type?); whether weapons and improvements share the rotation with stat upgrades; shop UI.
@@ -514,6 +522,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 56 | 2026-11-14T06:58:51+00:00 | Enemies | Ranged enemy: smaller green triangle that points at you; flies; darts a short way off when you get close; single fast leading shot with a heavy tell (points, glows, charging sound, aim line that tracks then locks before firing); shots pass through platforms; only fires when on screen; 2 stages per hit; shares the one-attacker turn with the melee; one dash hit kills it; shatters into green triangles. |
 | 57 | 2026-11-14T06:58:51+00:00 | Combat | Health 20 = 5 pips × 4 stages; melee lunge and ranged shot each cost 2 stages; kills still heal 1 stage. Supersedes the numbers in #48. |
 | 58 | 2026-11-14T07:02:23+00:00 | Enemies | Tank: red pentagon, 2× the player; slow walk with heavy jumps; ground slam whose shockwave runs both ways along its platform (jump it); tell = crouch and glow, landing marker, rumble, slight camera shake; 4 stages per hit; long recovery after a slam; 8 hits; dash damages it without moving it (you bounce off); has its own attack turn alongside the others; breaks into red pentagon chunks. |
+| 59 | 2026-11-14T14:34:43+00:00 | Combat | Stomp: landing on an enemy from above does 1 damage, knocks it away and flattens it (~1 s, can't be hit) so it can't be repeated; stomping the tank knocks you away instead. You bounce up with your double jump refreshed. Landing on an attacking enemy hurts you as normal. |
 
 ---
 
