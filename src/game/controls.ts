@@ -23,6 +23,10 @@ export const touchInput = {
   fireX: 0,
   fireY: 0,
   dashQueued: false,
+  /** Touch weapon-cycle button pressed (#25). */
+  switchQueued: false,
+  /** How many weapons you own (the cycle button only shows with two or more). */
+  weaponCount: 0,
   /** 0 … 1, how far through the dash cooldown (1 = ready). Written by GameScene, drawn by the touch controls. */
   dashReady: 1,
   /** Whether the on-screen controls are showing (i.e. playing on touch). */

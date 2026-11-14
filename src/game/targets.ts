@@ -1,4 +1,5 @@
-// Anything that can be shot or auto-aimed at. Practice dummies now; enemies later.
+// Anything that can be shot or auto-aimed at.
+export type HitSource = 'dash' | 'stomp' | 'shot'
 export interface Target {
   readonly x: number
   readonly y: number
@@ -8,5 +9,6 @@ export interface Target {
   readonly attacking: boolean
   /** Colour for its off-screen marker (matches the enemy). */
   readonly colour: number
-  hit(damage: number, dir: { x: number; y: number }): void
+  /** `source`: dashes and stomps can interrupt an enemy's attack; shots only damage it (#68). */
+  hit(damage: number, dir: { x: number; y: number }, source?: HitSource): void
 }

@@ -4,6 +4,8 @@ import { burst, ring } from '../fx.ts'
 import { GRAVITY, MELEE, STOMP } from '../tuning.ts'
 import { firstMove, platformAt, type NavGraph } from './nav.ts'
 import type { Enemy, PlayerInfo, Turns } from './types.ts'
+import type { HitSource } from '../targets.ts'
+import { drawBar } from './RangedEnemy.ts'
 
 // The melee enemy (#40): a small orange circle with one eye. Hops after you,
 // finds its way across platforms, winds up (glow + whine), then rolls at you on
@@ -99,7 +101,7 @@ export class MeleeEnemy implements Enemy {
     }
     const away = Math.sign(this.x - fromX) || 1
     this.body.setVelocity(away * STOMP.knock.x, -STOMP.knock.y)
-    this.hit(STOMP.damage, { x: 0, y: 0 }, true)
+    this.hit(STOMP.damage, { x: 0, y: 0 }, 'stomp')
     if (this.alive) this.flat = STOMP.flatten
   }
 
@@ -119,15 +121,17 @@ export class MeleeEnemy implements Enemy {
     return this.body.blocked.down || this.body.touching.down
   }
 
-  hit(damage: number, dir: { x: number; y: number }, fromStomp = false) {
+  hit(damage: number, dir: { x: number; y: number }, source: HitSource = 'dash') {
     if (!this.alive || this.flat > 0) return
     this.hp -= damage
     this.flash = 0.07
-    this.kick(1.35, 0.7)
+    this.kick(source === 'shot' ? 1.15 : 1.35, source === 'shot' ? 0.88 : 0.7)
     sfx.enemyHit()
-    if (!fromStomp) this.body.setVelocity(dir.x * MELEE.knockback, Math.min(this.body.velocity.y, -260 + dir.y * 200))
-    // A hit during the wind-up cancels the lunge (#40); a hit mid-roll or mid-leap knocks it out of it.
-    if (this.state === 'windup' || this.state === 'roll' || this.state === 'leap') this.toDizzy()
+    if (source === 'dash') this.body.setVelocity(dir.x * MELEE.knockback, Math.min(this.body.velocity.y, -260 + dir.y * 200))
+    // Shots just nudge it (#68): no cancelling, so a stream of bullets can't stun-lock it.
+    else if (source === 'shot' && this.state !== 'roll' && this.state !== 'leap') this.body.setVelocityX(this.body.velocity.x + dir.x * 140 * damage)
+    // A dash during the wind-up cancels the lunge (#40); a dash mid-roll or mid-leap knocks it out of it.
+    if (source === 'dash' && (this.state === 'windup' || this.state === 'roll' || this.state === 'leap')) this.toDizzy()
     if (this.hp <= 0) this.die(dir)
   }
 
@@ -403,19 +407,9 @@ export class MeleeEnemy implements Enemy {
     this.eye.setPosition(x + ex * this.sx, y + offY + ey * this.sy)
     this.pupil.setPosition(this.eye.x + px, this.eye.y + py)
 
-    // Health bar: shown once it's been hit; one segment per hit point.
+    // Health bar: shown once it's been hit; one segment per hit point (partly filled for half-hits).
     this.bar.clear()
-    if (this.hp < MELEE.health) {
-      const seg = 12
-      const gap = 3
-      const total = MELEE.health * seg + (MELEE.health - 1) * gap
-      const bx = x - total / 2
-      const by = y - this.radius - 16
-      for (let i = 0; i < MELEE.health; i++) {
-        this.bar.fillStyle(i < this.hp ? MELEE.colour : 0xffffff, i < this.hp ? 0.95 : 0.15)
-        this.bar.fillRect(bx + i * (seg + gap), by, seg, 5)
-      }
-    }
+    if (this.hp < MELEE.health) drawBar(this.bar, x, y - this.radius - 16, this.hp, MELEE.health, MELEE.colour)
 
     // Dizzy stars orbiting overhead.
     if (this.state === 'dizzy') {

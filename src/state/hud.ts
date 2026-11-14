@@ -1,7 +1,17 @@
 // Player state the React HUD shows (health), written by Phaser.
 // Plain TS (no Phaser import) so React can use it without loading the game.
 
+export interface HudWeapon {
+  id: 'pistol' | 'automatic' | 'shotgun'
+  ammo: number
+  magazine: number
+  /** 0…1 while reloading, else null. */
+  reloading: number | null
+}
+
 interface HudState {
+  weapons: HudWeapon[]
+  currentWeapon: HudWeapon['id'] | null
   /** Health in stages (#48): pips × stagesPerPip. */
   health: number
   pips: number
@@ -16,7 +26,7 @@ interface HudState {
   deathCount: number
 }
 
-let state: HudState = { health: 25, pips: 5, stagesPerPip: 5, healCount: 0, healedPip: -1, hurtCount: 0, deathCount: 0 }
+let state: HudState = { weapons: [], currentWeapon: null, health: 20, pips: 5, stagesPerPip: 4, healCount: 0, healedPip: -1, hurtCount: 0, deathCount: 0 }
 const listeners = new Set<() => void>()
 
 export const hudStore = {

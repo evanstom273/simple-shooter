@@ -19,6 +19,9 @@ export class TouchControlsScene extends Phaser.Scene {
   private dashLabel!: Phaser.GameObjects.Text
   private dashRing!: Phaser.GameObjects.Graphics
   private dashPointer: number | null = null
+  /** Weapon cycle button (#25), shown once you own two or more weapons. */
+  private swapBtn!: Phaser.GameObjects.Arc
+  private swapLabel!: Phaser.GameObjects.Text
   private stickPointer: number | null = null
   private jumpPointer: number | null = null
   private firePointer: number | null = null
@@ -44,6 +47,12 @@ export class TouchControlsScene extends Phaser.Scene {
     this.dashRing = this.add.graphics()
     this.dashLabel = this.add
       .text(0, 0, 'DASH', { fontFamily: 'system-ui, sans-serif', fontStyle: 'bold', color: '#8fd3ff' })
+      .setOrigin(0.5)
+      .setAlpha(0.7)
+
+    this.swapBtn = this.add.circle(0, 0, 1, 0xfff2b0, 0.1).setStrokeStyle(2 * this.dpr, 0xfff2b0, 0.35)
+    this.swapLabel = this.add
+      .text(0, 0, 'SWAP', { fontFamily: 'system-ui, sans-serif', fontStyle: 'bold', color: '#fff2b0' })
       .setOrigin(0.5)
       .setAlpha(0.7)
 
@@ -88,6 +97,10 @@ export class TouchControlsScene extends Phaser.Scene {
     const dr = 38 * u
     this.dashBtn.setRadius(dr).setPosition(this.jumpBtn.x - jr - 22 * u - dr, this.jumpBtn.y - jr * 0.9)
     this.dashLabel.setPosition(this.dashBtn.x, this.dashBtn.y).setFontSize(Math.round(14 * u))
+
+    const sr = 26 * u
+    this.swapBtn.setRadius(sr).setPosition(this.jumpBtn.x + jr * 0.2, this.jumpBtn.y - jr - 20 * u - sr)
+    this.swapLabel.setPosition(this.swapBtn.x, this.swapBtn.y).setFontSize(Math.round(11 * u))
   }
 
   private placeStick(x: number, y: number) {
@@ -110,6 +123,12 @@ export class TouchControlsScene extends Phaser.Scene {
       this.jumpPointer = p.id
       touchInput.jumpQueued = true
       this.jumpBtn.setFillStyle(0xffffff, 0.3)
+      return
+    }
+    if (this.swapBtn.visible && Phaser.Math.Distance.Between(p.x, p.y, this.swapBtn.x, this.swapBtn.y) <= this.swapBtn.radius * 1.3) {
+      touchInput.switchQueued = true
+      this.swapBtn.setFillStyle(0xfff2b0, 0.35)
+      this.time.delayedCall(120, () => this.swapBtn.setFillStyle(0xfff2b0, 0.1))
       return
     }
     const dashHit = Phaser.Math.Distance.Between(p.x, p.y, this.dashBtn.x, this.dashBtn.y) <= this.dashBtn.radius * 1.25
@@ -172,6 +191,9 @@ export class TouchControlsScene extends Phaser.Scene {
   }
 
   update() {
+    const swap = this.dashBtn.visible && touchInput.weaponCount >= 2
+    this.swapBtn.setVisible(swap)
+    this.swapLabel.setVisible(swap)
     if (!this.dashBtn.visible) return
     // Cooldown: the ring fills back up; the button lights up when ready.
     const ready = touchInput.dashReady

@@ -64,6 +64,30 @@ export function Hud() {
           )
         })}
       </div>
+      {/* Weapons you own (#68): current highlighted, ammo bar, fills back up while reloading. */}
+      {hud.weapons.length > 0 && (
+        <div className="relative mt-2 flex items-end gap-1.5">
+          {hud.weapons.map((w, i) => {
+            const current = w.id === hud.currentWeapon
+            const fill = w.reloading !== null ? w.reloading : w.ammo / w.magazine
+            return (
+              <div
+                key={w.id}
+                className={`flex flex-col items-center gap-0.5 rounded-md px-1.5 pt-1 pb-0.5 ring-1 ${current ? 'bg-white/10 ring-white/40' : 'bg-white/5 opacity-60 ring-white/10'}`}
+                title={`${i + 1}: ${WEAPON_ICONS[w.id].label}`}
+              >
+                <svg viewBox="0 0 28 14" width="28" height="14" aria-label={WEAPON_ICONS[w.id].label} className={w.reloading !== null ? 'opacity-40' : ''}>
+                  <path d={WEAPON_ICONS[w.id].path} fill={WEAPON_ICONS[w.id].colour} />
+                </svg>
+                <div className="h-1 w-7 overflow-hidden rounded-full bg-white/10">
+                  <div className={`h-full ${w.reloading !== null ? 'bg-white/50' : 'bg-white'}`} style={{ width: `${fill * 100}%` }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* Gold in hand and run score (#53). */}
       <div className="relative mt-1.5 flex items-center gap-3 text-xs tabular-nums">
         <span className="flex items-center gap-1 font-bold text-amber-300">
@@ -75,7 +99,7 @@ export function Hud() {
         <span className="text-neutral-400">score {run.score}</span>
       </div>
       <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
-        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Land on enemies to stomp
+        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Land on enemies to stomp · Left-click shoot · 1–3 / wheel switch gun
       </p>
 
       {/* Wave readout (#13, #18). */}
@@ -189,8 +213,25 @@ export function Hud() {
             ))}
           </div>
           <p className="mt-3 mb-1 text-xs font-semibold tracking-wide text-neutral-400 uppercase">Testing</p>
+          <div className="mb-1.5 flex items-center gap-1">
+            <span className="mr-1 w-10 text-xs text-neutral-400">Give</span>
+            {(['pistol', 'automatic', 'shotgun'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => debugBus.give(id)}
+                aria-label={`Give ${WEAPON_ICONS[id].label}`}
+                title={`Give ${WEAPON_ICONS[id].label}`}
+                className="grid h-8 w-10 place-items-center rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20"
+              >
+                <svg viewBox="0 0 28 14" width="24" height="12" aria-hidden="true">
+                  <path d={WEAPON_ICONS[id].path} fill={WEAPON_ICONS[id].colour} />
+                </svg>
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-1">
-            <span className="mr-1 text-xs text-neutral-400">Spawn</span>
+            <span className="mr-1 w-10 text-xs text-neutral-400">Spawn</span>
             {SPAWN_BUTTONS.map((b) => (
               <button
                 key={b.kind}
@@ -238,4 +279,10 @@ function CountUp({ value }: { value: number }) {
     return () => cancelAnimationFrame(raf)
   }, [value])
   return <>{shown}</>
+}
+
+const WEAPON_ICONS: Record<'pistol' | 'automatic' | 'shotgun', { label: string; colour: string; path: string }> = {
+  pistol: { label: 'Pistol', colour: '#fff2b0', path: 'M3 4h16v4h-9v5H5V8H3z' },
+  automatic: { label: 'Automatic', colour: '#ffd27a', path: 'M1 4h26v3H16v2h-3v4H8V7H1z' },
+  shotgun: { label: 'Shotgun', colour: '#ffb38a', path: 'M2 3h20v3H2zM2 7h20v3H11v3H6v-3H2z' },
 }

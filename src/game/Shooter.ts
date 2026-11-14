@@ -3,13 +3,13 @@ import { sfx } from '../audio/sfx.ts'
 import type { AimMode } from '../settings/store.ts'
 import { burst } from './fx.ts'
 import type { Target } from './targets.ts'
-import { AIM, ARENA, PLAYER, WEAPONS } from './tuning.ts'
+import { AIM, ARENA, PLAYER, WEAPON_ORDER, WEAPONS, type WeaponId } from './tuning.ts'
 
-// Aiming and shooting (#36–#39, #41–#43): the three aim modes, auto-aim
-// targeting, bullets, the gun barrel, the crosshair and the target bracket.
-// Platforms don't block bullets or auto-aim (#42); only the floor stops bullets.
+// Aiming and shooting (#36–#39, #41–#43, #68): the three aim modes, auto-aim,
+// the three weapons with magazines that reload automatically once empty,
+// bullets (platforms don't stop them; the floor does), the gun on the
+// character, reload ring, crosshair and target bracket.
 
-const BULLET_COLOUR = 0xfff2b0
 const BRACKET_COLOUR = 0xfff2b0
 
 interface Bullet {
@@ -19,6 +19,7 @@ interface Bullet {
   vx: number
   vy: number
   life: number
+  damage: number
 }
 
 export interface ShooterInput {
@@ -28,8 +29,6 @@ export interface ShooterInput {
   facing: number
   dashing: boolean
   mode: AimMode
-  /** Has a gun. Unarmed (the start of a run, #21): no shooting or barrel, but auto-aim still picks a target for the dash. */
-  armed: boolean
   /** Trigger held (mouse button or right-side touch). */
   fireHeld: boolean
   /** Manual mode: the world point being aimed at, if any. */
@@ -40,16 +39,21 @@ export interface ShooterInput {
   crosshair: { x: number; y: number } | null
 }
 
+export interface WeaponStatus {
+  id: WeaponId
+  ammo: number
+  magazine: number
+  /** 0…1 while reloading, else null. */
+  reloading: number | null
+}
+
 export class Shooter {
   private bullets: Bullet[] = []
   private cooldown = 0
   private locked: Target | null = null
-  /** The current auto-aim target, if any (for the off-screen marker and zoom). */
-  get target(): Target | null {
-    return this.locked
-  }
   private aimAngle = 0
   private barrel: Phaser.GameObjects.Rectangle
+  private barrel2: Phaser.GameObjects.Rectangle
   private barrelKick = 0
   private overlay: Phaser.GameObjects.Graphics
   private scene: Phaser.Scene
@@ -57,18 +61,84 @@ export class Shooter {
   private floorY: number
   private targets: () => Target[]
 
+  /** Weapons you have (#21: none at the start), in the order you got them. */
+  private owned: WeaponId[] = []
+  private current = -1
+  private ammo: Partial<Record<WeaponId, number>> = {}
+  /** Seconds left reloading the current weapon (0 = not reloading). */
+  private reloadLeft = 0
+
+  /** Fire-rate multiplier from upgrades (#12, applies to every weapon, #22). */
+  fireRateBonus = 1
+  /** Damage multiplier per weapon from buying it again (#26). */
+  damageBonus: Partial<Record<WeaponId, number>> = {}
+
   constructor(scene: Phaser.Scene, floorY: number, targets: () => Target[]) {
     this.scene = scene
     this.floorY = floorY
     this.targets = targets
-    this.barrel = scene.add.rectangle(0, 0, PLAYER.size * 0.42, PLAYER.size * 0.22, 0xd8d8e4).setOrigin(0, 0.5).setDepth(11)
+    this.barrel = scene.add.rectangle(0, 0, 10, 10, 0xd8d8e4).setOrigin(0, 0.5).setDepth(11).setVisible(false)
+    this.barrel2 = scene.add.rectangle(0, 0, 10, 10, 0xd8d8e4).setOrigin(0, 0.5).setDepth(11).setVisible(false)
     this.overlay = scene.add.graphics().setDepth(20)
+  }
+
+  /** The current auto-aim target, if any (for the off-screen marker and zoom). */
+  get target(): Target | null {
+    return this.locked
+  }
+
+  get armed() {
+    return this.current >= 0
+  }
+
+  get weapon(): WeaponId | null {
+    return this.current >= 0 ? this.owned[this.current] : null
+  }
+
+  get reloading() {
+    return this.reloadLeft > 0
+  }
+
+  /** Gain a weapon (testing buttons now; the shop later). Owning it already raises its damage (#26). */
+  give(id: WeaponId) {
+    if (this.owned.includes(id)) {
+      this.damageBonus[id] = (this.damageBonus[id] ?? 1) + 0.25
+      return
+    }
+    this.owned.push(id)
+    this.ammo[id] = WEAPONS[id].magazine
+    if (!this.reloading) this.current = this.owned.length - 1
+  }
+
+  /** Switch by slot (number keys) or step (wheel / cycle button). Not while reloading (#68). */
+  select(slot: number) {
+    if (this.reloading || slot < 0 || slot >= this.owned.length || slot === this.current) return false
+    this.current = slot
+    this.cooldown = Math.max(this.cooldown, 0.12)
+    sfx.dashReady()
+    return true
+  }
+
+  cycle(step: number) {
+    if (this.owned.length < 2) return false
+    return this.select((this.current + step + this.owned.length) % this.owned.length)
+  }
+
+  status(): { weapons: WeaponStatus[]; current: WeaponId | null } {
+    return {
+      current: this.weapon,
+      weapons: WEAPON_ORDER.filter((id) => this.owned.includes(id)).map((id) => ({
+        id,
+        ammo: this.ammo[id] ?? 0,
+        magazine: WEAPONS[id].magazine,
+        reloading: id === this.weapon && this.reloading ? 1 - this.reloadLeft / WEAPONS[id].reload : null,
+      })),
+    }
   }
 
   /**
    * The nearest living target in range, re-checked every frame (#43). Keeps the
-   * current target unless another is at least AIM.switchMargin closer, so the
-   * bracket doesn't flick between two enemies at similar distances.
+   * current target unless another is at least AIM.switchMargin closer.
    */
   private updateLock(x: number, y: number) {
     const dist = (t: Target) => Phaser.Math.Distance.Between(x, y, t.x, t.y)
@@ -86,79 +156,95 @@ export class Shooter {
     if (!this.locked || (best && best !== this.locked && bestD < dist(this.locked) * (1 - AIM.switchMargin))) this.locked = best
   }
 
-  /** Returns the shot direction if a shot was fired this frame (for recoil). */
-  update(dt: number, s: ShooterInput): { x: number; y: number } | null {
+  /** Returns the shot direction and recoil if a shot was fired this frame. */
+  update(dt: number, s: ShooterInput): { x: number; y: number; recoil: number } | null {
     const auto = s.mode !== 'manual'
     if (auto) this.updateLock(s.x, s.y)
     else this.locked = null
 
-    // Where are we aiming?
     let target: { x: number; y: number } | null = null
     if (auto && this.locked) target = this.locked
     else if (!auto && s.aimPoint) target = s.aimPoint
     const angle = target ? Math.atan2(target.y - s.y, target.x - s.x) : s.facing < 0 ? Math.PI : 0
-    // Barrel swings quickly to the aim, so it doesn't snap.
     this.aimAngle = Phaser.Math.Angle.RotateTo(this.aimAngle, angle, dt * 30)
 
-    // Should we fire?
-    let wantFire = s.armed && s.fireHeld
-    if (s.mode === 'fullAuto') {
-      // Full auto fires only when there's a target; never at nothing.
-      wantFire = s.armed && !!this.locked
+    // Reloading: count down, then refill (#68).
+    const id = this.weapon
+    if (id && this.reloadLeft > 0) {
+      this.reloadLeft -= dt
+      if (this.reloadLeft <= 0) {
+        this.reloadLeft = 0
+        this.ammo[id] = WEAPONS[id].magazine
+        sfx.reloaded()
+      }
     }
+
+    let wantFire = s.fireHeld
+    if (s.mode === 'fullAuto') wantFire = !!this.locked // never fires at nothing
 
     this.cooldown -= dt
-    let fired: { x: number; y: number } | null = null
-    if (wantFire && !s.dashing && this.cooldown <= 0) {
-      // Carry the leftover so holding the trigger gives an exact fire rate.
-      this.cooldown = Math.max(0, this.cooldown + 1 / WEAPONS.pistol.fireRate)
-      fired = { x: Math.cos(angle), y: Math.sin(angle) }
+    let fired: { x: number; y: number; recoil: number } | null = null
+    if (id && wantFire && !s.dashing && !this.reloading && this.cooldown <= 0) {
+      const w = WEAPONS[id]
+      this.cooldown = Math.max(0, this.cooldown + 1 / (w.fireRate * this.fireRateBonus))
       this.aimAngle = angle
-      this.fire(s.x, s.y, fired)
+      this.fire(s.x, s.y, angle, id)
+      fired = { x: Math.cos(angle), y: Math.sin(angle), recoil: w.recoil }
+      this.ammo[id] = (this.ammo[id] ?? 1) - 1
+      if ((this.ammo[id] ?? 0) <= 0) {
+        this.reloadLeft = w.reload
+        sfx.reloadStart()
+      }
     }
-
     if (this.cooldown < 0) this.cooldown = 0
     this.updateBullets(dt)
-    this.drawBarrel(dt, s)
+    this.drawGun(dt, s)
     this.drawOverlay(s)
     return fired
   }
 
-  private fire(x: number, y: number, dir: { x: number; y: number }) {
-    const w = WEAPONS.pistol
-    const muzzle = PLAYER.size * 0.62
-    const mx = x + dir.x * muzzle
-    const my = y + dir.y * muzzle
-    const o = this.scene.add.rectangle(mx, my, 18, 6, BULLET_COLOUR).setDepth(8).setRotation(Math.atan2(dir.y, dir.x))
-    this.bullets.push({ o, x: mx, y: my, vx: dir.x * w.bulletSpeed, vy: dir.y * w.bulletSpeed, life: 1.2 })
+  private fire(x: number, y: number, angle: number, id: WeaponId) {
+    const w = WEAPONS[id]
+    const muzzle = PLAYER.size * (0.3 + w.barrel.length)
+    const mx = x + Math.cos(angle) * muzzle
+    const my = y + Math.sin(angle) * muzzle
+    const damage = w.damage * (this.damageBonus[id] ?? 1)
+    for (let i = 0; i < w.pellets; i++) {
+      const a = angle + (w.pellets > 1 ? -w.spread + (2 * w.spread * i) / (w.pellets - 1) + Phaser.Math.FloatBetween(-0.04, 0.04) : Phaser.Math.FloatBetween(-w.spread, w.spread))
+      const speed = w.bulletSpeed * (w.pellets > 1 ? Phaser.Math.FloatBetween(0.85, 1.1) : 1)
+      const o = this.scene.add.rectangle(mx, my, w.pellets > 1 ? 10 : 18, w.pellets > 1 ? 6 : 6, w.colour).setDepth(8).setRotation(a)
+      this.bullets.push({ o, x: mx, y: my, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: w.life, damage })
+    }
 
-    // Muzzle flash: a bright little star plus a soft glow (above the darkness).
-    const flash = this.scene.add.star(mx, my, 4, 4, 14, 0xffffff).setDepth(12).setRotation(Math.random())
+    // Muzzle flash and glow (bigger for the shotgun).
+    const big = w.pellets > 1 ? 1.6 : 1
+    const flash = this.scene.add.star(mx, my, 4, 4 * big, 14 * big, 0xffffff).setDepth(12).setRotation(Math.random())
     this.scene.tweens.add({ targets: flash, scale: 1.6, alpha: 0, duration: 70, onComplete: () => flash.destroy() })
-    const glow = this.scene.add.circle(mx, my, 46, BULLET_COLOUR, 0.28).setDepth(5).setBlendMode(Phaser.BlendModes.ADD)
+    const glow = this.scene.add.circle(mx, my, 46 * big, w.colour, 0.28).setDepth(5).setBlendMode(Phaser.BlendModes.ADD)
     this.scene.tweens.add({ targets: glow, alpha: 0, scale: 1.4, duration: 110, onComplete: () => glow.destroy() })
     this.barrelKick = 1
-    sfx.shoot()
+    if (id === 'shotgun') sfx.shotgun()
+    else if (id === 'automatic') sfx.automatic()
+    else sfx.shoot()
   }
 
   private updateBullets(dt: number) {
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i]
       b.life -= dt
-      // Sub-steps so fast bullets can't skip through thin platforms or targets.
       const dist = Math.hypot(b.vx, b.vy) * dt
       const steps = Math.max(1, Math.ceil(dist / 10))
       let dead = b.life <= 0
       for (let k = 0; k < steps && !dead; k++) {
         b.x += (b.vx * dt) / steps
         b.y += (b.vy * dt) / steps
-        if (b.x < 0 || b.x > ARENA.width || b.y < 0 || b.y > ARENA.height) {
+        if (b.x < 0 || b.x > ARENA.width || b.y < 0) {
           dead = true
           break
         }
         if (b.y >= this.floorY) {
           const back = Math.atan2(-b.vy, -b.vx)
-          burst(this.scene, b.x, b.y, { count: 5, colour: BULLET_COLOUR, angle: back, spread: 0.9, speed: [100, 260], size: [3, 6], life: 200 })
+          burst(this.scene, b.x, b.y, { count: 4, colour: 0xfff2b0, angle: back, spread: 0.9, speed: [100, 240], size: [3, 6], life: 180 })
           sfx.spark()
           dead = true
           break
@@ -166,7 +252,7 @@ export class Shooter {
         for (const t of this.targets()) {
           if (t.alive && Phaser.Math.Distance.Between(b.x, b.y, t.x, t.y) < t.radius) {
             const len = Math.hypot(b.vx, b.vy)
-            t.hit(WEAPONS.pistol.damage, { x: b.vx / len, y: b.vy / len })
+            t.hit(b.damage, { x: b.vx / len, y: b.vy / len }, 'shot')
             dead = true
             break
           }
@@ -176,18 +262,38 @@ export class Shooter {
         b.o.destroy()
         this.bullets.splice(i, 1)
       } else {
-        b.o.setPosition(b.x, b.y)
+        // Shotgun pellets fade over their short life.
+        b.o.setPosition(b.x, b.y).setAlpha(Math.min(1, b.life * 6))
       }
     }
   }
 
-  private drawBarrel(dt: number, s: ShooterInput) {
+  /** The gun on the character: a different barrel per weapon; it spins once while reloading. */
+  private drawGun(dt: number, s: ShooterInput) {
+    const id = this.weapon
+    const show = !!id && !s.dashing
+    this.barrel.setVisible(show)
+    this.barrel2.setVisible(show && !!id && !!WEAPONS[id].barrel.double)
+    if (!id || !show) return
+    const w = WEAPONS[id]
     this.barrelKick = Math.max(0, this.barrelKick - dt * 12)
-    const out = PLAYER.size * 0.32 - this.barrelKick * 7
-    this.barrel
-      .setVisible(s.armed && !s.dashing)
-      .setPosition(s.x + Math.cos(this.aimAngle) * out, s.y + Math.sin(this.aimAngle) * out)
-      .setRotation(this.aimAngle)
+    const len = PLAYER.size * w.barrel.length
+    const thick = PLAYER.size * w.barrel.thickness
+    const out = PLAYER.size * 0.32 - this.barrelKick * (id === 'shotgun' ? 14 : 7)
+    // Reload animation: the gun spins round once.
+    const spin = this.reloading ? (1 - this.reloadLeft / w.reload) * Math.PI * 2 : 0
+    const a = this.aimAngle + spin
+    const px = s.x + Math.cos(this.aimAngle) * out
+    const py = s.y + Math.sin(this.aimAngle) * out
+    const col = this.reloading ? 0x9a9aae : 0xd8d8e4
+    if (w.barrel.double) {
+      const nx = -Math.sin(a) * thick * 0.3
+      const ny = Math.cos(a) * thick * 0.3
+      this.barrel.setSize(len, thick * 0.45).setDisplaySize(len, thick * 0.45).setFillStyle(col).setPosition(px - nx, py - ny).setRotation(a)
+      this.barrel2.setSize(len, thick * 0.45).setDisplaySize(len, thick * 0.45).setFillStyle(col).setPosition(px + nx, py + ny).setRotation(a)
+    } else {
+      this.barrel.setSize(len, thick).setDisplaySize(len, thick).setFillStyle(col).setPosition(px, py).setRotation(a)
+    }
   }
 
   private drawOverlay(s: ShooterInput) {
@@ -195,14 +301,29 @@ export class Shooter {
     g.clear()
     const px = s.pxToWorld
 
+    // Reload ring around the gun hand: fills as it reloads (#68).
+    const id = this.weapon
+    if (id && this.reloading) {
+      const k = 1 - this.reloadLeft / WEAPONS[id].reload
+      const cx = s.x + Math.cos(this.aimAngle) * PLAYER.size * 0.55
+      const cy = s.y + Math.sin(this.aimAngle) * PLAYER.size * 0.55
+      const r = PLAYER.size * 0.42
+      g.lineStyle(3 * px, 0xffffff, 0.18)
+      g.strokeCircle(cx, cy, r)
+      g.lineStyle(3 * px, WEAPONS[id].colour, 0.95)
+      g.beginPath()
+      g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2)
+      g.strokePath()
+    }
+
     // Target bracket: four corner marks around the locked target, slowly turning.
     const t = this.locked
     if (t) {
       const h = t.radius + 10
       const arm = h * 0.5
-      const spin = this.scene.time.now / 1200
-      const c = Math.cos(spin)
-      const sn = Math.sin(spin)
+      const spinA = this.scene.time.now / 1200
+      const c = Math.cos(spinA)
+      const sn = Math.sin(spinA)
       const rot = (lx: number, ly: number) => ({ x: t.x + lx * c - ly * sn, y: t.y + lx * sn + ly * c })
       g.lineStyle(3 * px, BRACKET_COLOUR, 0.9)
       for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {

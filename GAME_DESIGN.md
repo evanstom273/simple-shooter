@@ -245,6 +245,14 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **You bounce up and your double jump is refreshed.**
 - **An attacking enemy wins:** landing on one mid-attack (a rolling or leaping melee, a slamming tank) hurts you as normal. Stomping is only safe on enemies that aren't attacking.
 
+### Weapons, ammo and reloading *(2026-11-14T21:30:44+00:00 — History #68)*
+- **The classic split:** **pistol** accurate and steady; **automatic** fast, weaker per bullet, slight spread; **shotgun** slow, short-range burst of pellets, big recoil shove.
+- **Ammo: each gun has a magazine.** There's **no reload button**: empty the magazine and it **reloads automatically** after a short countdown, with an animation and a visual effect. **A gun only reloads when it's empty.**
+- **You can't switch weapons while reloading.**
+- **The reload countdown shows** as a ring around the gun on the character, a bar under the player, and the gun's HUD icon filling back up.
+- **Which weapon you've got:** small HUD icons (current highlighted) **and** a distinct gun shape on the character.
+- Until the shop exists, weapons come from **testing buttons** in the settings panel. You still start unarmed (#21).
+
 ### Weapons and dash
 - **The player starts unarmed, with only a dash that does damage.** *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Dash aims itself in the auto-aim modes** (Auto aim, Full auto): with no movement input it goes for the auto-aim target. Touch: joystick direction if pushed, else the target, else facing. Desktop: A/D direction if held, else the target, else facing (mouse ignored, as for shooting). Manual is unchanged (mouse / joystick). *(2026-11-14T06:17:03+00:00 — History #46)*
@@ -288,6 +296,12 @@ From Lyra (built while she was at work, so the details marked *Claude* are inter
 ---
 
 ## C. Current Development Scope
+
+### Step 12: Player shooting — **BUILT** *(2026-11-14T21:30:44+00:00)*
+**In scope (done):** the three weapons (#22, #68) with magazines, automatic reload when empty, reload lock on switching, reload ring + bar + HUD icon; switching with 1–3, mouse wheel and a touch SWAP button; a distinct barrel per gun; HUD weapon icons with ammo bars; testing "Give" buttons; partial enemy health bars; pushes that carry (see below).
+
+**Next:** the hub with the shop (#62, #63), then random platform layouts (#67).
+
 
 ### Next, in this order of priority (Lyra, 2026-11-14T21:22:41+00:00, History #67)
 Before worlds, art or anything else: **(1) player shooting** (the three weapons, switching), **(2) the hub with the shop**, **(3) randomly generated platform layouts**.
@@ -449,6 +463,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Motes | Tested | 45 faint drifting squares under the darkness layer, so they mostly show near the player's light. *(2026-11-14T05:08:55+00:00)* |
 | Aim modes (#36–#39, #41) | Tested | `settingsStore` (plain TS, shared by React and Phaser) holds the mode; settings panel (gear button) with Manual / Auto aim / Full auto; saved in Dexie with mute. Defaults from `pointer: coarse`: touch → Auto aim, desktop → Manual. *(2026-11-14T05:45:20+00:00)* |
 | Shooting (`Shooter.ts`) | Tested | Hold the trigger to fire at the weapon's rate (pistol 4/s, exact). Desktop: left mouse button; mouse aims in Manual (system cursor replaced by a crosshair). Touch: hold anywhere right of the joystick zone that isn't JUMP/DASH; in Manual shots go towards the thumb. No target in range: shots go straight ahead (direction last moved). Full auto fires only at a locked target in line of sight. Can't fire mid-dash. Bullets: 1900 px/s, sub-stepped so they can't skip thin platforms; pass through platforms (#42) and stop at the floor with sparks. *(2026-11-14T05:45:20+00:00)* |
+| Weapons (#68) | Tested | `WEAPONS` in `tuning.ts`. Pistol: 1 dmg, 4/s, mag 8, reload 1.0 s, long range. Automatic: 0.5 dmg, 10/s, mag 24, reload 1.6 s, ±0.07 rad spread. Shotgun: 6 pellets × 0.5 dmg in a ±0.28 rad fan, 1.2/s, mag 4, reload 1.4 s, pellets live 0.32 s (short range), 460 px/s recoil shove + small shake. Empty magazine → reload (gun greys and spins once, ring around the gun, bar under the player in the gun's colour, HUD icon refills, click when done); no firing or switching meanwhile. Switching: 1–3, mouse wheel, touch SWAP button (shown with 2+ guns). Barrel per gun: pistol short, automatic long and thin, shotgun short double. HUD: an icon per owned gun under the health, current highlighted, ammo bar. Buying a gun you own (later, the shop) adds +25% damage (#26, placeholder); a fire-rate multiplier is ready for the Fire Rate upgrade. Checked: unarmed can't fire; pistol fired exactly 8 then reloaded; switching refused mid-reload; wheel and keys switch; shotgun fires 6 pellets; touch SWAP and touch firing work. *(2026-11-14T21:30:44+00:00)* |
+| Pushes carry | Tested | After getting hit, a shotgun blast, bouncing off the tank or being knocked off it by a stomp, your run input only steers gently for 0.18–0.3 s, so the push actually moves you (the shotgun kick went from ~0 to ~76 px). *(2026-11-14T21:30:44+00:00)* |
 | Auto-aim | Tested | *(Updated 2026-11-14T05:50:22+00:00, #42–#43.)* Nearest living target within 700 px, re-checked every frame; keeps the current target unless another is ≥15% closer (`AIM.switchMargin`); drops it when it dies or leaves range. Platforms ignored. Checked: a 6% difference kept the old target, 33% switched. *Previously:* line of sight + locked until death. Rotating corner bracket on the locked target. *(2026-11-14T05:45:20+00:00)* |
 | Shot feel | Tested | Muzzle star flash, additive glow, barrel kicks back, small recoil push (sideways; lift when firing down in the air), tiny squash, shot sound; impact sparks + tick. *(2026-11-14T05:45:20+00:00)* |
 | Off-screen markers (#44) | Tested | `MarkersScene` (screen space, drawn under the touch controls): for each living target outside the view, an arrowhead where the line from screen centre to the target meets the edge (inset 26 CSS px). Size 9–15 px and opacity by distance (fades out to 1600 px). Auto-aim target: yellow, 16–19 px pulsing, with a pulsing ring. Each target supplies its marker colour. *(2026-11-14T06:06:53+00:00)* |
@@ -456,7 +472,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Dash damage | Tested | Dashing through a target hits it once per dash (1 damage), with white sparks, a thud, a small shake, 25 ms vibration and a 0.05 s freeze-frame. Three dashes pop a dummy. *(2026-11-14T06:17:03+00:00)* |
 | Dash grace | Tested | 0.12 s of invulnerability after a dash ends (`DASH.grace`), added after testing showed a dash ending just inside a dummy hurt the player. *(2026-11-14T06:17:03+00:00)* |
 | Dash auto-aim (#46) | Tested | Auto modes, no movement input: dash direction = towards the auto-aim target (checked: mouse ignored, dash went to the target); with A held it went straight left. *(2026-11-14T06:17:03+00:00)* |
-| Unarmed start (#21) | Tested | Gun switched off (`armed = false`): no shooting, no barrel; auto-aim still runs (bracket and markers show the dash target). Shooting code kept for the weapons step. *(2026-11-14T06:17:03+00:00)* |
+| Unarmed start (#21) | Tested | *(Now: you own no weapons until given one, #68.)* Was: gun switched off (`armed = false`): no shooting, no barrel; auto-aim still runs (bracket and markers show the dash target). Shooting code kept for the weapons step. *(2026-11-14T06:17:03+00:00)* |
 | Heal on kills (#47) | Superseded by #48 | Each kill while hurt counts towards the next pip; the number needed is rolled 3–5 (`HEAL`) and re-rolled after each heal. Kills at full health are ignored; a hit resets the count. HUD: the first empty pip fills from the bottom (kills ÷ needed); the restored pip pops in; in game a ring, rising white sparks, a chime and a short buzz. Dummy pops count as kills. *(2026-11-14T06:23:49+00:00)* |
 | Melee enemy (#40) | Tested | `enemies/MeleeEnemy.ts`. Radius 18 (¾ of the square), 3 HP. Invisible physics circle + a visible circle that squashes; eye tracks the player (spins with the body when rolling, wobbles when dizzy, with orbiting stars). States: spawning (1 s marker) → chase (hops 240×380 px/s, 0.06 s pause) → wind-up 0.5 s (heats orange→white, shivers, rising whine) → roll (880 px/s, ends after 2 wall bounces or 1.6 s) or leap (0.55 s ballistic arc to where you were) → dizzy 1 s → 0.8 s before it can lunge again. Lunges when within 300 px: roll if on your platform (or within 40 px vertically), else leap. Hit: white flash, squash, knockback; a hit in the wind-up, roll or leap makes it dizzy. Death: six curved orange arc shards, sparks, ring, shatter sound, counts as a kill (#47). Checked: spawn → drop to the floor → hop over → wind-up → roll hits you → wall bounce → dizzy; climbs to the top platform; leaps up from below. *(2026-11-14T06:35:05+00:00)* |
 | Enemy route-finding | Tested | `enemies/nav.ts`: graph of moves between platforms (jump straight up through a one-way platform above, drop through one below, hop across a gap up or down), shortest route by breadth-first search. Every platform reachable from the floor and back. Target = the platform you're on, or the one below you if you're in the air. *(2026-11-14T06:35:05+00:00)* |
@@ -505,6 +521,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Tanks aren't kept in the arena by the test spawner**, only spawned with T, since they're meant for later waves.
 - **A hit during a roll or leap also dizzies the enemy** (the design only says the wind-up). Otherwise a mid-roll hit's knockback would be overwritten by the roll.
 - **Rolls can carry an enemy off the end of a platform**; it falls and finds its way back.
+- **Bullets don't cancel enemy attacks** (#68): only dashes and stomps interrupt a wind-up, roll or leap, as #40 specified for the dash. Shots damage and nudge, so the automatic can't stun-lock a melee enemy.
+- **Enemy health bars show partial segments** for half-damage hits.
 - **Post-dash grace (0.12 s)** is Claude's addition so a dash that ends inside something doesn't immediately hurt you.
 - **Health shown as pips** rather than a bar: five hit points read better as five squares.
 - **No firing during a dash** (the barrel hides while dashing).
@@ -587,6 +605,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 65 | 2026-11-14T21:19:20+00:00 | Enemies | Every world gets a fully unique enemy roster (not variants of the core three). |
 | 66 | 2026-11-14T21:20:38+00:00 | Structure | Four sections per world, each with its own unique boss (16 bosses across the first four worlds). Designed through question rounds like the enemies. |
 | 67 | 2026-11-14T21:22:41+00:00 | Structure / priorities | Section platforms are randomly generated each time you enter (replays differ); you start wave 1 by walking into the room. Priorities before worlds or art: player shooting, the hub + shop, random platform generation. |
+| 68 | 2026-11-14T21:30:44+00:00 | Weapons | Classic split (pistol / automatic / shotgun). Magazines that reload automatically only once empty, no reload button; can't switch while reloading; reload shown as a ring on the gun, a bar under the player and the HUD icon. Weapons shown as HUD icons and a distinct gun on the character. Testing buttons give weapons until the shop exists. |
 
 ---
 

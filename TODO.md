@@ -10,14 +10,13 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
-**Priority (Lyra, #67):** 1. player shooting (weapons + switching) · 2. hub + shop · 3. randomly generated platforms. Then worlds and art.
+**Priority (Lyra, #67):** ~~1. player shooting~~ (done) · 2. hub + shop · 3. randomly generated platforms. Then worlds and art.
 
 - Tune the ranged enemy and tank in play.
 - Restructure (#62): hub (shop, levelling, saving), worlds and sections, checkpoints, boss fights; endless as a separate mode. Settle the open questions in §E 1h first.
 - Decide what makes waves harder past ~wave 13.
 - Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.
 - Tune the melee enemy in play after the difficulty pass (#48–#51): wind-up, roll speed, dizzy, cooldown if still too hard.
-- Weapons step: automatic, shotgun, switching (number keys, wheel, mobile cycle button).
 - When combat exists, add its juice: hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash + recoil (shotgun shove), damage feedback (bigger shake, red edge pulse, light dims at low health), last-kill slow motion, wave banners, animated upgrade cards.
 - Title (Lyra, deferred).
 - Lyra to try the bigger arena and zoom (#35) on the Fold and desktop; also whether the movement blur is gone.
@@ -25,6 +24,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Step 12: player shooting: pistol / automatic / shotgun, magazines + auto-reload, switching (keys, wheel, SWAP), HUD icons, testing Give buttons (#68). *(2026-11-14T21:30:44+00:00)*
 - [x] Step 11: basic endless waves, gold drops + magnet, score, wave HUD + intermission count-up, run over + Play again, local high scores (#60). *(2026-11-14T14:52:38+00:00)*
 - [x] Step 10: stomp (#59). *(2026-11-14T14:38:46+00:00)*
 - [x] Testing: automatic spawning off; on-screen spawn buttons for each enemy (touch and desktop). *(2026-11-14T14:33:08+00:00)*

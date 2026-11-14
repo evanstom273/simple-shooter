@@ -102,6 +102,19 @@ export const sfx = {
     tone('square', vary(880), vary(220), 0.07, 0.08)
     noise('highpass', 4000, 1500, 0.05, 0.12, 0.7)
   },
+  automatic: () => {
+    tone('square', vary(700), vary(260), 0.045, 0.06)
+    noise('highpass', 4500, 2000, 0.035, 0.08, 0.7)
+  },
+  shotgun: () => {
+    tone('sawtooth', vary(220), 50, 0.2, 0.2)
+    noise('lowpass', 3500, 300, 0.22, 0.35, 0.8)
+  },
+  reloadStart: () => tone('square', vary(500), vary(300), 0.06, 0.06),
+  reloaded: () => {
+    tone('square', vary(900), vary(900), 0.03, 0.07)
+    tone('square', vary(1300), vary(1300), 0.04, 0.07, 0.06)
+  },
   spark: () => noise('highpass', vary(5000), 3000, 0.04, 0.05, 1),
   targetHit: () => tone('triangle', vary(520), vary(380), 0.05, 0.08),
   hurt: () => {

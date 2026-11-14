@@ -129,8 +129,8 @@ export class RangedEnemy implements Enemy {
     if (!this.alive || this.flat > 0) return
     this.hp -= damage
     this.flash = 0.07
-    this.vx = dir.x * 600
-    this.vy = dir.y * 600
+    this.vx = dir.x * 600 * Math.min(1, damage)
+    this.vy = dir.y * 600 * Math.min(1, damage)
     sfx.enemyHit()
     if (this.hp <= 0) this.die()
   }
@@ -325,8 +325,15 @@ export function drawBar(g: Phaser.GameObjects.Graphics, x: number, y: number, hp
   const gap = max > 4 ? 2 : 3
   const total = max * seg + (max - 1) * gap
   for (let i = 0; i < max; i++) {
-    g.fillStyle(i < hp ? colour : 0xffffff, i < hp ? 0.95 : 0.15)
-    g.fillRect(x - total / 2 + i * (seg + gap), y, seg, 5)
+    const sx = x - total / 2 + i * (seg + gap)
+    g.fillStyle(0xffffff, 0.15)
+    g.fillRect(sx, y, seg, 5)
+    // Partly filled for half-hits (the automatic and shotgun do 0.5, #68).
+    const fill = Phaser.Math.Clamp(hp - i, 0, 1)
+    if (fill > 0) {
+      g.fillStyle(colour, 0.95)
+      g.fillRect(sx, y, seg * fill, 5)
+    }
   }
 }
 

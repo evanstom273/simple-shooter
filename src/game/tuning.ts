@@ -108,17 +108,83 @@ export const SCREEN = {
   light: { radius: 0.62, clear: 0.22, edge: 0.92 },
 }
 
-/** Weapons. Only the pistol exists so far (a temporary starting weapon until upgrades exist). */
-export const WEAPONS = {
-  pistol: {
+export type WeaponId = 'pistol' | 'automatic' | 'shotgun'
+
+/**
+ * Weapons (#22, #68): the classic split. Infinite magazines refill automatically
+ * once empty (no reload button); you can't fire or switch while reloading.
+ * All placeholders, to tune in play.
+ */
+export const WEAPONS: Record<
+  WeaponId,
+  {
+    label: string
+    colour: number
+    /** Damage per bullet / pellet (enemy HP: melee 3, ranged 1, tank 8). */
+    damage: number
     /** Shots per second while the trigger is held. */
-    fireRate: 4,
-    bulletSpeed: 1900,
-    damage: 1,
+    fireRate: number
+    magazine: number
+    /** Seconds to reload once empty. */
+    reload: number
+    bulletSpeed: number
+    /** Seconds a bullet lives (short for the shotgun = short range). */
+    life: number
+    /** Random spread either side, radians. */
+    spread: number
+    /** Bullets per shot. */
+    pellets: number
     /** Push back on the player per shot, px/s. */
+    recoil: number
+    /** Barrel on the character: length and thickness (fractions of the player's size), barrels. */
+    barrel: { length: number; thickness: number; double?: boolean }
+  }
+> = {
+  pistol: {
+    label: 'Pistol',
+    colour: 0xfff2b0,
+    damage: 1,
+    fireRate: 4,
+    magazine: 8,
+    reload: 1.0,
+    bulletSpeed: 1900,
+    life: 1.2,
+    spread: 0.01,
+    pellets: 1,
     recoil: 60,
+    barrel: { length: 0.42, thickness: 0.22 },
   },
-} as const
+  automatic: {
+    label: 'Automatic',
+    colour: 0xffd27a,
+    damage: 0.5,
+    fireRate: 10,
+    magazine: 24,
+    reload: 1.6,
+    bulletSpeed: 2100,
+    life: 1.0,
+    spread: 0.07,
+    pellets: 1,
+    recoil: 35,
+    barrel: { length: 0.62, thickness: 0.16 },
+  },
+  shotgun: {
+    label: 'Shotgun',
+    colour: 0xffb38a,
+    damage: 0.5,
+    fireRate: 1.2,
+    magazine: 4,
+    reload: 1.4,
+    bulletSpeed: 1500,
+    life: 0.32,
+    spread: 0.28,
+    pellets: 6,
+    recoil: 460,
+    barrel: { length: 0.4, thickness: 0.3, double: true },
+  },
+}
+
+export const WEAPON_ORDER: WeaponId[] = ['pistol', 'automatic', 'shotgun']
 
 export const AIM = {
   /** Auto-aim range in world px (#38). Placeholder. */

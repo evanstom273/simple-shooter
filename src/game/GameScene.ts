@@ -68,8 +68,16 @@ export class GameScene extends Phaser.Scene {
   private stepTimer = 0
   private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
   private shooter!: Shooter
-  /** No gun at the start of a run (#21); weapons come from upgrade offers later. */
-  private armed = false
+  /** Reload bar under the player (#68), below the dash bar. */
+  private reloadBack!: Phaser.GameObjects.Rectangle
+  private reloadBar!: Phaser.GameObjects.Rectangle
+  private weaponKeys: Phaser.Input.Keyboard.Key[] = []
+  private hudWeaponsTimer = 0
+  /**
+   * Seconds during which your own run input doesn't steer you sideways, so a
+   * push (getting hit, the shotgun's kick, bouncing off the tank) actually carries.
+   */
+  private pushTime = 0
   /** Health in stages (#48). */
   private health: number = PLAYER.pips * PLAYER.stagesPerPip
   /** Seconds of post-hit invulnerability left (#27). */
@@ -158,6 +166,8 @@ export class GameScene extends Phaser.Scene {
     // Desktop dash cooldown: a thin bar under the square, hidden when ready.
     this.cooldownBack = this.add.rectangle(0, 0, PLAYER.size, 6, 0xffffff, 0.12).setOrigin(0, 0.5).setDepth(9)
     this.cooldownBar = this.add.rectangle(0, 0, PLAYER.size, 6, COLOURS.dash, 0.9).setOrigin(0, 0.5).setDepth(9)
+    this.reloadBack = this.add.rectangle(0, 0, PLAYER.size, 5, 0xffffff, 0.12).setOrigin(0, 0.5).setDepth(9).setVisible(false)
+    this.reloadBar = this.add.rectangle(0, 0, PLAYER.size, 5, 0xfff2b0, 0.95).setOrigin(0, 0.5).setDepth(9).setVisible(false)
     this.physics.add.existing(this.player)
 
     // Shooting. Bullets pass through platforms; only the floor stops them (#42).
@@ -208,6 +218,18 @@ export class GameScene extends Phaser.Scene {
       ranged: kb.addKey(Phaser.Input.Keyboard.KeyCodes.R),
       tank: kb.addKey(Phaser.Input.Keyboard.KeyCodes.T),
     }
+    // Weapon switching (#22, #68): number keys 1–3 and the mouse wheel; blocked while reloading.
+    this.weaponKeys = [kb.addKey(Phaser.Input.Keyboard.KeyCodes.ONE), kb.addKey(Phaser.Input.Keyboard.KeyCodes.TWO), kb.addKey(Phaser.Input.Keyboard.KeyCodes.THREE)]
+    this.input.on(Phaser.Input.Events.POINTER_WHEEL, (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      if (dy !== 0) this.shooter.cycle(Math.sign(dy))
+    })
+    // Testing: "Give weapon" buttons in the settings panel.
+    const offGive = debugBus.onGive((id) => {
+      this.shooter.give(id)
+      this.pushWeaponsHud()
+    })
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, offGive)
+    this.events.once(Phaser.Scenes.Events.DESTROY, offGive)
 
     // Right-click dashes (#21): towards the mouse in Manual; auto modes decide in readControls.
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
@@ -334,8 +356,10 @@ export class GameScene extends Phaser.Scene {
     if (this.dashing) {
       this.updateDash(dt)
     } else {
+      this.pushTime = Math.max(0, this.pushTime - dt)
       const target = c.moveX * PLAYER.runSpeed
-      const t = Math.min(1, dt * PLAYER.responsiveness)
+      // While being pushed, steer only gently so the push carries.
+      const t = Math.min(1, dt * PLAYER.responsiveness * (this.pushTime > 0 ? 0.15 : 1))
       b.setVelocityX(b.velocity.x + (target - b.velocity.x) * t)
 
       // Ground jump: on the ground, or just after leaving it (coyote time); a press
@@ -380,6 +404,13 @@ export class GameScene extends Phaser.Scene {
     this.cooldownBack.setVisible(showBar).setPosition(left, barY)
     this.cooldownBar.setVisible(showBar).setPosition(left, barY).setScale(touchInput.dashReady, 1)
 
+    // Reload bar under the player (#68), in the gun's colour.
+    const ws = this.shooter.status().weapons.find((w) => w.reloading !== null)
+    const reloadY = feetY + (showBar ? 18 : 10)
+    this.reloadBack.setVisible(!!ws).setPosition(left, reloadY)
+    if (ws) this.reloadBar.setFillStyle(WEAPONS[ws.id].colour, 0.95)
+    this.reloadBar.setVisible(!!ws).setPosition(left, reloadY).setScale(ws?.reloading ?? 0, 1)
+
     this.wasGrounded = grounded
     this.prevBottom = this.body_.bottom
     this.lastVelY = b.velocity.y
@@ -411,12 +442,17 @@ export class GameScene extends Phaser.Scene {
     const desktopManual = !touch && mode === 'manual'
     this.game.canvas.style.cursor = desktopManual ? 'none' : ''
 
+    for (let i = 0; i < this.weaponKeys.length; i++) if (Phaser.Input.Keyboard.JustDown(this.weaponKeys[i])) this.shooter.select(i)
+    if (touchInput.switchQueued) {
+      this.shooter.cycle(1)
+      touchInput.switchQueued = false
+    }
+
     const shot = this.shooter.update(dt, {
       x: this.player.x,
       y: this.player.y,
       facing: this.facing,
       dashing: this.dashing,
-      armed: this.armed,
       mode,
       fireHeld,
       aimPoint,
@@ -424,12 +460,21 @@ export class GameScene extends Phaser.Scene {
       crosshair: desktopManual && aimPoint ? aimPoint : null,
     })
     if (shot) {
-      // Small recoil: mostly sideways; a little lift if firing downwards in the air.
+      // Recoil: mostly sideways; lift if firing downwards in the air. The shotgun shoves hard.
       const b = this.body_
-      b.setVelocityX(b.velocity.x - shot.x * WEAPONS.pistol.recoil)
-      if (!b.blocked.down) b.setVelocityY(b.velocity.y - shot.y * WEAPONS.pistol.recoil * 0.5)
-      this.view.kick(1 - Math.abs(shot.x) * 0.06, 1 - Math.abs(shot.y) * 0.06)
+      b.setVelocityX(b.velocity.x - shot.x * shot.recoil)
+      if (!b.blocked.down) b.setVelocityY(b.velocity.y - shot.y * shot.recoil * 0.5)
+      const k = shot.recoil > 200 ? 0.18 : 0.06
+      this.view.kick(1 - Math.abs(shot.x) * k, 1 - Math.abs(shot.y) * k)
+      if (shot.recoil > 200) {
+        this.shake(90, 0.006)
+        this.pushTime = 0.18
+      }
     }
+    touchInput.weaponCount = this.shooter.status().weapons.length
+    // Keep the HUD's weapon icons current (ammo, reload) without flooding React.
+    this.hudWeaponsTimer -= dt
+    if (shot || this.shooter.reloading || this.hudWeaponsTimer <= 0) this.pushWeaponsHud()
   }
 
   private updateEnemies(dt: number) {
@@ -601,11 +646,12 @@ export class GameScene extends Phaser.Scene {
       if (this.dashing) {
         if (this.dashHits.has(t) || !e.hittable) continue
         this.dashHits.add(t)
-        t.hit(1, { x: this.dashDir.x, y: this.dashDir.y })
+        t.hit(1, { x: this.dashDir.x, y: this.dashDir.y }, 'dash')
         if ((t as Enemy).heavy) {
           // Too heavy to move (#58): you bounce off it.
           this.endDash(0)
           this.body_.setVelocity(-this.dashDir.x * TANK.dashBounce, -Math.abs(this.dashDir.y) * TANK.dashBounce * 0.5 - 200)
+          this.pushTime = 0.25
           this.view.kick(0.65, 1.3)
         }
         sfx.dashHit()
@@ -662,6 +708,7 @@ export class GameScene extends Phaser.Scene {
       // The tank doesn't budge: you're knocked away instead.
       const away = Math.sign(this.player.x - e.x) || this.facing
       b.setVelocity(away * STOMP.tankKnock.x, -STOMP.tankKnock.y)
+      this.pushTime = 0.25
     } else {
       b.setVelocityY(-STOMP.bounce)
     }
@@ -689,6 +736,7 @@ export class GameScene extends Phaser.Scene {
     const away = Math.sign(this.player.x - fromX) || -this.facing
     const hud = hudStore.get()
     this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
+    this.pushTime = 0.3
     this.view.kick(1.35, 0.7)
     this.view.pulse(0.12)
     burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
@@ -702,6 +750,12 @@ export class GameScene extends Phaser.Scene {
   }
 
 
+
+  private pushWeaponsHud() {
+    this.hudWeaponsTimer = 0.25
+    const st = this.shooter.status()
+    hudStore.set({ weapons: st.weapons, currentWeapon: st.current })
+  }
 
   /** For the marker overlay. */
   get markerInfo() {
