@@ -1,0 +1,514 @@
+<title>The Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&display=swap">
+<style>
+  /* Layout: a single dark game screen (deliberately one theme), framed by a slim header and a key underneath. */
+  :root {
+    --bg: #07070b;
+    --panel: #12121a;
+    --line: #2a2a38;
+    --fg: #d9d9e6;
+    --muted: #8a8aa0;
+    --gold: #ffcf4a;
+    --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+    --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body {
+    font-family: var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 16px 32px;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 14px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; letter-spacing: 0.02em; margin: 0; text-wrap: balance; }
+  h1 span { color: var(--muted); font-weight: 500; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; margin-left: 10px; }
+  .hint { color: var(--muted); font-size: 0.85rem; }
+  kbd { font-family: var(--display); font-size: 0.78rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; color: var(--fg); background: var(--panel); }
+  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #000; touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .touch { position: absolute; inset: auto 0 0 0; display: none; justify-content: space-between; padding: 10px 12px; pointer-events: none; }
+  .touch .group { display: flex; gap: 10px; pointer-events: auto; }
+  .touch button { width: 52px; height: 52px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.08); color: #fff; font: 700 0.72rem var(--display); letter-spacing: 0.05em; }
+  .touch button:active, .touch button.on { background: rgba(255,255,255,0.25); }
+  @media (pointer: coarse) { .touch { display: flex; } }
+  .key { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .key div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.45; min-width: 0; }
+  .key b { font-family: var(--display); font-weight: 700; display: block; margin-bottom: 2px; letter-spacing: 0.02em; }
+  button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>The Hub <span>mockup · walkable</span></h1>
+    <p class="hint"><kbd>A</kbd><kbd>D</kbd> move · <kbd>Space</kbd> jump (twice for double) · <kbd>W</kbd>/<kbd>↑</kbd> buy · <kbd>S</kbd> drop through · walk into a portal</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="Walkable mock-up of the hub: a central shop with the world portals in the wings and endless mode below"></canvas>
+    <div class="touch" aria-hidden="false">
+      <div class="group">
+        <button id="tl" aria-label="Move left">◀</button>
+        <button id="tr" aria-label="Move right">▶</button>
+      </div>
+      <div class="group">
+        <button id="tu" aria-label="Buy">BUY</button>
+        <button id="tj" aria-label="Jump">JUMP</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="key" aria-label="What's in the hub">
+    <div><b>Centre: the shop</b>Three random offers on pedestals with prices, plus a reroll pedestal that costs more each time. Stand at one and press <kbd>W</kbd> to buy.</div>
+    <div><b>Wings: the four worlds</b>Two portals each side, each its own shape and colour, with the world name, the next section and four boss pips. Names are placeholders.</div>
+    <div><b>Below: endless mode</b>Drop through the gap in the middle of the floor. Its portal shows your best score; platforms lead back up.</div>
+    <div><b>Training dummy</b>Right of the shop. Dash into it and land on it to practise.</div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const stage = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- World ---------------------------------------------------------------
+  const W = 3800, FLOOR = 720, LOWER = 1320, VIEW_W = 1600, VIEW_H = 900;
+  const HOLE = { x: 1830, w: 140 };          // the drop to endless, in the centre of the floor
+  const SLAB = 70;                            // floor thickness; the endless chamber is a room beneath it
+  const ROOM = { x: 1300, w: 1200 };          // the endless chamber's extent
+  const solids = [                            // [x, y, w, h]; the main floor is split by the hole
+    [0, FLOOR, HOLE.x, SLAB],
+    [HOLE.x + HOLE.w, FLOOR, W - HOLE.x - HOLE.w, SLAB],
+    [ROOM.x, LOWER, ROOM.w, 300],             // chamber floor
+    [ROOM.x - 60, FLOOR + SLAB, 60, LOWER - FLOOR - SLAB + 300],   // chamber walls
+    [ROOM.x + ROOM.w, FLOOR + SLAB, 60, LOWER - FLOOR - SLAB + 300],
+  ];
+  const ledges = [                            // one-way platforms leading back up from endless
+    [1360, LOWER - 170, 200], [1600, LOWER - 340, 200], [1770, LOWER - 500, 260],
+  ];
+
+  const portals = [
+    { x: 380,  shape: 'hex',      colour: '#5fd4e8', name: 'World 1', sub: 'placeholder', next: '1-2', cleared: 1 },
+    { x: 1020, shape: 'diamond',  colour: '#a98bff', name: 'World 2', sub: 'placeholder', next: '2-1', cleared: 0 },
+    { x: 2780, shape: 'triangle', colour: '#ffb547', name: 'World 3', sub: 'placeholder', next: '3-3', cleared: 2 },
+    { x: 3420, shape: 'circle',   colour: '#ff6f91', name: 'World 4', sub: 'placeholder', next: '4-1', cleared: 0 },
+  ];
+  const endless = { x: 2240, y: LOWER, colour: '#f2f2f2', best: 4310, wave: 9 };
+
+  const OFFERS = [
+    { id: 'health', label: 'Health', note: '+1 pip', price: 600, colour: '#ff6b6b' },
+    { id: 'jump', label: 'Jump Height', note: '+12%', price: 450, colour: '#7fd1ff' },
+    { id: 'speed', label: 'Movement Speed', note: '+10%', price: 450, colour: '#8ff59a' },
+    { id: 'impact', label: 'Dash & stomp', note: '+25% damage', price: 700, colour: '#8fd3ff' },
+    { id: 'pistol', label: 'Pistol', note: 'new weapon', price: 1200, colour: '#fff2b0' },
+    { id: 'automatic', label: 'Automatic', note: 'new weapon', price: 1800, colour: '#ffd27a' },
+    { id: 'shotgun', label: 'Shotgun', note: 'new weapon', price: 1600, colour: '#ffb38a' },
+    { id: 'heal', label: 'Heal', note: '+2 pips', price: 300, colour: '#ffffff' },
+  ];
+  const pedestalX = [1520, 1700, 2100, 2280];   // three offers + reroll, either side of the hole
+  let gold = 3250, rerollPrice = 150, stock = [];
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const restock = () => { stock = shuffle(OFFERS.slice()).slice(0, 3).map((o) => ({ ...o, sold: false })); };
+  restock();
+  const dummy = { x: 2620, hit: 0, squash: 0 };
+
+  // ---- Player ----------------------------------------------------------------
+  const P = { x: 1620, y: FLOOR - 24, vx: 0, vy: 0, w: 48, h: 48, grounded: true, air: 1, face: 1, sx: 1, sy: 1, drop: 0 };
+  const keys = {};
+  let jumpPressed = false, usePressed = false, toast = null, flash = null;
+
+  const say = (text, colour = '#fff') => { toast = { text, colour, t: 2.2 }; };
+
+  // ---- Input -----------------------------------------------------------------
+  const down = (k) => {
+    if (k === ' ' || k === 'Spacebar') { if (!keys.jump) jumpPressed = true; keys.jump = true; }
+    if (k === 'w' || k === 'W' || k === 'ArrowUp') { if (!keys.use) usePressed = true; keys.use = true; }
+    if (k === 'a' || k === 'A' || k === 'ArrowLeft') keys.left = true;
+    if (k === 'd' || k === 'D' || k === 'ArrowRight') keys.right = true;
+    if (k === 's' || k === 'S' || k === 'ArrowDown') keys.down = true;
+  };
+  const up = (k) => {
+    if (k === ' ' || k === 'Spacebar') keys.jump = false;
+    if (k === 'w' || k === 'W' || k === 'ArrowUp') keys.use = false;
+    if (k === 'a' || k === 'A' || k === 'ArrowLeft') keys.left = false;
+    if (k === 'd' || k === 'D' || k === 'ArrowRight') keys.right = false;
+    if (k === 's' || k === 'S' || k === 'ArrowDown') keys.down = false;
+  };
+  window.addEventListener('keydown', (e) => { if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault(); down(e.key); });
+  window.addEventListener('keyup', (e) => up(e.key));
+  const hold = (id, k) => {
+    const el = document.getElementById(id);
+    const on = (e) => { e.preventDefault(); el.classList.add('on'); down(k); };
+    const off = (e) => { e.preventDefault(); el.classList.remove('on'); up(k); };
+    el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off); el.addEventListener('pointerleave', off); el.addEventListener('pointercancel', off);
+  };
+  hold('tl', 'a'); hold('tr', 'd'); hold('tj', ' '); hold('tu', 'w');
+
+  // ---- Physics ---------------------------------------------------------------
+  const G = 2400, RUN = 460, JUMP = 980;
+  const overlap = (ax, ay, aw, ah, bx, by, bw, bh) => ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+
+  function step(dt) {
+    const move = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    if (move) P.face = move;
+    P.vx += (move * RUN - P.vx) * Math.min(1, dt * 18);
+    if (jumpPressed) {
+      if (P.grounded) { P.vy = -JUMP; P.sx = 0.75; P.sy = 1.3; }
+      else if (P.air > 0) { P.air--; P.vy = -JUMP * 0.9; P.sx = 0.8; P.sy = 1.22; }
+    }
+    jumpPressed = false;
+    if (keys.down && P.grounded) P.drop = 0.25;
+    P.drop = Math.max(0, P.drop - dt);
+    P.vy += G * dt;
+
+    // X then Y, against solid blocks.
+    P.x += P.vx * dt;
+    for (const s of solids) if (overlap(P.x - 24, P.y - 24, 48, 48, ...s)) { P.x = P.vx > 0 ? s[0] - 24 : s[0] + s[2] + 24; P.vx = 0; }
+    P.x = Math.max(24, Math.min(W - 24, P.x));
+    const prevBottom = P.y + 24;
+    P.y += P.vy * dt;
+    const was = P.grounded;
+    P.grounded = false;
+    for (const s of solids) {
+      const within = P.x + 24 > s[0] && P.x - 24 < s[0] + s[2];
+      // Landing: feet crossed (or touch) the top of a solid this frame, so fast falls can't tunnel through.
+      if (within && P.vy >= 0 && prevBottom <= s[1] + 1 && P.y + 24 >= s[1]) { P.y = s[1] - 24; P.vy = 0; P.grounded = true; continue; }
+      if (overlap(P.x - 24, P.y - 24, 48, 48, ...s)) {
+        if (P.vy > 0) { P.y = s[1] - 24; P.grounded = true; } else { P.y = s[1] + s[3] + 24; }
+        P.vy = 0;
+      }
+    }
+    if (P.vy >= 0 && !P.drop) for (const [lx, ly, lw] of ledges) {
+      if (P.x > lx - 20 && P.x < lx + lw + 20 && prevBottom <= ly && P.y + 24 >= ly) { P.y = ly - 24; P.vy = 0; P.grounded = true; }
+    }
+    if (P.grounded) { P.air = 1; if (!was) { P.sx = 1.3; P.sy = 0.72; } }
+    P.sx += (1 - P.sx) * Math.min(1, dt * 12);
+    P.sy += (1 - P.sy) * Math.min(1, dt * 12);
+
+    // Portals: walk in to enter (mock).
+    for (const p of portals) if (Math.abs(P.x - p.x) < 60 && Math.abs(P.y - (FLOOR - 120)) < 120) enter(p.name + ' · section ' + p.next, p.colour, p);
+    if (Math.abs(P.x - endless.x) < 60 && P.y > LOWER - 200) enter('Endless mode', endless.colour, endless);
+
+    // Pedestals: W / ↑ to buy.
+    const near = nearestPedestal();
+    if (usePressed && near) buy(near);
+    usePressed = false;
+
+    // Training dummy: land on it or run into it fast.
+    if (Math.abs(P.x - dummy.x) < 50 && P.y > FLOOR - 110 && P.vy > 200 && dummy.hit <= 0) { dummy.hit = 0.6; dummy.squash = 1; P.vy = -900; P.air = 1; say('Stomp!', '#8fd3ff'); }
+    dummy.hit -= dt; dummy.squash = Math.max(0, dummy.squash - dt * 3);
+    if (toast) { toast.t -= dt; if (toast.t <= 0) toast = null; }
+    if (flash) { flash.t -= dt; if (flash.t <= 0) flash = null; }
+  }
+
+  function enter(label, colour, src) {
+    if (flash) return;
+    flash = { t: 1.1, colour };
+    say('Entering ' + label + ' (mock)', colour);
+    // Bounce back out so you can keep exploring.
+    setTimeout(() => { P.x += (P.x < (src.x ?? 0) ? -130 : 130); P.vx = 0; }, 400);
+  }
+
+  function nearestPedestal() {
+    if (P.y < FLOOR - 120 || P.y > FLOOR) return null;
+    for (let i = 0; i < pedestalX.length; i++) if (Math.abs(P.x - pedestalX[i]) < 52) return i;
+    return null;
+  }
+  function buy(i) {
+    if (i === 3) {
+      if (gold < rerollPrice) return say('Not enough gold to reroll', '#ff8a8a');
+      gold -= rerollPrice; rerollPrice = Math.round(rerollPrice * 1.6 / 10) * 10; restock(); say('Rerolled', '#fff');
+      return;
+    }
+    const o = stock[i];
+    if (!o || o.sold) return;
+    if (gold < o.price) return say('Not enough gold', '#ff8a8a');
+    gold -= o.price; o.sold = true; say('Bought ' + o.label, o.colour);
+  }
+
+  // ---- Drawing ---------------------------------------------------------------
+  let t = 0;
+  const cam = { x: P.x, y: P.y };
+
+  function shapePath(c, shape, r) {
+    c.beginPath();
+    if (shape === 'circle') { c.arc(0, 0, r, 0, Math.PI * 2); return; }
+    const sides = shape === 'hex' ? 6 : shape === 'diamond' || shape === 'square' ? 4 : 3;
+    const off = shape === 'square' ? Math.PI / 4 + Math.PI / 2 : shape === 'diamond' ? 0 : shape === 'triangle' ? -Math.PI / 2 : Math.PI / 6;
+    for (let i = 0; i <= sides; i++) {
+      const a = off + (i / sides) * Math.PI * 2 - (shape === 'diamond' ? Math.PI / 2 : 0);
+      const px = Math.cos(a) * r, py = Math.sin(a) * r * (shape === 'diamond' ? 1.25 : 1);
+      i ? c.lineTo(px, py) : c.moveTo(px, py);
+    }
+    c.closePath();
+  }
+
+  function drawBackground() {
+    // Deep, cold void with a faint horizon glow: quiet and strange.
+    const g = ctx.createLinearGradient(0, -400, 0, LOWER + 400);
+    g.addColorStop(0, '#05050a'); g.addColorStop(0.45, '#0d0e18'); g.addColorStop(0.62, '#121424'); g.addColorStop(1, '#040407');
+    ctx.fillStyle = g; ctx.fillRect(cam.x - VIEW_W, -600, VIEW_W * 3, LOWER + 1200);
+
+    // Far layer: endless rows of colossal pillars fading into fog (parallax).
+    for (const [depth, alpha, hgt] of [[0.25, 0.05, 1100], [0.45, 0.08, 900]]) {
+      ctx.save();
+      ctx.translate(cam.x * depth, 0);
+      const spacing = 260 / (1 - depth * 0.6);
+      const start = Math.floor((cam.x - cam.x * depth - VIEW_W) / spacing) * spacing;
+      for (let x = start; x < cam.x - cam.x * depth + VIEW_W * 1.2; x += spacing) {
+        ctx.fillStyle = `rgba(150,160,210,${alpha})`;
+        ctx.fillRect(x, FLOOR - hgt, 46, hgt);
+        ctx.fillRect(x - 10, FLOOR - hgt, 66, 14);
+      }
+      ctx.restore();
+    }
+    // A shaft of pale light falling on the shop.
+    const sh = ctx.createLinearGradient(0, -200, 0, FLOOR);
+    sh.addColorStop(0, 'rgba(200,210,255,0)'); sh.addColorStop(1, 'rgba(200,210,255,0.09)');
+    ctx.fillStyle = sh;
+    ctx.beginPath(); ctx.moveTo(1700, -200); ctx.lineTo(2100, -200); ctx.lineTo(2380, FLOOR); ctx.lineTo(1420, FLOOR); ctx.closePath(); ctx.fill();
+    // Fog band at floor level.
+    const fog = ctx.createLinearGradient(0, FLOOR - 240, 0, FLOOR);
+    fog.addColorStop(0, 'rgba(120,130,190,0)'); fog.addColorStop(1, 'rgba(120,130,190,0.12)');
+    ctx.fillStyle = fog; ctx.fillRect(cam.x - VIEW_W, FLOOR - 240, VIEW_W * 3, 240);
+  }
+
+  function drawFloor() {
+    // Solid ground below the hall, except the endless chamber carved out of it.
+    ctx.fillStyle = '#0c0c14';
+    ctx.fillRect(0, FLOOR + SLAB, ROOM.x - 60, 1200);
+    ctx.fillRect(ROOM.x + ROOM.w + 60, FLOOR + SLAB, W - ROOM.x - ROOM.w - 60, 1200);
+    // The chamber: a darker, stiller room with its own faint glow.
+    const room = ctx.createLinearGradient(0, FLOOR + SLAB, 0, LOWER);
+    room.addColorStop(0, '#07070c'); room.addColorStop(1, '#141420');
+    ctx.fillStyle = room; ctx.fillRect(ROOM.x, FLOOR + SLAB, ROOM.w, LOWER - FLOOR - SLAB);
+    for (const [x, y, w, h] of solids) {
+      ctx.fillStyle = '#1b1c2a'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#2c2e44'; ctx.fillRect(x, y, w, 4);
+    }
+    // Floor tiles: faint lines, receding.
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)'; ctx.lineWidth = 2;
+    for (let x = 0; x < W; x += 120) { if (x > HOLE.x - 10 && x < HOLE.x + HOLE.w) continue; ctx.beginPath(); ctx.moveTo(x, FLOOR + 4); ctx.lineTo(x - 30, FLOOR + 60); ctx.stroke(); }
+    // The hole: a soft glow rising from endless.
+    const hg = ctx.createLinearGradient(0, FLOOR, 0, FLOOR - 120);
+    hg.addColorStop(0, 'rgba(255,255,255,0.10)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hg; ctx.fillRect(HOLE.x, FLOOR - 120, HOLE.w, 120);
+    for (const [lx, ly, lw] of ledges) { ctx.fillStyle = '#2a2b40'; ctx.fillRect(lx, ly, lw, 14); ctx.fillStyle = '#3a3c58'; ctx.fillRect(lx, ly, lw, 3); }
+  }
+
+  function drawPortal(p, baseY, r = 95) {
+    const cy = baseY - 150;
+    ctx.save();
+    ctx.translate(p.x, cy);
+    // Light pool on the floor.
+    const pool = ctx.createRadialGradient(0, 150, 10, 0, 150, 220);
+    pool.addColorStop(0, p.colour + '33'); pool.addColorStop(1, p.colour + '00');
+    ctx.fillStyle = pool; ctx.fillRect(-240, 60, 480, 140);
+    // Swirling interior.
+    const spin = reduceMotion ? 0 : t * 0.6;
+    shapePath(ctx, p.shape, r);
+    const inner = ctx.createRadialGradient(Math.cos(spin) * 18, Math.sin(spin) * 18, 4, 0, 0, r * 1.1);
+    inner.addColorStop(0, '#ffffff'); inner.addColorStop(0.18, p.colour + 'cc'); inner.addColorStop(1, '#05050a');
+    ctx.fillStyle = inner; ctx.fill();
+    // Glowing rim, breathing.
+    ctx.shadowColor = p.colour; ctx.shadowBlur = 30 + (reduceMotion ? 0 : Math.sin(t * 2 + p.x) * 10);
+    ctx.lineWidth = 7; ctx.strokeStyle = p.colour; ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Echo outline drifting outwards.
+    if (!reduceMotion) { const k = (t * 0.5 + p.x / 997) % 1; ctx.save(); ctx.scale(1 + k * 0.35, 1 + k * 0.35); shapePath(ctx, p.shape, r); ctx.globalAlpha = 0.5 * (1 - k); ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); }
+    ctx.restore();
+  }
+
+  function drawPortalLabels(p, baseY) {
+    const top = baseY - 395;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = p.colour; ctx.font = '700 30px "Space Grotesk", Inter, sans-serif';
+    ctx.fillText(p.name, p.x, top);
+    ctx.fillStyle = '#8a8aa0'; ctx.font = '500 15px Inter, sans-serif';
+    ctx.fillText(p.sub ? p.sub : '', p.x, top + 22);
+    if (p.next) {
+      ctx.fillStyle = '#e6e6f2'; ctx.font = '700 20px "Space Grotesk", Inter, sans-serif';
+      ctx.fillText('Next: ' + p.next, p.x, top + 50);
+      for (let i = 0; i < 4; i++) {
+        const x = p.x - 42 + i * 28, y = top + 64;
+        ctx.fillStyle = i < p.cleared ? p.colour : 'rgba(255,255,255,0.12)';
+        ctx.fillRect(x - 8, y, 16, 16);
+        if (i < p.cleared) { ctx.shadowColor = p.colour; ctx.shadowBlur = 10; ctx.fillRect(x - 8, y, 16, 16); ctx.shadowBlur = 0; }
+      }
+    }
+  }
+
+  function drawIcon(id, x, y, colour) {
+    ctx.save(); ctx.translate(x, y); ctx.fillStyle = colour; ctx.strokeStyle = colour; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (id === 'health' || id === 'heal') { ctx.fillRect(-6, -18, 12, 36); ctx.fillRect(-18, -6, 36, 12); }
+    else if (id === 'jump') { ctx.beginPath(); ctx.moveTo(-16, 4); ctx.lineTo(0, -10); ctx.lineTo(16, 4); ctx.moveTo(-16, 18); ctx.lineTo(0, 4); ctx.lineTo(16, 18); ctx.stroke(); }
+    else if (id === 'speed') { ctx.beginPath(); ctx.moveTo(-18, -14); ctx.lineTo(-4, 0); ctx.lineTo(-18, 14); ctx.moveTo(0, -14); ctx.lineTo(14, 0); ctx.lineTo(0, 14); ctx.stroke(); }
+    else if (id === 'impact') { ctx.beginPath(); for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, rr = i % 2 ? 9 : 20; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); }
+    else if (id === 'pistol') { ctx.fillRect(-18, -8, 30, 8); ctx.fillRect(-12, 0, 9, 14); }
+    else if (id === 'automatic') { ctx.fillRect(-24, -7, 46, 7); ctx.fillRect(-10, 0, 8, 13); ctx.fillRect(2, 0, 6, 9); }
+    else if (id === 'shotgun') { ctx.fillRect(-22, -11, 38, 6); ctx.fillRect(-22, -3, 38, 6); ctx.fillRect(-14, 3, 9, 12); }
+    else if (id === 'reroll') { ctx.beginPath(); ctx.arc(0, 0, 15, 0.4, Math.PI * 1.7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(13, -16); ctx.lineTo(16, -4); ctx.lineTo(4, -4); ctx.fill(); }
+    ctx.restore();
+  }
+
+  function drawPedestals() {
+    const near = nearestPedestal();
+    pedestalX.forEach((x, i) => {
+      const isReroll = i === 3;
+      const o = isReroll ? { id: 'reroll', label: 'Reroll', price: rerollPrice, colour: '#cfcfe0', note: 'new offers' } : stock[i];
+      // Pedestal: a tapered block.
+      ctx.fillStyle = '#23243a';
+      ctx.beginPath(); ctx.moveTo(x - 34, FLOOR); ctx.lineTo(x - 24, FLOOR - 80); ctx.lineTo(x + 24, FLOOR - 80); ctx.lineTo(x + 34, FLOOR); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#3a3c58'; ctx.fillRect(x - 28, FLOOR - 84, 56, 8);
+      if (o.sold) { ctx.fillStyle = '#6a6a80'; ctx.font = '600 14px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('SOLD', x, FLOOR - 110); return; }
+      // Floating item with a soft glow.
+      const bob = reduceMotion ? 0 : Math.sin(t * 2 + i) * 6;
+      const iy = FLOOR - 140 + bob;
+      const glow = ctx.createRadialGradient(x, iy, 2, x, iy, 46);
+      glow.addColorStop(0, o.colour + '55'); glow.addColorStop(1, o.colour + '00');
+      ctx.fillStyle = glow; ctx.fillRect(x - 50, iy - 50, 100, 100);
+      drawIcon(o.id, x, iy, o.colour);
+      // Price tag.
+      const afford = gold >= o.price;
+      ctx.textAlign = 'center';
+      ctx.font = '700 17px "Space Grotesk", Inter, sans-serif';
+      ctx.fillStyle = afford ? '#ffcf4a' : '#8a6a6a';
+      ctx.fillText('◆ ' + o.price, x, FLOOR - 186 + bob);
+      if (near === i) {
+        ctx.fillStyle = '#ffffff'; ctx.font = '700 16px "Space Grotesk", Inter, sans-serif';
+        ctx.fillText(o.label, x, FLOOR - 236);
+        ctx.fillStyle = '#a0a0b8'; ctx.font = '500 13px Inter, sans-serif';
+        ctx.fillText(o.note, x, FLOOR - 218);
+        ctx.fillStyle = '#ffffff'; ctx.font = '600 13px Inter, sans-serif';
+        ctx.fillText('W / ↑  ' + (isReroll ? 'reroll' : 'buy'), x, FLOOR - 258);
+      }
+    });
+  }
+
+  function drawDummy() {
+    const sq = dummy.squash;
+    ctx.save(); ctx.translate(dummy.x, FLOOR);
+    ctx.fillStyle = '#3a3c58'; ctx.fillRect(-4, -40, 8, 40);
+    ctx.scale(1 + sq * 0.4, 1 - sq * 0.4);
+    ctx.fillStyle = '#9a9ab2'; ctx.strokeStyle = '#1a1a26'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, -70, 30, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#1a1a26'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, -70, 16, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -70, 5, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#6a6a80'; ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('TRAINING', dummy.x, FLOOR + 26);
+  }
+
+  function drawEndless() {
+    drawPortal({ x: endless.x, shape: 'square', colour: endless.colour }, LOWER, 80);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f2f2f2'; ctx.font = '700 30px "Space Grotesk", Inter, sans-serif'; ctx.fillText('Endless', endless.x, LOWER - 330);
+    ctx.fillStyle = '#ffcf4a'; ctx.font = '700 18px "Space Grotesk", Inter, sans-serif'; ctx.fillText('Best ' + endless.best.toLocaleString('en-GB') + '  ·  wave ' + endless.wave, endless.x, LOWER - 302);
+    ctx.fillStyle = '#8a8aa0'; ctx.font = '500 14px Inter, sans-serif'; ctx.fillText('start from nothing', endless.x, LOWER - 282);
+  }
+
+  // The player: the approved concept (square, oval eyes, smile, floating hands, L feet).
+  function drawPlayer() {
+    const { x, y, face } = P;
+    const bottom = y + 24;
+    const run = Math.abs(P.vx) > 40 && P.grounded;
+    const swing = run && !reduceMotion ? Math.sin(t * 14) : 0;
+    ctx.save(); ctx.translate(x, bottom);
+    // Feet.
+    ctx.fillStyle = '#2a2a3a'; ctx.strokeStyle = '#1a1a26'; ctx.lineWidth = 2;
+    for (const [fx, ph] of [[-12, 0], [10, Math.PI]]) {
+      const lift = run ? Math.max(0, Math.sin(t * 14 + ph)) * 6 : 0;
+      ctx.save(); ctx.translate(fx, -lift); ctx.scale(face, 1);
+      ctx.beginPath(); ctx.moveTo(-7, -10); ctx.lineTo(1, -10); ctx.lineTo(1, 0); ctx.lineTo(13, 0); ctx.lineTo(13, 6); ctx.lineTo(-7, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+    // Body (squash and stretch from the feet).
+    ctx.save(); ctx.translate(0, -12); ctx.rotate(P.vx / RUN * 0.07); ctx.scale(P.sx, P.sy);
+    const bg = ctx.createLinearGradient(0, -48, 0, 0); bg.addColorStop(0, '#ffffff'); bg.addColorStop(1, '#d9dbe8');
+    ctx.fillStyle = bg; ctx.strokeStyle = '#1a1a26'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(-24, -48, 48, 48, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1a1a26';
+    for (const ex of [-9, 9]) { ctx.beginPath(); ctx.ellipse(ex + face * 3, -30, 4, 6, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#fff'; for (const ex of [-8, 10]) { ctx.beginPath(); ctx.arc(ex + face * 3, -33, 1.4, 0, Math.PI * 2); ctx.fill(); }
+    ctx.strokeStyle = '#1a1a26'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-7 + face * 3, -15); ctx.quadraticCurveTo(face * 3, -9, 7 + face * 3, -15); ctx.stroke();
+    ctx.restore();
+    // Floating hands.
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#1a1a26'; ctx.lineWidth = 2.5;
+    for (const [hx, ph] of [[-36, 0], [36, Math.PI]]) {
+      const hy = -40 + (P.grounded ? Math.sin(t * 3 + ph) * 2 : -12) + swing * (hx > 0 ? -6 : 6);
+      ctx.beginPath(); ctx.arc(hx, hy, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawHud(scale) {
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    // Health pips and gold, as in the game.
+    for (let i = 0; i < 5; i++) { ctx.fillStyle = '#f2f2f2'; ctx.beginPath(); ctx.roundRect(24 + i * 26, 22, 18, 18, 4); ctx.fill(); }
+    ctx.fillStyle = '#ffcf4a'; ctx.font = '700 20px "Space Grotesk", Inter, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('◆ ' + gold.toLocaleString('en-GB'), 24, 70);
+    ctx.fillStyle = '#6a6a80'; ctx.font = '500 13px Inter, sans-serif'; ctx.fillText('carried · lost if you die', 24, 90);
+    if (toast) {
+      ctx.globalAlpha = Math.min(1, toast.t * 2);
+      ctx.textAlign = 'center'; ctx.font = '700 26px "Space Grotesk", Inter, sans-serif'; ctx.fillStyle = toast.colour;
+      ctx.fillText(toast.text, VIEW_W / 2, 120);
+      ctx.globalAlpha = 1;
+    }
+    if (flash) { ctx.fillStyle = flash.colour; ctx.globalAlpha = Math.max(0, flash.t - 0.5) * 0.9; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = 1; }
+    // Edge darkness: the liminal hush around the player.
+    const v = ctx.createRadialGradient(VIEW_W / 2, VIEW_H * 0.55, VIEW_H * 0.25, VIEW_W / 2, VIEW_H * 0.55, VIEW_W * 0.75);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.72)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.restore();
+  }
+
+  // Drifting motes, like in the game.
+  const motes = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.random() * (LOWER + 200), s: 2 + Math.random() * 4, v: 6 + Math.random() * 16, ph: Math.random() * 7 }));
+
+  function render() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+    const scale = canvas.width / VIEW_W;
+    // Camera follows the player, eased; looks ahead a touch.
+    cam.x += (P.x + P.vx * 0.25 - cam.x) * 0.1;
+    cam.y += (P.y - 120 - cam.y) * 0.1;
+    const cx = Math.max(VIEW_W / 2, Math.min(W - VIEW_W / 2, cam.x));
+    const cy = Math.max(-100, Math.min(LOWER + 200 - VIEW_H / 2, cam.y));
+    ctx.setTransform(scale, 0, 0, scale, (-cx + VIEW_W / 2) * scale, (-cy + VIEW_H / 2) * scale);
+    ctx.clearRect(cx - VIEW_W, cy - VIEW_H, VIEW_W * 2, VIEW_H * 2);
+    cam.x = cam.x; // keep eased value
+    const save = cam.x; cam.x = cx;
+    drawBackground();
+    cam.x = save;
+    for (const m of motes) {
+      if (!reduceMotion) { m.y -= m.v / 60; m.x += Math.sin(t + m.ph) * 0.3; if (m.y < -200) m.y = LOWER + 200; }
+      ctx.fillStyle = 'rgba(210,215,255,0.18)'; ctx.fillRect(m.x, m.y, m.s, m.s);
+    }
+    drawFloor();
+    portals.forEach((p) => drawPortal(p, FLOOR));
+    drawEndless();
+    drawPedestals();
+    drawDummy();
+    portals.forEach((p) => drawPortalLabels(p, FLOOR));
+    drawPlayer();
+    drawHud(scale);
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.max(0, Math.min(0.033, (now - last) / 1000));
+    last = now; t += dt;
+    step(dt);
+    render();
+    requestAnimationFrame(frame);
+  }
+  say('Welcome to the hub', '#e6e6f2');
+  requestAnimationFrame(frame);
+  stage.addEventListener('pointerdown', () => stage.focus && stage.focus());
+})();
+</script>
