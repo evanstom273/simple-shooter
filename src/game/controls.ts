@@ -25,6 +25,9 @@ export const touchInput = {
   dashQueued: false,
   /** Touch weapon-cycle button pressed (#25). */
   switchQueued: false,
+  /** Interact (#72): the touch USE button; useAvailable shows it. */
+  useQueued: false,
+  useAvailable: false,
   /** How many weapons you own (the cycle button only shows with two or more). */
   weaponCount: 0,
   /** 0 … 1, how far through the dash cooldown (1 = ready). Written by GameScene, drawn by the touch controls. */

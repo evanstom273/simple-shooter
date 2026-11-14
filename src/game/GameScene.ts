@@ -15,10 +15,14 @@ import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
 import { debugBus } from '../state/debug.ts'
 import { runStore } from '../state/run.ts'
+import { navStore } from '../state/nav.ts'
+import { arriveInHub, buy as shopBuy, progressStore, reroll as shopReroll, storyStats } from '../state/progress.ts'
+import { Hub } from './Hub.ts'
+import { ARENA_LEVEL, HUB, HUB_LEVEL, type Level } from './levels.ts'
 import { loadScores, recordRun } from '../persist/scores.ts'
 import { Gold } from './Gold.ts'
 import { goldFor, maxAlive, waveOrder, waveSize, type EnemyKind } from './waves.ts'
-import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, STOMP, TANK, VIEW, WAVES, WEAPONS } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, MELEE, PLAYER, SCREEN, STOMP, TANK, VIEW, WAVES, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -35,7 +39,7 @@ const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle
   private body_!: Phaser.Physics.Arcade.Body
-  private keys!: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key; jump: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key }
+  private keys!: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key; jump: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key; use: Phaser.Input.Keyboard.Key; useAlt: Phaser.Input.Keyboard.Key }
 
   private facing = 1
   private airJumpsLeft: number = PLAYER.airJumps
@@ -82,6 +86,16 @@ export class GameScene extends Phaser.Scene {
   impactBonus = 1
   /** Health in stages (#48). */
   private health: number = PLAYER.pips * PLAYER.stagesPerPip
+  /** Where we are (#62, #70): the hub, a story section, or endless mode. */
+  private mode: 'hub' | 'section' | 'endless' = 'endless'
+  private world: 1 | 2 | 3 | 4 = 1
+  private section = 1
+  private level: Level = ARENA_LEVEL
+  private hub: Hub | null = null
+  /** Player stats, raised by shop upgrades in story mode (#63); endless starts from nothing (#72). */
+  private runSpeed: number = PLAYER.runSpeed
+  private jumpSpeed: number = PLAYER.jumpSpeed
+  private pips: number = PLAYER.pips
   /** Seconds of post-hit invulnerability left (#27). */
   private hurtTime = 0
   /** Seconds of freeze-frame left. */
@@ -121,7 +135,7 @@ export class GameScene extends Phaser.Scene {
   private spawnKeys!: { melee: Phaser.Input.Keyboard.Key; ranged: Phaser.Input.Keyboard.Key; tank: Phaser.Input.Keyboard.Key }
   /** Everything that can be hit or auto-aimed at. */
   private get targets(): Target[] {
-    return this.enemies
+    return this.hub ? [...this.enemies, this.hub.dummy] : this.enemies
   }
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
@@ -137,16 +151,28 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    const dest = navStore.get()
+    this.mode = dest.mode
+    if (dest.mode === 'section') {
+      this.world = dest.world
+      this.section = dest.section
+    }
+    this.level = this.mode === 'hub' ? HUB_LEVEL : ARENA_LEVEL
+    ARENA.width = this.level.width
+    ARENA.height = this.level.height
+    this.applyStats(true)
+
     this.physics.world.gravity.y = GRAVITY
     this.physics.world.setBounds(0, 0, ARENA.width, ARENA.height)
 
-    this.add.rectangle(0, 0, ARENA.width, ARENA.height, COLOURS.arena).setOrigin(0)
+    if (this.mode !== 'hub') this.add.rectangle(0, 0, ARENA.width, ARENA.height, COLOURS.arena).setOrigin(0)
+    else this.add.rectangle(0, -400, ARENA.width, ARENA.height + 400, 0x0d0e18).setOrigin(0).setDepth(-3)
 
     this.createMotes()
 
     const platforms = this.physics.add.staticGroup()
-    for (const p of PLATFORMS) {
-      const r = this.add.rectangle(p.x, p.y, p.w, p.h, COLOURS.platform).setOrigin(0)
+    for (const p of this.level.platforms) {
+      const r = this.add.rectangle(p.x, p.y, p.w, p.h, this.mode === 'hub' && p.solid ? 0x1b1c2a : COLOURS.platform).setOrigin(0)
       platforms.add(r)
       r.setData('baseY', p.y)
       if (!p.solid) {
@@ -162,7 +188,7 @@ export class GameScene extends Phaser.Scene {
     // Physics box: invisible. What you see is PlayerView, which squashes and stretches.
     this.darkness = this.createDarkness()
 
-    this.player = this.add.rectangle(ARENA.width / 2, ARENA.height - 120, PLAYER.size, PLAYER.size, 0xffffff).setVisible(false)
+    this.player = this.add.rectangle(this.level.spawn.x, this.level.spawn.y, PLAYER.size, PLAYER.size, 0xffffff).setVisible(false)
     this.view = new PlayerView(this)
 
     // Desktop dash cooldown: a thin bar under the square, hidden when ready.
@@ -173,18 +199,44 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.existing(this.player)
 
     // Shooting. Bullets pass through platforms; only the floor stops them (#42).
-    const floorY = PLATFORMS.find((p) => p.solid)?.y ?? ARENA.height
+    const floorY = this.mode === 'hub' ? HUB.floor : (this.level.platforms.find((p) => p.solid)?.y ?? ARENA.height)
     this.shooter = new Shooter(this, floorY, () => this.targets)
     this.gold = new Gold(this, floorY, (v) => this.collectGold(v))
 
-    // A fresh run (#17): wave 1 after a short countdown. Best score from Dexie.
+    // The run state for this place. Story modes carry gold between sections (#62); endless starts from nothing (#72).
     runStore.reset()
-    runStore.set({ phase: 'intermission', wave: 1, countdown: 3 })
-    void loadScores().then((d) => runStore.set({ best: d.best }))
+    const prog = progressStore.get()
+    if (this.mode === 'hub') {
+      runStore.set({ phase: 'hub', mode: 'hub', gold: prog.gold })
+      arriveInHub()
+      this.hub = new Hub(this, {
+        enterWorld: (w) => navStore.go({ mode: 'section', world: w, section: Math.min(4, progressStore.get().cleared[w] + 1) }),
+        enterEndless: () => navStore.go({ mode: 'endless' }),
+        buy: (i) => {
+          const ok = i === 3 ? shopReroll() : shopBuy(i)
+          if (ok) this.applyStats(false)
+          return ok
+        },
+      })
+    } else if (this.mode === 'section') {
+      runStore.set({ phase: 'intermission', mode: 'section', wave: 1, countdown: 3, gold: prog.gold, world: this.world, section: this.section })
+    } else {
+      runStore.set({ phase: 'intermission', mode: 'endless', wave: 1, countdown: 3 })
+    }
+    void loadScores().then((d) => {
+      runStore.set({ best: d.best })
+      const top = d.runs[0]
+      this.hub?.setEndlessBest(d.best, top?.wave ?? 0)
+    })
+    // Story modes: you have the weapons you've bought, improved as bought (#26, #63).
+    if (this.mode !== 'endless') {
+      for (const w of prog.weapons) this.shooter.give(w)
+      for (const [w, n] of Object.entries(prog.improved)) this.shooter.damageBonus[w as keyof typeof WEAPONS] = 1 + 0.25 * (n ?? 0)
+    }
 
     // Enemies (#40): route-finding graph, a physics group so they bump each other,
     // and platform collisions that let them drop through one-way platforms.
-    this.nav = buildNav(PLATFORMS)
+    this.nav = buildNav(this.level.platforms)
     this.enemyGroup = this.physics.add.group({ collideWorldBounds: true })
     this.physics.add.collider(this.enemyGroup, this.enemyGroup)
     this.physics.add.collider(this.enemyGroup, platforms, undefined, (eo, plat) => {
@@ -209,6 +261,9 @@ export class GameScene extends Phaser.Scene {
       right: kb.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       jump: kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
       down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      // Interact (#72): W / ↑ (buy at a pedestal).
+      use: kb.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      useAlt: kb.addKey(Phaser.Input.Keyboard.KeyCodes.UP),
     }
     // Testing: the on-screen spawn buttons (React) ask for enemies through debugBus.
     const offSpawn = debugBus.onSpawn((kind) => this.spawnEnemy(kind))
@@ -238,7 +293,7 @@ export class GameScene extends Phaser.Scene {
       if (p.wasTouch || !p.rightButtonDown()) return
       this.mouseDash = { x: p.worldX - this.player.x, y: p.worldY - this.player.y }
     })
-    hudStore.set({ health: this.health, pips: PLAYER.pips, stagesPerPip: PLAYER.stagesPerPip })
+    hudStore.set({ health: this.health, pips: this.pips, stagesPerPip: PLAYER.stagesPerPip })
 
     const cam = this.cameras.main
     cam.setBounds(0, 0, ARENA.width, ARENA.height)
@@ -332,14 +387,14 @@ export class GameScene extends Phaser.Scene {
 
     // Skid: turning round at speed on the ground kicks up dust.
     this.skidCooldown = Math.max(0, this.skidCooldown - dt)
-    if (grounded && !this.dashing && c.moveX !== 0 && Math.sign(c.moveX) !== Math.sign(b.velocity.x) && Math.abs(b.velocity.x) > PLAYER.runSpeed * 0.6 && this.skidCooldown === 0) {
+    if (grounded && !this.dashing && c.moveX !== 0 && Math.sign(c.moveX) !== Math.sign(b.velocity.x) && Math.abs(b.velocity.x) > this.runSpeed * 0.6 && this.skidCooldown === 0) {
       this.skidCooldown = 0.25
       burst(this, this.player.x, feetY - 3, { count: 5, colour: COLOURS.dust, angle: b.velocity.x > 0 ? -0.4 : Math.PI + 0.4, spread: 0.3, speed: [120, 260], size: [5, 9], gravity: -60 })
       sfx.skid()
     }
 
     // Footstep ticks while running on the ground.
-    if (grounded && !this.dashing && Math.abs(b.velocity.x) > PLAYER.runSpeed * 0.5) {
+    if (grounded && !this.dashing && Math.abs(b.velocity.x) > this.runSpeed * 0.5) {
       this.stepTimer -= dt
       if (this.stepTimer <= 0) {
         this.stepTimer = 0.26
@@ -359,7 +414,7 @@ export class GameScene extends Phaser.Scene {
       this.updateDash(dt)
     } else {
       this.pushTime = Math.max(0, this.pushTime - dt)
-      const target = c.moveX * PLAYER.runSpeed
+      const target = c.moveX * this.runSpeed
       // While being pushed, steer only gently so the push carries.
       const t = Math.min(1, dt * PLAYER.responsiveness * (this.pushTime > 0 ? 0.15 : 1))
       b.setVelocityX(b.velocity.x + (target - b.velocity.x) * t)
@@ -373,13 +428,13 @@ export class GameScene extends Phaser.Scene {
         if (canGroundJump) {
           this.sinceGrounded = PLAYER.coyoteTime
           sfx.jump()
-          b.setVelocityY(-PLAYER.jumpSpeed)
+          b.setVelocityY(-this.jumpSpeed)
           this.view.kick(0.72, 1.32)
           burst(this, this.player.x, feetY - 3, { count: 6, colour: COLOURS.dust, angle: -DOWN, spread: 1.2, speed: [60, 160], size: [5, 9], gravity: 200 })
         } else if (this.airJumpsLeft > 0) {
           this.airJumpsLeft--
           sfx.airJump()
-          b.setVelocityY(-PLAYER.jumpSpeed * PLAYER.airJumpScale)
+          b.setVelocityY(-this.jumpSpeed * PLAYER.airJumpScale)
           this.view.kick(0.8, 1.22)
           ring(this, this.player.x, feetY, PLAYER.size * 1.2, PLAYER.size * 0.35, 0xffffff)
         }
@@ -514,6 +569,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.updateWaves(dt)
+    if (this.hub) {
+      const use = Phaser.Input.Keyboard.JustDown(this.keys.use) || Phaser.Input.Keyboard.JustDown(this.keys.useAlt) || touchInput.useQueued
+      touchInput.useQueued = false
+      this.hub.update(dt, { ...this.playerInfo, bottom: this.body_.bottom }, use)
+      touchInput.useAvailable = this.hub.near >= 0
+    }
     this.gold.update(dt, this.player.x, this.player.y)
   }
 
@@ -524,11 +585,12 @@ export class GameScene extends Phaser.Scene {
    * all dead, the wave's cleared. Between waves, a countdown to the next.
    */
   private updateWaves(dt: number) {
+    if (this.mode === 'hub') return
     const run = runStore.get()
     if (run.phase === 'fighting') {
       const alive = [...this.waveEnemies].filter((e) => !e.dead).length
       this.waveSpawnTimer -= dt
-      if (this.waveQueue.length && alive < maxAlive(run.wave) && this.waveSpawnTimer <= 0) {
+      if (this.waveQueue.length && alive < maxAlive(this.effectiveWave(run.wave)) && this.waveSpawnTimer <= 0) {
         const e = this.spawnEnemy(this.waveQueue.shift()!)
         this.waveEnemies.add(e)
         this.waveSpawnTimer = WAVES.spawnGap
@@ -550,12 +612,20 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Story sections are 5 waves (#62); later sections start further up the
+   * wave curve (Claude: section n plays waves 2n-1 … 2n+3). Endless is as is.
+   */
+  private effectiveWave(n: number) {
+    return this.mode === 'section' ? n + (this.section - 1) * 2 : n
+  }
+
   private startWave(n: number) {
-    this.waveQueue = waveOrder(n)
+    this.waveQueue = waveOrder(this.effectiveWave(n))
     this.waveSpawnTimer = 0
     this.waveEnemies.clear()
     const run = runStore.get()
-    runStore.set({ phase: 'fighting', wave: n, left: waveSize(n), waveGold: 0, waveStarts: run.waveStarts + 1 })
+    runStore.set({ phase: 'fighting', wave: n, left: waveSize(this.effectiveWave(n)), waveGold: 0, waveStarts: run.waveStarts + 1 })
     sfx.waveStart()
   }
 
@@ -563,6 +633,10 @@ export class GameScene extends Phaser.Scene {
     const run = runStore.get()
     this.gold.collectAll()
     sfx.waveClear()
+    if (this.mode === 'section' && run.wave >= 5) {
+      this.clearSection()
+      return
+    }
     this.countdownShown = -1
     runStore.set({ phase: 'intermission', wave: run.wave + 1, countdown: WAVES.intermission, left: 0 })
   }
@@ -576,14 +650,70 @@ export class GameScene extends Phaser.Scene {
   /** A kill: gold drops (#53) worth more in later waves, and you heal a stage (#48). */
   private onEnemyKilled(kind: EnemyKind, x: number, y: number, source: HitSource) {
     const run = runStore.get()
-    this.gold.drop(x, y, goldFor(kind, Math.max(1, run.wave)))
+    this.gold.drop(x, y, goldFor(kind, Math.max(1, this.effectiveWave(run.wave))))
     runStore.set({ kills: run.kills + 1 })
     // Only dash and stomp kills heal (#69): the risky play keeps you alive; guns don't.
     if (source !== 'shot') this.onKill()
   }
 
   /** Health hit zero: the run is over (#17). Everything resets; the score is recorded. */
+  /** Section cleared (no bosses yet, so after wave 5): keep gold and damage, mark progress, back to the hub (#62, #70). */
+  private clearSection() {
+    runStore.set({ phase: 'cleared', left: 0 })
+    // Let the last gold arrive, then bank it and go home.
+    this.time.delayedCall(2600, () => {
+      const run = runStore.get()
+      const prog = progressStore.get()
+      progressStore.set({
+        gold: run.gold,
+        health: this.health,
+        cleared: { ...prog.cleared, [this.world]: Math.max(prog.cleared[this.world], this.section) },
+      })
+      navStore.go({ mode: 'hub' })
+    })
+  }
+
+  /** Re-read upgrades and weapons after a purchase (#63) and apply them now. */
+  private applyStats(initial: boolean) {
+    if (this.mode === 'endless') {
+      this.runSpeed = PLAYER.runSpeed
+      this.jumpSpeed = PLAYER.jumpSpeed
+      this.pips = PLAYER.pips
+      this.impactBonus = 1
+      if (initial) this.health = this.pips * PLAYER.stagesPerPip
+      return
+    }
+    const prog = progressStore.get()
+    const st = storyStats(prog)
+    this.runSpeed = PLAYER.runSpeed * st.runMul
+    this.jumpSpeed = PLAYER.jumpSpeed * st.jumpMul
+    this.pips = st.pips
+    this.impactBonus = st.impact
+    this.health = Math.min(this.pips * PLAYER.stagesPerPip, prog.health ?? this.pips * PLAYER.stagesPerPip)
+    if (!initial) {
+      for (const w of prog.weapons) if (!this.shooter.status().weapons.some((x) => x.id === w)) this.shooter.give(w)
+      for (const [w, n] of Object.entries(prog.improved)) this.shooter.damageBonus[w as keyof typeof WEAPONS] = 1 + 0.25 * (n ?? 0)
+      this.pushWeaponsHud()
+      hudStore.set({ health: this.health, pips: this.pips })
+      runStore.set({ gold: prog.gold })
+    }
+  }
+
   private endRun() {
+    if (this.mode === 'section') {
+      // Story death (#62): lose all carried gold, no way back; back to the hub fully healed (#70).
+      this.over = true
+      this.physics.world.pause()
+      this.view.flicker = false
+      this.shake(400, 0.02)
+      sfx.runOver()
+      buzz(250)
+      burst(this, this.player.x, this.player.y, { count: 24, colour: 0xffffff, angle: 0, spread: Math.PI, speed: [150, 450], size: [5, 11], life: 700 })
+      runStore.set({ phase: 'dead', lostGold: runStore.get().gold, gold: 0 })
+      progressStore.set({ gold: 0, health: null })
+      window.setTimeout(() => navStore.go({ mode: 'hub' }), 2800)
+      return
+    }
     this.over = true
     this.physics.world.pause()
     this.view.flicker = false
@@ -599,8 +729,9 @@ export class GameScene extends Phaser.Scene {
 
   /** Spawn one enemy: walkers on a random platform, fliers in the air; preferably well away from the player. */
   private spawnEnemy(kind: EnemyKind): Enemy {
-    const far = PLATFORMS.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
-    const pool = far.length ? far : [...PLATFORMS]
+    const plats = this.level.platforms
+    const far = plats.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
+    const pool = far.length ? far : [...plats]
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]
     let me: Enemy | null = null
     const kill = () => {
@@ -679,7 +810,7 @@ export class GameScene extends Phaser.Scene {
   /** A kill counts towards healing one pip, unless you're already at full health (#47). */
   /** Each kill restores one stage (#48); wasted at full health. A pip refilling gets the bigger effect. */
   private onKill() {
-    const max = PLAYER.pips * PLAYER.stagesPerPip
+    const max = this.pips * PLAYER.stagesPerPip
     if (this.health >= max) return
     this.health += 1
     const pipDone = this.health % PLAYER.stagesPerPip === 0
@@ -766,7 +897,7 @@ export class GameScene extends Phaser.Scene {
 
   /** For the marker overlay. */
   get markerInfo() {
-    return { targets: this.targets, target: this.shooter.target, player: this.player }
+    return { targets: this.enemies as Target[], target: this.shooter.target, player: this.player }
   }
 
   /**
@@ -798,7 +929,7 @@ export class GameScene extends Phaser.Scene {
   /** The camera leads a little in the direction you're running. */
   private updateLookAhead(dt: number) {
     const cam = this.cameras.main
-    const v = this.body_.velocity.x / PLAYER.runSpeed
+    const v = this.body_.velocity.x / this.runSpeed
     const target = Phaser.Math.Clamp(v, -1, 1) * (cam.width / cam.zoom) * SCREEN.lookAhead
     this.lookAhead += (target - this.lookAhead) * Math.min(1, dt * SCREEN.lookAheadSpeed)
     // followOffset is subtracted from the target, so negative looks ahead to the right.

@@ -4,6 +4,7 @@ import { loadSettings, saveSettings, type Settings } from '../persist/settings.t
 import { AIM_MODES, defaultAimMode, settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
 import { debugBus, type EnemyKind } from '../state/debug.ts'
+import { navStore } from '../state/nav.ts'
 import { restartBus, runStore } from '../state/run.ts'
 
 // React UI layer over the Phaser canvas. pointer-events-none so the game still
@@ -96,17 +97,26 @@ export function Hud() {
           </svg>
           {run.gold}
         </span>
-        <span className="text-neutral-400">score {run.score}</span>
+        {run.mode === 'endless' && <span className="text-neutral-400">score {run.score}</span>}
+        {run.mode === 'section' && (
+          <span className="text-neutral-400">
+            World {run.world} · Section {run.section}
+          </span>
+        )}
       </div>
       <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
         A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Land on enemies to stomp · Left-click shoot · 1–3 / wheel switch gun
+        {run.mode === 'hub' && ' · W / ↑ buy · walk into a portal to enter'}
       </p>
 
       {/* Wave readout (#13, #18). */}
       {run.phase === 'fighting' && (
         <div className="absolute top-3 left-1/2 flex -translate-x-1/2 items-baseline gap-2 rounded-full bg-black/40 px-3 py-1 ring-1 ring-white/10">
           <span className="text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">Wave</span>
-          <span className="text-sm font-bold text-neutral-100 tabular-nums">{run.wave}</span>
+          <span className="text-sm font-bold text-neutral-100 tabular-nums">
+            {run.wave}
+            {run.mode === 'section' && <span className="text-neutral-400"> / 5</span>}
+          </span>
           <span className="text-xs text-neutral-400 tabular-nums">· {run.left} left</span>
         </div>
       )}
@@ -131,10 +141,40 @@ export function Hud() {
                 </p>
               </>
             ) : (
-              <p className="text-xs font-semibold tracking-[0.25em] text-neutral-400 uppercase">Get ready</p>
+              <>
+                {run.mode === 'section' && (
+                  <p className="text-sm font-black tracking-[0.2em] text-neutral-100 uppercase">
+                    World {run.world} · Section {run.section}
+                  </p>
+                )}
+                <p className="text-xs font-semibold tracking-[0.25em] text-neutral-400 uppercase">Get ready</p>
+              </>
             )}
             <p className="mt-2 text-sm text-neutral-300">
               Wave {run.wave} in <span className="font-bold text-neutral-100 tabular-nums">{Math.ceil(run.countdown)}</span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Story section cleared (#62): gold and damage carry back to the hub. */}
+      {run.phase === 'cleared' && (
+        <div className="wave-banner absolute inset-x-0 top-[26%] text-center">
+          <p className="text-xs font-semibold tracking-[0.3em] text-neutral-400 uppercase">
+            World {run.world} · Section {run.section}
+          </p>
+          <p className="text-5xl font-black text-neutral-100">Cleared</p>
+          <p className="mt-2 text-sm text-amber-300 tabular-nums">{run.gold} gold to spend</p>
+        </div>
+      )}
+
+      {/* Story death (#62, #70): the gold you carried is gone; back to the hub, healed. */}
+      {run.phase === 'dead' && (
+        <div className="run-over absolute inset-0 grid place-items-center bg-black/60">
+          <div className="text-center">
+            <p className="text-5xl font-black text-red-300">You died</p>
+            <p className="mt-2 text-sm text-neutral-400 tabular-nums">
+              {run.lostGold > 0 ? `${run.lostGold} gold lost` : 'Nothing lost but pride'}
             </p>
           </div>
         </div>
@@ -168,6 +208,13 @@ export function Hud() {
               className="mt-5 w-full rounded-xl bg-neutral-100 py-2.5 font-bold text-neutral-900 hover:bg-white active:scale-[0.98]"
             >
               Play again
+            </button>
+            <button
+              type="button"
+              onClick={() => navStore.go({ mode: 'hub' })}
+              className="mt-2 w-full rounded-xl bg-white/5 py-2.5 font-bold text-neutral-200 hover:bg-white/10 active:scale-[0.98]"
+            >
+              Back to the hub
             </button>
           </div>
         </div>

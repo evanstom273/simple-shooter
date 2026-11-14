@@ -1,7 +1,7 @@
 // All numbers here are placeholders, to be tuned in play.
 
 /** The arena: a fixed-size world, bigger than the screen; the camera follows the player around it. */
-export const ARENA = { width: 2400, height: 1350 } as const
+export const ARENA = { width: 2400, height: 1350 }
 
 /**
  * Camera zoom. The baseline is the zoom at which a 1600×900 area would fill the

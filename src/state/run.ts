@@ -1,7 +1,8 @@
 // The current run (#17, #18, #53), shared between Phaser (writes) and React (shows).
 // Plain TS, no Phaser import.
 
-export type Phase = 'fighting' | 'intermission' | 'over'
+export type Phase = 'fighting' | 'intermission' | 'over' | 'hub' | 'cleared' | 'dead'
+export type RunMode = 'hub' | 'section' | 'endless'
 
 export interface RunState {
   wave: number
@@ -22,6 +23,12 @@ export interface RunState {
   best: number
   newBest: boolean
   kills: number
+  /** Where we are (#70): story sections show waves out of 5 and no score. */
+  mode: RunMode
+  world: number
+  section: number
+  /** Gold lost on a story death (for the banner). */
+  lostGold: number
 }
 
 const initial = (best = 0): RunState => ({
@@ -36,6 +43,10 @@ const initial = (best = 0): RunState => ({
   best,
   newBest: false,
   kills: 0,
+  mode: 'endless',
+  world: 1,
+  section: 1,
+  lostGold: 0,
 })
 
 let state = initial()

@@ -10,12 +10,13 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
-**Priority (Lyra, #67):** ~~1. player shooting~~ (done) · 2. hub + shop · 3. randomly generated platforms. Then worlds and art.
+**Priority (Lyra, #67):** ~~1. player shooting~~ (done) · ~~2. hub + shop~~ (done, #74) · 3. randomly generated platforms. Then worlds and art.
 
 - Tune the ranged enemy and tank in play.
-- Restructure (#62): hub (shop, levelling, saving), worlds and sections, checkpoints, boss fights; endless as a separate mode. Settle the open questions in §E 1h first.
+- Hub part 3: the short tutorial room on first launch (#70).
+- Lyra to play the hub and story loop: section length, gold per section, shop prices, the wave offset per section (#74).
+- Restructure (#62) still to come: boss fights, per-world enemy rosters, world names.
 - Decide what makes waves harder past ~wave 13.
-- Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.
 - Tune the melee enemy in play after the difficulty pass (#48–#51): wind-up, roll speed, dizzy, cooldown if still too hard.
 - When combat exists, add its juice: hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash + recoil (shotgun shove), damage feedback (bigger shake, red edge pulse, light dims at low health), last-kill slow motion, wave banners, animated upgrade cards.
 - Title (Lyra, deferred).
@@ -24,6 +25,8 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Hub in the game as the main menu: portals to story sections (5 waves), shop on pedestals with reroll, training dummy, endless portal, death/clear rules, progress saved, W / ↑ and touch BUY (#70, #72, #74). *(2026-11-14T22:06:39+00:00)*
+- [x] Character art in the game: player, melee, ranged, tank (#73). *(2026-11-14T22:06:39+00:00)*
 - [x] Melee-first rebalance: gun damage ~40%, only dash/stomp kills heal, Fire Rate → dash & stomp damage upgrade (design; hook in code) (#69). *(2026-11-14T21:39:33+00:00)*
 - [x] Step 12: player shooting: pistol / automatic / shotgun, magazines + auto-reload, switching (keys, wheel, SWAP), HUD icons, testing Give buttons (#68). *(2026-11-14T21:30:44+00:00)*
 - [x] Step 11: basic endless waves, gold drops + magnet, score, wave HUD + intermission count-up, run over + Play again, local high scores (#60). *(2026-11-14T14:52:38+00:00)*
