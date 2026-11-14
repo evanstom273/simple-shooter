@@ -20,6 +20,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Dash cooldown 0.8 s → 1.6 s (#55). *(2026-11-14T06:53:18+00:00)*
 - [x] Contact damage removed; only attacks hurt (#52). *(2026-11-14T06:47:26+00:00)*
 - [x] Step 8c: stage health, scrape vs attack, heal a stage per kill, turn-taking, bigger enemies, enemy health bars (#48–#51). *(2026-11-14T06:44:50+00:00)*
 - [x] Step 8b: the melee enemy (#40) with route-finding, lunges, dizzy, shards; temporary spawner; dummies removed. *(2026-11-14T06:35:05+00:00)*

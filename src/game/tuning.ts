@@ -58,7 +58,7 @@ export const DASH = {
   /** Seconds. You're invulnerable for the whole dash (#24). */
   duration: 0.15,
   /** Seconds from the start of one dash until the next is allowed. */
-  cooldown: 0.8,
+  cooldown: 1.6,
   /** Fraction of dash speed kept when it ends, so it doesn't stop dead. */
   carry: 0.35,
   /** Seconds of invulnerability after a dash ends, so ending inside an enemy doesn't hurt. */
