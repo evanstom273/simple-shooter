@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T14:52:38+00:00):**
+**Where the project stands (as of 2026-11-14T21:13:05+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Restructure decided** (#62): worlds and sections (5 waves + a boss), a hub with shop/levelling/saving, death costs carried currency; endless becomes a separate mode. Not built yet (2026-11-14T21:13:05+00:00).
 - **Basic waves built** (#60): endless waves, gold drops and score, wave counter and between-wave tally, run over and restart, local high scores (2026-11-14T14:52:38+00:00). No shop yet.
 - **Stomp built** (#59) (2026-11-14T14:38:46+00:00).
 - **All three enemy types built** (ranged #56, tank #58) and health is 5 × 4 stages with 2-stage melee/ranged hits (#57) (2026-11-14T07:12:19+00:00).
@@ -50,8 +51,19 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - **A simple shooter.** *(2026-11-14T04:09:54+00:00 — History #1)*
 - **2D side-view, wave-based roguelite arena shooter.** The player survives increasingly difficult waves of enemies and picks upgrades between waves. Focus on simple, enjoyable combat and replayability. Small scope, with the aim of actually finishing the game. Refines #1. *(2026-11-14T04:17:36+00:00 — History #7)*
 
+### Game structure: worlds, sections and the hub *(2026-11-14T21:13:05+00:00 — History #62)*
+Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around the existing waves and enemies.
+- **Worlds**, each entered through its own **archstone** in the hub, split into numbered, named **sections** (e.g. 1-1 "Gates of …", 4-1 "Shrine of …").
+- **A section is 5 waves, then a boss.** Bosses are **Soulsborne-style fights**: a massive health bar, massive tells, **one or two phases**.
+- **Worlds can be tackled in any order**; sections within a world go in sequence.
+- **Checkpoints:** progress within a world is kept. Clear 1-1, die in 1-2, and the archstone takes you back into 1-2.
+- **The hub:** where you **shop, level up and save**. You return there **after completing a section** (5 waves + boss) and **when you die**. No shop or levelling mid-section.
+- **Death: you lose all the currency you're carrying, with no way to recover it.** Levels, upgrades and weapons are kept. (Souls-like progression; the unrecoverable currency keeps a roguelike edge.)
+- **Endless waves and the high score stay as a separate mode.**
+
 ### Runs, death and saving *(2026-11-14T04:24:39+00:00 — History #17)*
 - **Endless waves.** A run goes on until you die; the score is how far you got. *(2026-11-14T04:24:39+00:00 — History #18)*
+- *(For story mode, superseded by #62: death costs only your currency and returns you to the hub. The rules below now describe the endless mode.)*
 - **Dying ends the run, and that's the only way to lose it.** You start again fully from scratch: wave 1, no upgrades, no weapons.
 - **A run survives closing the browser.** The run is saved between waves; come back (even days later) and you're in the **shop** (was: upgrade screen, #53) **before the wave you left**. Leaving mid-wave restarts that wave, with what you had at the start of it.
 - **Local high scores** kept in IndexedDB (Dexie): **the run's final cumulative score** (#53), plus e.g. wave reached.
@@ -174,9 +186,9 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Spawning:** a **marker appears briefly first** as a warning, then it **fades in** there.
 - **Crowds:** they **bump and push** each other, so a group spreads out rather than stacking.
 
-### Shop and currency (replaces the three-card offer) *(2026-11-14T06:52:12+00:00 — History #53)*
+### Shop and currency (replaces the three-card offer; moved to the hub by #62) *(2026-11-14T06:52:12+00:00 — History #53)*
 - **Enemies drop currency when killed.** Drops scatter from the kill and **fly to you once you're close** (magnet). *(2026-11-14T06:52:12+00:00 — History #54)*
-- **Between waves there's a shop.** Spend as much or as little as you like on **stat upgrades, new weapons and improvements to weapons you own**, or save it for later waves.
+- ~~**Between waves there's a shop.**~~ *(Now in the hub, visited after each section, #62.)* Spend as much or as little as you like on **stat upgrades, new weapons and improvements to weapons you own**, or save it for later waves.
 - **Rotating selection:** each shop offers a random handful of items, so runs play out differently. *(2026-11-14T06:52:12+00:00 — History #54)*
 - **Escalating prices:** buying the same thing again costs more (pairs with diminishing returns, #19). *(2026-11-14T06:52:12+00:00 — History #54)*
 - **The shop sells healing** too, so heal-or-upgrade is a choice. *(2026-11-14T06:52:12+00:00 — History #54)*
@@ -375,6 +387,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1h. **Structure (#62), open:** how many worlds and sections to start with, and their names and themes; what "level up" means (what you spend on, and how that differs from the shop); whether the shop still rotates (#54); whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
 1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
@@ -559,6 +572,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 59 | 2026-11-14T14:34:43+00:00 | Combat | Stomp: landing on an enemy from above does 1 damage, knocks it away and flattens it (~1 s, can't be hit) so it can't be repeated; stomping the tank knocks you away instead. You bounce up with your double jump refreshed. Landing on an attacking enemy hurts you as normal. |
 | 60 | 2026-11-14T14:52:38+00:00 | Waves | Basic waves: endless; 10–15 enemies; wave 1 melee only, wave 2 mostly melee + some ranged, building gradually (tanks later); gold per kill 50 / 50 / 150 at wave 1, scaling gradually to ~250 for a melee by wave 10; between waves a count of gold earned. Built with Claude's interpretations listed in §B. |
 | 61 | 2026-11-14T20:00:20+00:00 | Art | Art direction "Stylised Geometry": bright, bold geometric characters with eyes, faces, floating hands and feet; SVG. Player concept from Lyra's sketch approved (`concepts/player-concept.svg`). |
+| 62 | 2026-11-14T21:13:05+00:00 | Structure | Restructure (Demon's Souls archstones): worlds of numbered, named sections, each 5 waves + a Soulsborne-style boss (1–2 phases); worlds in any order, sections in sequence with per-world checkpoints; a hub for shop, levelling and saving, returned to after each section and on death; death loses all carried currency with no recovery, keeping levels/upgrades/weapons; endless waves + high score kept as a separate mode. Supersedes the between-wave shop (#53) and, for story mode, death resetting everything (#17). |
 
 ---
 

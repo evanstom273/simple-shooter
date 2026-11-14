@@ -11,7 +11,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 ## Next
 
 - Tune the ranged enemy and tank in play.
-- The shop between waves (#53, #54), including resuming a run in the shop after closing the browser (#17).
+- Restructure (#62): hub (shop, levelling, saving), worlds and sections, checkpoints, boss fights; endless as a separate mode. Settle the open questions in §E 1h first.
 - Decide what makes waves harder past ~wave 13.
 - Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.
 - Tune the melee enemy in play after the difficulty pass (#48–#51): wind-up, roll speed, dizzy, cooldown if still too hard.
