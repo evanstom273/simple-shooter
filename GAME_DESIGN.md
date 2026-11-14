@@ -65,6 +65,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - Desktop and mobile support (#9).
 - **Not in scope:** unnecessary simulation systems, crafting, elaborate skill trees or complex progression mechanics.
 
+### Art direction: Stylised Geometry *(2026-11-14T20:00:20+00:00 — History #61)*
+- **"Stylised Geometry"** (Lyra's term): every character is still a recognisable simple shape, but **bright, bold characters** with features: **eyes, faces, floating hands, feet**.
+- **The player:** the square with **two oval eyes and a smile**, **floating circle hands** (not attached), and **L-shaped feet**, from Lyra's sketch. Concept sheet: `concepts/player-concept.svg` (idle, running, dash, hurt, stomp). Approved by Lyra.
+- Art is drawn as **SVG**. Hands, feet and faces are visual only: hitboxes stay as they are.
+- **Enemy concepts** (Claude, awaiting Lyra's verdict): `concepts/enemies-concept.svg`, five poses each matching their in-game states. Melee: orange ball, one big eye, little floating hands. Ranged: long green arrowhead, one narrow browed eye, tiny floating fins. Tank: red pentagon, one heavy-browed eye, big floating square fists, block feet.
+
 ### Graphics *(2026-11-14T04:17:36+00:00 — History #8)*
 - **Minimalist geometric shapes** instead of traditional sprites.
 - **Player: a square.**
@@ -552,6 +558,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 58 | 2026-11-14T07:02:23+00:00 | Enemies | Tank: red pentagon, 2× the player; slow walk with heavy jumps; ground slam whose shockwave runs both ways along its platform (jump it); tell = crouch and glow, landing marker, rumble, slight camera shake; 4 stages per hit; long recovery after a slam; 8 hits; dash damages it without moving it (you bounce off); has its own attack turn alongside the others; breaks into red pentagon chunks. |
 | 59 | 2026-11-14T14:34:43+00:00 | Combat | Stomp: landing on an enemy from above does 1 damage, knocks it away and flattens it (~1 s, can't be hit) so it can't be repeated; stomping the tank knocks you away instead. You bounce up with your double jump refreshed. Landing on an attacking enemy hurts you as normal. |
 | 60 | 2026-11-14T14:52:38+00:00 | Waves | Basic waves: endless; 10–15 enemies; wave 1 melee only, wave 2 mostly melee + some ranged, building gradually (tanks later); gold per kill 50 / 50 / 150 at wave 1, scaling gradually to ~250 for a melee by wave 10; between waves a count of gold earned. Built with Claude's interpretations listed in §B. |
+| 61 | 2026-11-14T20:00:20+00:00 | Art | Art direction "Stylised Geometry": bright, bold geometric characters with eyes, faces, floating hands and feet; SVG. Player concept from Lyra's sketch approved (`concepts/player-concept.svg`). |
 
 ---
 
