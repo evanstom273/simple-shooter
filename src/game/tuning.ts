@@ -38,11 +38,9 @@ export const PLAYER = {
   jumpBuffer: 0.12,
   /** Seconds that platforms ignore you after pressing down to drop through. */
   dropThrough: 0.22,
-  /** Health (#48): pips × stages per pip. 5 × 5 = 25. */
+  /** Health (#57): pips × stages per pip. 5 × 4 = 20. */
   pips: 5,
-  stagesPerPip: 5,
-  /** Damage in stages from being caught by an attack (#48). Touching enemies does nothing (#52). */
-  attackDamage: 5,
+  stagesPerPip: 4,
   /** Seconds of invulnerability after a hit (#27). */
   hurtInvulnerability: 1,
   /** Knockback when hit: sideways away from the source, and up, px/s. */
@@ -159,9 +157,67 @@ export const MELEE = {
   /** Temporary spawner (until waves): keep this many in the arena. */
   keepAlive: 2,
   respawnDelay: 2,
+  /** Stages of damage when a lunge hits you (#57). */
+  damage: 2,
   /** Taking turns (#49): enemies without the attack turn keep about this far away. */
   waitDistance: 400,
   /** Seconds between one enemy's turn ending and the next one's starting. */
   turnGap: 0.5,
   spawnWarning: 1,
 } as const
+
+/** Ranged enemy (#56). All placeholders, to tune in play. */
+export const RANGED = {
+  colour: 0x5ee36a,
+  hotColour: 0xeaffd8,
+  /** Circumradius of the triangle: smaller than the player. */
+  radius: 18,
+  health: 1,
+  /** Preferred position: this far from you, this far above. */
+  preferredDistance: 520,
+  preferredHeight: 220,
+  hoverSpeed: 240,
+  /** Gets this close and it darts away. */
+  dartTrigger: 260,
+  dartSpeed: 1100,
+  dartTime: 0.22,
+  dartCooldown: 1,
+  /** Will only start a shot from within this range, and only when on screen. */
+  fireRange: 950,
+  /** Charge (aim line tracks your predicted path), then lock (line freezes), then fire. */
+  charge: 0.9,
+  lock: 0.35,
+  shotSpeed: 1150,
+  /** Seconds between shots. */
+  reload: 2.2,
+  /** Stages per hit (#56). */
+  damage: 2,
+} as const
+
+/** Tank enemy (#58). All placeholders, to tune in play. */
+export const TANK = {
+  colour: 0xe0453a,
+  hotColour: 0xfff0e0,
+  /** 2× the player: body width/height. */
+  size: 96,
+  health: 8,
+  walkSpeed: 95,
+  /** Starts a slam when within this range. */
+  slamRange: 520,
+  windup: 1.0,
+  /** Seconds in the air from leap to slam. */
+  leapTime: 0.7,
+  /** Long recovery after a slam: the punish window. */
+  recovery: 2.0,
+  /** Seconds after recovering before it can slam again. */
+  slamCooldown: 1.5,
+  shockwaveSpeed: 700,
+  shockwaveHeight: 46,
+  /** Stages per hit, slam or shockwave (#58). */
+  damage: 4,
+  /** Your dash bounces off it at this speed (px/s). */
+  dashBounce: 520,
+} as const
+
+/** Temporary spawner until waves exist: how many of each to keep in the arena. Keys: E melee, R ranged, T tank. */
+export const SPAWNER = { melee: 2, ranged: 1, tank: 0 } as const

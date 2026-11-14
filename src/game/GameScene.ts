@@ -4,13 +4,16 @@ import { sfx } from '../audio/sfx.ts'
 import { burst, ring } from './fx.ts'
 import { buzz } from './haptics.ts'
 import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
-import { MeleeEnemy, type PlayerInfo } from './enemies/MeleeEnemy.ts'
+import { MeleeEnemy } from './enemies/MeleeEnemy.ts'
+import { RangedEnemy } from './enemies/RangedEnemy.ts'
+import { TankEnemy } from './enemies/TankEnemy.ts'
+import type { Enemy, Hazard, PlayerInfo, Turns } from './enemies/types.ts'
 import { buildNav, platformAt, platformBelow, type NavGraph } from './enemies/nav.ts'
 import { Shooter } from './Shooter.ts'
 import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
-import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, SPAWNER, TANK, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -76,35 +79,22 @@ export class GameScene extends Phaser.Scene {
    * Taking turns (#49): only one enemy may wind up or lunge at a time. The rest
    * keep their distance until it's done, then a short gap before the next.
    */
-  private turns = {
-    holder: null as MeleeEnemy | null,
-    gap: 0,
-    request: (e: MeleeEnemy) => {
-      const t = this.turns
-      if (t.holder && t.holder !== e && t.holder.alive) return false
-      if (t.holder !== e && t.gap > 0) return false
-      t.holder = e
-      return true
-    },
-    release: (e: MeleeEnemy) => {
-      const t = this.turns
-      if (t.holder !== e) return
-      t.holder = null
-      t.gap = MELEE.turnGap
-    },
-    isOthers: (e: MeleeEnemy) => !!this.turns.holder && this.turns.holder !== e && this.turns.holder.alive,
-  }
   /** Zoom that fills the screen (#35); the target zoom-out (#44) scales it down. */
   private baseZoom = 1
   private minZoom = 0.1
   private zoomFactor = 1
-  private enemies: MeleeEnemy[] = []
+  /** Melee and ranged share one attack turn (#49, #56); the tank has its own (#58). */
+  private turns = makeTurns(MELEE.turnGap)
+  private tankTurns = makeTurns(0)
+  private enemies: Enemy[] = []
+  /** Shots and shockwaves: hurt the player on touch. */
+  private hazards: Hazard[] = []
   private enemyGroup!: Phaser.Physics.Arcade.Group
   private nav!: NavGraph
-  private playerInfo: PlayerInfo = { x: 0, y: 0, platform: -1 }
-  /** Temporary spawner until waves exist: seconds until the next spawn. */
-  private spawnTimer = 0.5
-  private spawnKey!: Phaser.Input.Keyboard.Key
+  private playerInfo: PlayerInfo = { x: 0, y: 0, vx: 0, vy: 0, platform: -1, view: new Phaser.Geom.Rectangle() }
+  /** Temporary spawner until waves exist: seconds until the next spawn of each kind. */
+  private spawnTimers = { melee: 0.5, ranged: 3, tank: 6 }
+  private spawnKeys!: { melee: Phaser.Input.Keyboard.Key; ranged: Phaser.Input.Keyboard.Key; tank: Phaser.Input.Keyboard.Key }
   /** Everything that can be hit or auto-aimed at. */
   private get targets(): Target[] {
     return this.enemies
@@ -166,7 +156,7 @@ export class GameScene extends Phaser.Scene {
     this.enemyGroup = this.physics.add.group({ collideWorldBounds: true })
     this.physics.add.collider(this.enemyGroup, this.enemyGroup)
     this.physics.add.collider(this.enemyGroup, platforms, undefined, (eo, plat) => {
-      const e = (eo as Phaser.GameObjects.Arc).getData('enemy') as MeleeEnemy | undefined
+      const e = (eo as Phaser.GameObjects.Arc).getData('enemy') as { dropping: number } | undefined
       return !(e && e.dropping > 0 && (plat as Phaser.GameObjects.Rectangle).getData('oneWay'))
     })
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
@@ -188,8 +178,12 @@ export class GameScene extends Phaser.Scene {
       jump: kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
       down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
     }
-    // Temporary: E spawns an extra enemy (desktop), for testing crowds.
-    this.spawnKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.E)
+    // Temporary: E / R / T spawn an extra melee / ranged / tank (desktop), for testing.
+    this.spawnKeys = {
+      melee: kb.addKey(Phaser.Input.Keyboard.KeyCodes.E),
+      ranged: kb.addKey(Phaser.Input.Keyboard.KeyCodes.R),
+      tank: kb.addKey(Phaser.Input.Keyboard.KeyCodes.T),
+    }
 
     // Right-click dashes (#21): towards the mouse in Manual; auto modes decide in readControls.
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
@@ -416,33 +410,69 @@ export class GameScene extends Phaser.Scene {
     const b = this.body_
     const grounded = b.blocked.down || b.touching.down
     const plat = grounded ? platformAt(this.nav, this.player.x, b.bottom) : -1
-    this.playerInfo.x = this.player.x
-    this.playerInfo.y = this.player.y
-    this.playerInfo.platform = plat >= 0 ? plat : platformBelow(this.nav, this.player.x, b.bottom)
+    const pi = this.playerInfo
+    pi.x = this.player.x
+    pi.y = this.player.y
+    pi.vx = b.velocity.x
+    pi.vy = b.velocity.y
+    pi.platform = plat >= 0 ? plat : platformBelow(this.nav, this.player.x, b.bottom)
+    pi.view.setTo(this.cameras.main.worldView.x, this.cameras.main.worldView.y, this.cameras.main.worldView.width, this.cameras.main.worldView.height)
 
-    this.turns.gap = Math.max(0, this.turns.gap - dt)
-    if (this.turns.holder && !this.turns.holder.alive) this.turns.holder = null
-    for (const e of this.enemies) e.update(dt, this.playerInfo)
-    this.enemies = this.enemies.filter((e) => e.state !== 'dead')
+    this.turns.tick(dt)
+    this.tankTurns.tick(dt)
+    for (const e of this.enemies) e.update(dt, pi)
+    this.enemies = this.enemies.filter((e) => !e.dead)
 
-    // Temporary spawner (until waves): keep a couple in the arena; E adds one.
-    if (Phaser.Input.Keyboard.JustDown(this.spawnKey)) this.spawnEnemy()
-    if (this.enemies.length < MELEE.keepAlive) {
-      this.spawnTimer -= dt
-      if (this.spawnTimer <= 0) {
-        this.spawnEnemy()
-        this.spawnTimer = MELEE.respawnDelay
+    // Hazards (shots, shockwaves) hurt on touch unless you're invulnerable.
+    for (const h of this.hazards) {
+      h.update(dt)
+      if (!h.done && !this.invulnerable && h.hits(b.left, b.top, b.right, b.bottom)) {
+        this.takeHit(h.x, h.damage)
+        h.done = true
+      }
+      if (h.done) h.destroy()
+    }
+    this.hazards = this.hazards.filter((h) => !h.done)
+
+    // Temporary spawner (until waves): keep a few of each in the arena; E / R / T add one.
+    for (const kind of ['melee', 'ranged', 'tank'] as const) {
+      if (Phaser.Input.Keyboard.JustDown(this.spawnKeys[kind])) this.spawnEnemy(kind)
+      const count = this.enemies.filter((e) => kindOf(e) === kind).length
+      if (count < SPAWNER[kind]) {
+        this.spawnTimers[kind] -= dt
+        if (this.spawnTimers[kind] <= 0) {
+          this.spawnEnemy(kind)
+          this.spawnTimers[kind] = MELEE.respawnDelay
+        }
       }
     }
   }
 
-  /** On a random platform, preferably well away from the player. */
-  private spawnEnemy() {
+  /** Walkers on a random platform, fliers in the air; preferably well away from the player. */
+  private spawnEnemy(kind: 'melee' | 'ranged' | 'tank') {
     const far = PLATFORMS.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
     const pool = far.length ? far : [...PLATFORMS]
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]
+    const kill = () => this.onKill()
+    if (kind === 'ranged') {
+      const x = Phaser.Math.Between(100, ARENA.width - 100)
+      const y = Phaser.Math.Between(250, ARENA.height - 400)
+      this.enemies.push(new RangedEnemy(this, x, y, this.turns, kill, (h) => this.hazards.push(h)))
+      return
+    }
+    if (kind === 'tank') {
+      const x = Phaser.Math.Between(p.x + 60, p.x + p.w - 60)
+      const e = new TankEnemy(this, x, p.y - TANK.size * 0.43 - 2, this.nav, this.tankTurns, kill, (h) => this.hazards.push(h), (ms, k) => this.shake(ms, k))
+      this.enemyGroup.add(e.o)
+      const tb = e.o.body as Phaser.Physics.Arcade.Body
+      tb.setCollideWorldBounds(true)
+      tb.pushable = false
+      tb.enable = false
+      this.enemies.push(e)
+      return
+    }
     const x = Phaser.Math.Between(p.x + 40, p.x + p.w - 40)
-    const e = new MeleeEnemy(this, x, p.y - MELEE.radius - 2, this.nav, () => this.onKill(), this.turns)
+    const e = new MeleeEnemy(this, x, p.y - MELEE.radius - 2, this.nav, kill, this.turns)
     this.enemyGroup.add(e.o)
     ;(e.o.body as Phaser.Physics.Arcade.Body).setCircle(MELEE.radius).setCollideWorldBounds(true)
     ;(e.o.body as Phaser.Physics.Arcade.Body).enable = false
@@ -464,13 +494,19 @@ export class GameScene extends Phaser.Scene {
         if (this.dashHits.has(t)) continue
         this.dashHits.add(t)
         t.hit(1, { x: this.dashDir.x, y: this.dashDir.y })
+        if ((t as Enemy).heavy) {
+          // Too heavy to move (#58): you bounce off it.
+          this.endDash(0)
+          this.body_.setVelocity(-this.dashDir.x * TANK.dashBounce, -Math.abs(this.dashDir.y) * TANK.dashBounce * 0.5 - 200)
+          this.view.kick(0.65, 1.3)
+        }
         sfx.dashHit()
         buzz(25)
         this.shake(80, 0.004)
         burst(this, t.x, t.y, { count: 8, colour: 0xffffff, angle: this.dashDir.angle(), spread: 0.8, speed: [150, 380], size: [4, 8], life: 220 })
         this.freeze(PLAYER.dashHitStop)
       } else if (t.attacking && !this.invulnerable) {
-        this.takeHit(t.x)
+        this.takeHit(t.x, (t as Enemy).damage)
         return
       }
     }
@@ -510,10 +546,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Knockback, lose a hit point, short invulnerability (#23, #27). */
-  /** Getting hurt: only attacks (a roll or leap) hurt (#52). Costs a pip (#48). */
-  private takeHit(fromX: number) {
+  /** Getting hurt: only attacks hurt (#52): lunges, shots, slams, shockwaves (stages per #57, #58). */
+  private takeHit(fromX: number, damage: number) {
     const max = PLAYER.pips * PLAYER.stagesPerPip
-    this.health -= PLAYER.attackDamage
+    this.health -= damage
     this.hurtTime = PLAYER.hurtInvulnerability
     const away = Math.sign(this.player.x - fromX) || -this.facing
     const hud = hudStore.get()
@@ -751,4 +787,34 @@ export class GameScene extends Phaser.Scene {
     if (Math.abs(this.dashDir.x) > Math.abs(this.dashDir.y)) this.view.kick(1.25, 0.8)
     else this.view.kick(0.8, 1.25)
   }
+}
+
+/** One-attacker-at-a-time token (#49), with a short gap between turns. */
+function makeTurns(gapSeconds: number): Turns & { tick(dt: number): void } {
+  let holder: object | null = null
+  let gap = 0
+  return {
+    request(e) {
+      if (holder && holder !== e) return false
+      if (holder !== e && gap > 0) return false
+      holder = e
+      return true
+    },
+    release(e) {
+      if (holder !== e) return
+      holder = null
+      gap = gapSeconds
+    },
+    isOthers(e) {
+      return !!holder && holder !== e
+    },
+    tick(dt) {
+      gap = Math.max(0, gap - dt)
+      if (holder && (holder as Enemy).dead) holder = null
+    },
+  }
+}
+
+function kindOf(e: Enemy): 'melee' | 'ranged' | 'tank' {
+  return e instanceof RangedEnemy ? 'ranged' : e instanceof TankEnemy ? 'tank' : 'melee'
 }

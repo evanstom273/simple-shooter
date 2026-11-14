@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T06:47:26+00:00):**
+**Where the project stands (as of 2026-11-14T07:12:19+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **All three enemy types built** (ranged #56, tank #58) and health is 5 × 4 stages with 2-stage melee/ranged hits (#57) (2026-11-14T07:12:19+00:00).
 - **Contact damage removed entirely** (#52): only attacks hurt (2026-11-14T06:47:26+00:00).
 - **After playtesting the melee enemy ("very fucking hard"):** health is now 5 pips × 5 stages; contact costs a stage, attacks a pip; kills heal a stage; enemies take turns attacking; enemies 1.1× the player; enemy health bars (2026-11-14T06:44:50+00:00, #48–#51).
 - **Melee enemy built** (#40); practice dummies removed; a temporary spawner keeps two in the arena (2026-11-14T06:35:05+00:00).
@@ -247,6 +248,12 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 
 ## C. Current Development Scope
 
+### Step 9: Ranged enemy, tank, health 5 × 4 — **BUILT** *(2026-11-14T07:12:19+00:00)*
+**In scope (done):** the ranged enemy (#56) and the tank (#58) as designed; health 20 = 5 pips × 4 stages, melee lunge 2 stages (#57); shared enemy types; hazards (enemy shots, shockwaves, slam impact); the temporary spawner handles all three.
+
+**Out of scope:** waves, the shop (#53, #54), weapons.
+
+
 ### Step 8d: No contact damage — **BUILT** *(2026-11-14T06:47:26+00:00)*
 Touching enemies never hurts; only a roll or leap does (#52).
 
@@ -400,6 +407,11 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Turn-taking (#49) | Tested | Scene-level token: an enemy must get the turn to wind up; released when its dizzy spell ends (or it dies), then 0.5 s gap. Others within 480 px hop away to ~400 px or shuffle. Checked over 9 s with two enemies: never more than one attacking at once; they alternated. *(2026-11-14T06:44:50+00:00)* |
 | Enemy size (#50) | Done | Radius 26 (1.1 × the 48 px square). *(2026-11-14T06:44:50+00:00)* |
 | Enemy health bar (#51) | Tested | Three 12×5 px segments above the enemy, orange for remaining HP; drawn once it's taken a hit. *(2026-11-14T06:44:50+00:00)* |
+| Health 5 × 4 (#57) | Tested | 20 stages; melee lunge 2 stages, ranged shot 2, tank slam/shockwave 4. Kills heal 1 stage. *(2026-11-14T07:12:19+00:00)* |
+| Ranged enemy (#56) | Tested | `enemies/RangedEnemy.ts`. Green pointy triangle (radius 18; first made near-equilateral, which didn't read as pointing, so lengthened). Hovers to a vantage point ~520 px to one side of you and ~220 px above. Darts away (1100 px/s, 0.22 s) when you're within 260 px. When on screen, within 950 px and it gets the shared turn: charge 0.9 s (aim line tracks your predicted position from your velocity; glows; whine) → lock 0.35 s (line freezes, blinks, ping) → one shot at 1150 px/s that passes through platforms, 2 stages. Reload 2.2 s. 1 HP (a dash or a bullet kills it). Shatters into green triangles. Checked: shot hit a standing player 20→18; darted when approached; died to one hit; never charged while off screen. *(2026-11-14T07:12:19+00:00)* |
+| Tank (#58) | Tested | `enemies/TankEnemy.ts`. Red pentagon, 96 px (2×), 8 HP, one eye. Walks at 95 px/s, uses the same route-finding with heavy jumps; landings shake the screen. Within 520 px and on its own turn: wind-up 1 s (crouches, heats red→white, rumble, growing camera shake, landing marker tracking you) → leap (0.7 s arc to where you are) → slam: impact zone + two shockwaves running to the platform's ends (700 px/s, 46 px tall), all 4 stages → 2 s recovery (squashed, wobbly eye) → 1.5 s before it can slam again. Not pushable; your dash damages it and bounces you back (520 px/s). Breaks into falling red pentagon chunks. Checked: full cycle; slam on a standing player 20→16; shockwave hits a standing player (−4) and misses a jumping one; dash: −1 HP, tank didn't move, player bounced; dies at 8. *(2026-11-14T07:12:19+00:00)* |
+| Hazards | Tested | Enemy shots, shockwaves and the slam impact are scene-level hazards: each frame, if one touches the player (not invulnerable) it deals its damage and disappears. *(2026-11-14T07:12:19+00:00)* |
+| Temporary spawner | Temporary | *(Updated 2026-11-14T07:12:19+00:00.)* Keeps 2 melee + 1 ranged in the arena; tanks only on demand. E / R / T spawn an extra melee / ranged / tank (desktop). |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
 | ~~Practice dummies~~ | Removed (replaced by the melee enemy) | Five grey circles floating above platforms; 3 hits (dash or shot) to pop, respawn after 2.5 s; touching one hurts (to test health). Removed when the melee enemy goes in. |
@@ -423,6 +435,9 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
 - ~~Platforms block bullets from every side.~~ Changed by #42: bullets pass through.
+- **Tank slam impact zone:** the tank switched to recovering on the frame it landed, before the body-contact check, so a slam directly on you never counted. The slam now creates a brief damage zone over its footprint (Claude's fix).
+- **Ranged enemy has 1 HP**, so one bullet also kills it once weapons exist ("fragile").
+- **Tanks aren't kept in the arena by the test spawner**, only spawned with T, since they're meant for later waves.
 - **A hit during a roll or leap also dizzies the enemy** (the design only says the wind-up). Otherwise a mid-roll hit's knockback would be overwritten by the roll.
 - **Rolls can carry an enemy off the end of a platform**; it falls and finds its way back.
 - **Post-dash grace (0.12 s)** is Claude's addition so a dash that ends inside something doesn't immediately hurt you.
@@ -507,6 +522,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `enemies/` melee enemy and platform route-finding; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/state/hud.ts` health for the HUD; `src/audio/sfx.ts` synthesised sound.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `enemies/` melee, ranged and tank enemies, shared types and hazards, platform route-finding; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/state/hud.ts` health for the HUD; `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` sets its camera zoom on every resize (baseline 1600×900 view × `VIEW.zoom`, #35). In dev, the game is on `window.__game` for poking at from the console.

@@ -1,9 +1,9 @@
 import Phaser from 'phaser'
 import { sfx } from '../../audio/sfx.ts'
 import { burst, ring } from '../fx.ts'
-import type { Target } from '../targets.ts'
 import { GRAVITY, MELEE } from '../tuning.ts'
 import { firstMove, platformAt, type NavGraph } from './nav.ts'
+import type { Enemy, PlayerInfo, Turns } from './types.ts'
 
 // The melee enemy (#40): a small orange circle with one eye. Hops after you,
 // finds its way across platforms, winds up (glow + whine), then rolls at you on
@@ -11,23 +11,11 @@ import { firstMove, platformAt, type NavGraph } from './nav.ts'
 
 type State = 'spawning' | 'chase' | 'windup' | 'roll' | 'leap' | 'dizzy' | 'dead'
 
-/** Taking turns (#49): only one enemy attacks at a time. */
-export interface Turns {
-  request(e: MeleeEnemy): boolean
-  release(e: MeleeEnemy): void
-  isOthers(e: MeleeEnemy): boolean
-}
-
-export interface PlayerInfo {
-  x: number
-  y: number
-  /** Platform index the player is on, or will land on. */
-  platform: number
-}
-
-export class MeleeEnemy implements Target {
+export class MeleeEnemy implements Enemy {
   readonly radius = MELEE.radius
   readonly colour = MELEE.colour
+  readonly damage = MELEE.damage
+  readonly heavy = false
   alive = false
   state: State = 'spawning'
 
@@ -86,6 +74,10 @@ export class MeleeEnemy implements Target {
     this.marker = scene.add.circle(x, y, MELEE.radius * 1.6).setStrokeStyle(3, MELEE.colour, 0.8).setDepth(6)
     scene.tweens.add({ targets: this.marker, scale: 0.6, alpha: 0.4, duration: 300, yoyo: true, repeat: -1 })
     sfx.spawn()
+  }
+
+  get dead() {
+    return this.state === 'dead'
   }
 
   get x() {
