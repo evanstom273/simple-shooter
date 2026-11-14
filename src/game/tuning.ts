@@ -100,6 +100,8 @@ export const WEAPONS = {
 export const AIM = {
   /** Auto-aim range in world px (#38). Placeholder. */
   range: 700,
+  /** Only switch to a new target if it's this much closer than the current one (stops the bracket flickering). */
+  switchMargin: 0.15,
 } as const
 
 /** Practice dummies for testing aim, until enemies exist. */

@@ -106,12 +106,12 @@ export class GameScene extends Phaser.Scene {
     this.cooldownBar = this.add.rectangle(0, 0, PLAYER.size, 6, COLOURS.dash, 0.9).setOrigin(0, 0.5).setDepth(9)
     this.physics.add.existing(this.player)
 
-    // Shooting. Platforms (as they were placed) block bullets and line of sight.
-    const solids = PLATFORMS.map((p) => new Phaser.Geom.Rectangle(p.x, p.y, p.w, p.h))
+    // Shooting. Bullets pass through platforms; only the floor stops them (#42).
+    const floorY = PLATFORMS.find((p) => p.solid)?.y ?? ARENA.height
     // Temporary practice dummies until enemies exist: one floating above some platforms.
     const spots = [1, 3, 5, 7, 9].map((i) => PLATFORMS[i]).filter(Boolean).map((p) => ({ x: p.x + p.w / 2, y: p.y - DUMMY.radius - 70 }))
     this.targets = createPracticeTargets(this, spots)
-    this.shooter = new Shooter(this, solids, () => this.targets)
+    this.shooter = new Shooter(this, floorY, () => this.targets)
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
     this.body_.setCollideWorldBounds(true)
     this.physics.add.collider(

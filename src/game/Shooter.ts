@@ -5,8 +5,9 @@ import { burst } from './fx.ts'
 import type { Target } from './targets.ts'
 import { AIM, ARENA, PLAYER, WEAPONS } from './tuning.ts'
 
-// Aiming and shooting (#36–#39): the three aim modes, auto-aim target lock,
-// bullets, the gun barrel, the crosshair and the target bracket.
+// Aiming and shooting (#36–#39, #41–#43): the three aim modes, auto-aim
+// targeting, bullets, the gun barrel, the crosshair and the target bracket.
+// Platforms don't block bullets or auto-aim (#42); only the floor stops bullets.
 
 const BULLET_COLOUR = 0xfff2b0
 const BRACKET_COLOUR = 0xfff2b0
@@ -45,40 +46,38 @@ export class Shooter {
   private barrel: Phaser.GameObjects.Rectangle
   private barrelKick = 0
   private overlay: Phaser.GameObjects.Graphics
-  private line = new Phaser.Geom.Line()
   private scene: Phaser.Scene
-  private solids: Phaser.Geom.Rectangle[]
+  /** Top of the floor: the only thing that stops bullets. */
+  private floorY: number
   private targets: () => Target[]
 
-  constructor(scene: Phaser.Scene, solids: Phaser.Geom.Rectangle[], targets: () => Target[]) {
+  constructor(scene: Phaser.Scene, floorY: number, targets: () => Target[]) {
     this.scene = scene
-    this.solids = solids
+    this.floorY = floorY
     this.targets = targets
     this.barrel = scene.add.rectangle(0, 0, PLAYER.size * 0.42, PLAYER.size * 0.22, 0xd8d8e4).setOrigin(0, 0.5).setDepth(11)
     this.overlay = scene.add.graphics().setDepth(20)
   }
 
-  /** Can the player see this point? Platforms block line of sight (#38). */
-  hasLineOfSight(x1: number, y1: number, x2: number, y2: number) {
-    this.line.setTo(x1, y1, x2, y2)
-    return !this.solids.some((r) => Phaser.Geom.Intersects.LineToRectangle(this.line, r))
-  }
-
-  /** Locked until it dies (#38); otherwise the nearest visible target within range (#37). */
+  /**
+   * The nearest living target in range, re-checked every frame (#43). Keeps the
+   * current target unless another is at least AIM.switchMargin closer, so the
+   * bracket doesn't flick between two enemies at similar distances.
+   */
   private updateLock(x: number, y: number) {
-    if (this.locked && !this.locked.alive) this.locked = null
-    if (this.locked) return
+    const dist = (t: Target) => Phaser.Math.Distance.Between(x, y, t.x, t.y)
+    if (this.locked && (!this.locked.alive || dist(this.locked) > AIM.range)) this.locked = null
     let best: Target | null = null
     let bestD: number = AIM.range
     for (const t of this.targets()) {
       if (!t.alive) continue
-      const d = Phaser.Math.Distance.Between(x, y, t.x, t.y)
-      if (d < bestD && this.hasLineOfSight(x, y, t.x, t.y)) {
+      const d = dist(t)
+      if (d < bestD) {
         best = t
         bestD = d
       }
     }
-    this.locked = best
+    if (!this.locked || (best && best !== this.locked && bestD < dist(this.locked) * (1 - AIM.switchMargin))) this.locked = best
   }
 
   /** Returns the shot direction if a shot was fired this frame (for recoil). */
@@ -98,8 +97,8 @@ export class Shooter {
     // Should we fire?
     let wantFire = s.fireHeld
     if (s.mode === 'fullAuto') {
-      // Full auto fires only at a target it can see; never at nothing.
-      wantFire = !!this.locked && this.hasLineOfSight(s.x, s.y, this.locked.x, this.locked.y)
+      // Full auto fires only when there's a target; never at nothing.
+      wantFire = !!this.locked
     }
 
     this.cooldown -= dt
@@ -151,7 +150,7 @@ export class Shooter {
           dead = true
           break
         }
-        if (this.solids.some((r) => r.contains(b.x, b.y))) {
+        if (b.y >= this.floorY) {
           const back = Math.atan2(-b.vy, -b.vx)
           burst(this.scene, b.x, b.y, { count: 5, colour: BULLET_COLOUR, angle: back, spread: 0.9, speed: [100, 260], size: [3, 6], life: 200 })
           sfx.spark()
