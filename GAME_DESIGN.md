@@ -73,7 +73,9 @@ Designed with Lyra through rounds of questions.
 - **Doorways are geometric portals:** big glowing shapes, each world its own shape and colour.
 - **Over each portal:** the **world's name**, the **next section number** (e.g. "1-2"), and **four section pips** lit for bosses beaten. Over the endless portal: **best score and wave**.
 - **The shop is items on pedestals** in the room: the random 3–4 offers (#63) float on pedestals with price tags. **Fresh stock on every visit**, plus a **paid reroll** pedestal whose fee rises each use.
-- **Interacting:** walk into a portal to go through it; **buying needs a deliberate press** so you can't buy by accident.
+- **Interacting:** walk into a portal to go through it; **buying needs a deliberate press** so you can't buy by accident: **W / ↑ on desktop, and a touch button** that appears when you're near something. *(2026-11-14T21:49:41+00:00 — History #72)*
+- **Endless mode stays as it is: you start from nothing**, no story upgrades or weapons, so high scores stay comparable. *(2026-11-14T21:49:41+00:00 — History #72)*
+- **The hub is mocked up as an artifact first** and refined back and forth before it goes into the game.
 - **A training dummy** to practise dashes, stomps and new guns on (harmless).
 - **Health:** returning after **dying** fully heals you; returning after **clearing a section** keeps your damage (buy healing at the shop, #54, or push on).
 - **Mood: an eerie liminal space**, quiet and strange (like Demon's Souls' Nexus).
@@ -431,8 +433,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
-1i. **Hub (#70), open:** the interact key on desktop (W / ↑ suggested) and the touch button; tutorial room contents and whether it can be replayed; how the drop down to endless works (a hole in the floor?); the training dummy's look; reroll and healing prices; where settings/testing live once the hub is the menu.
-1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; ~~unique enemies per world~~ (fully unique, #65); whether the existing melee/ranged/tank become world 1's roster, endless mode's, or both; how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
+1i. **Hub (#70), open:** tutorial room contents and whether it can be replayed; how the drop down to endless works (a hole in the floor?); the training dummy's look; reroll and healing prices; where settings/testing live once the hub is the menu.
+1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; ~~unique enemies per world~~ (fully unique, #65); whether the existing melee/ranged/tank become world 1's roster, endless mode's, or both; how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; the hub itself (a walkable space, or a menu?); boss designs.
 1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
@@ -632,6 +634,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 69 | 2026-11-14T21:39:33+00:00 | Balance | Melee first: Fire Rate upgrade replaced by a dash & stomp damage upgrade; gun damage lowered (~40%); only dash/stomp kills heal; guns should be expensive. |
 | 70 | 2026-11-14T21:46:15+00:00 | Hub | Walkable hub that is also the main menu: centre shop (items on pedestals, fresh stock each visit + rising-price reroll), world portals across both wings (geometric, each its own shape/colour, showing name, next section and 4 boss pips), endless mode below (best score shown); walk into portals, deliberate press to buy; a training dummy; full heal only after dying; eerie liminal mood; first launch starts in a short tutorial room. |
 | 71 | 2026-11-14T21:46:15+00:00 | Balance | Gun damage +25% after testing: pistol 0.5, automatic 0.25, shotgun 0.25 per pellet. |
+| 72 | 2026-11-14T21:49:41+00:00 | Hub | Interact: W / ↑ and a contextual touch button. Endless mode starts from nothing (no story upgrades or weapons). Hub mocked up as an artifact before building. |
 
 ---
 
