@@ -42,6 +42,10 @@ export class Shooter {
   private bullets: Bullet[] = []
   private cooldown = 0
   private locked: Target | null = null
+  /** The current auto-aim target, if any (for the off-screen marker and zoom). */
+  get target(): Target | null {
+    return this.locked
+  }
   private aimAngle = 0
   private barrel: Phaser.GameObjects.Rectangle
   private barrelKick = 0

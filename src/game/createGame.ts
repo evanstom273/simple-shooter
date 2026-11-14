@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { GameScene } from './GameScene.ts'
+import { MarkersScene } from './MarkersScene.ts'
 import { TouchControlsScene } from './TouchControlsScene.ts'
 
 // Renders at the screen's real pixel density: the canvas is CSS size × dpr,
@@ -25,7 +26,7 @@ export function createGame(parent: HTMLElement): { game: Phaser.Game; destroy: (
     input: { activePointers: 4 },
     disableContextMenu: true,
     callbacks: { preBoot: (g) => g.registry.set('dpr', ratio) },
-    scene: [GameScene, TouchControlsScene],
+    scene: [GameScene, MarkersScene, TouchControlsScene],
   })
 
   // Handy for poking at the game from the console / automated checks in dev.

@@ -19,6 +19,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Step 7c: off-screen enemy markers, highlighted target arrow, zoom out (≤15%) for an off-screen target (History #44). *(2026-11-14T06:06:53+00:00)*
 - [x] Step 7b: bullets through platforms, no line of sight (#42); nearest-target auto-aim with 15% switch margin (#43). *(2026-11-14T05:50:22+00:00)*
 - [x] Step 7: shooting and aiming: three aim modes + settings panel, touch trigger, auto-aim lock + bracket, test pistol, shot juice, practice dummies (History #41). *(2026-11-14T05:45:20+00:00)*
 - [x] Step 6: short hops removed (#34); arena experiment 2400×1350, 0.8× zoom, 10 platforms (#35). *(2026-11-14T05:12:44+00:00)*

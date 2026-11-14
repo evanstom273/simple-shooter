@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T05:50:22+00:00):**
+**Where the project stands (as of 2026-11-14T06:06:53+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Off-screen enemy markers and target zoom-out** (2026-11-14T06:06:53+00:00).
 - **After testing: bullets pass through platforms; auto-aim re-picks the nearest target continuously** (2026-11-14T05:50:22+00:00).
 - **Shooting and aiming built** (all three aim modes, settings panel, test pistol, practice dummies) (2026-11-14T05:45:20+00:00).
 - **Short hops removed; bigger arena experiment (2400×1350, 0.8× zoom, 10 platforms)** (2026-11-14T05:12:44+00:00).
@@ -83,6 +84,8 @@ The core design (History #7–#15) was worked out in a separate conversation and
   **Defaults: Auto aim, manual shooting on mobile; Manual on desktop.** *(2026-11-14T05:22:58+00:00 / 2026-11-14T05:23:10+00:00 — History #39)*
   Motivation: manual aiming on a phone, especially the Fold's cover screen, is awkward with the right thumb already on jump and dash.
 - **Auto-aim targets the nearest enemy**, with a visible indicator on the current target. No facing-based targeting: the square has no front.
+  - **Off-screen markers:** an arrow at the screen edge for every enemy you can't see, in the enemy's colour; closer enemies get bigger, brighter arrows. The auto-aim target's arrow is yellow, larger and pulsing. *(2026-11-14T06:06:53+00:00 — History #44)*
+  - **Zoom out for an off-screen target:** while the auto-aim target is off screen the camera zooms out (up to 15%) to bring it in, easing out quickly and back slowly. *(2026-11-14T06:06:53+00:00 — History #44)*
   - **Bullets pass through platforms, and platforms don't block auto-aim.** Only the floor stops bullets. Supersedes the line-of-sight rule below. *(2026-11-14T05:50:22+00:00 — History #42)*
   - **Auto-aim re-picks the nearest target in range every frame**, switching only when another target is at least 15% closer (so the bracket doesn't flicker). Supersedes "locked until it dies". *(2026-11-14T05:50:22+00:00 — History #43)*
   - ~~**The target stays locked until it dies**; then the next nearest is picked.~~ *(Superseded by #43.)* *(2026-11-14T05:22:06+00:00 — History #38)*
@@ -173,6 +176,10 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ---
 
 ## C. Current Development Scope
+
+### Step 7c: Off-screen markers and target zoom — **BUILT** *(2026-11-14T06:06:53+00:00)*
+Edge arrows for off-screen enemies and a highlighted arrow for the auto-aim target; camera zooms out up to 15% while the target is off screen (#44).
+
 
 ### Step 7b: Shooting changes after testing — **BUILT** *(2026-11-14T05:50:22+00:00)*
 Bullets pass through platforms and auto-aim ignores them (#42); auto-aim re-picks the nearest target continuously with a 15% switch margin (#43).
@@ -286,6 +293,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Shooting (`Shooter.ts`) | Tested | Hold the trigger to fire at the weapon's rate (pistol 4/s, exact). Desktop: left mouse button; mouse aims in Manual (system cursor replaced by a crosshair). Touch: hold anywhere right of the joystick zone that isn't JUMP/DASH; in Manual shots go towards the thumb. No target in range: shots go straight ahead (direction last moved). Full auto fires only at a locked target in line of sight. Can't fire mid-dash. Bullets: 1900 px/s, sub-stepped so they can't skip thin platforms; pass through platforms (#42) and stop at the floor with sparks. *(2026-11-14T05:45:20+00:00)* |
 | Auto-aim | Tested | *(Updated 2026-11-14T05:50:22+00:00, #42–#43.)* Nearest living target within 700 px, re-checked every frame; keeps the current target unless another is ≥15% closer (`AIM.switchMargin`); drops it when it dies or leaves range. Platforms ignored. Checked: a 6% difference kept the old target, 33% switched. *Previously:* line of sight + locked until death. Rotating corner bracket on the locked target. *(2026-11-14T05:45:20+00:00)* |
 | Shot feel | Tested | Muzzle star flash, additive glow, barrel kicks back, small recoil push (sideways; lift when firing down in the air), tiny squash, shot sound; impact sparks + tick. *(2026-11-14T05:45:20+00:00)* |
+| Off-screen markers (#44) | Tested | `MarkersScene` (screen space, drawn under the touch controls): for each living target outside the view, an arrowhead where the line from screen centre to the target meets the edge (inset 26 CSS px). Size 9–15 px and opacity by distance (fades out to 1600 px). Auto-aim target: yellow, 16–19 px pulsing, with a pulsing ring. Each target supplies its marker colour. *(2026-11-14T06:06:53+00:00)* |
+| Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | Test pistol | Temporary | You start with the pistol until upgrades exist; the design says you start unarmed (#21). |
 | Practice dummies | Temporary | Five grey circles floating above platforms; 3 hits to pop, respawn after 2.5 s. Removed when the melee enemy goes in. |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
@@ -294,7 +303,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Starting with a pistol** contradicts #21 (start unarmed) until the upgrade offers exist.
 - **Dash doesn't damage anything yet**: there's nothing to hit.
 - **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
-- **Zoomed-in views see less of the arena** (#29): in portrait about a quarter of its width. Fine for movement; once enemies exist, ones off-screen may need an edge indicator (not decided).
+- **Zoomed-in views see less of the arena** (#29): in portrait about a fifth of its width. Off-screen enemies now get edge markers (#44).
+- **Portrait: the player sits under the touch controls** when on the floor (the camera can't scroll below the arena), so the square is partly hidden behind DASH.
 - **Touch controls sit over the game**, most noticeably in portrait, where the floor and the player run under the joystick and jump button.
 - Not yet tried on the physical Pixel 10 Pro Fold.
 - Phaser is a large chunk (~1.4 MB minified, ~360 KB gzipped). It loads lazily after the page, and the Vite size warning is raised to 1600 KB to stop it nagging.
@@ -363,6 +373,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 41 | 2026-11-14T05:45:20+00:00 | Controls | Touch trigger is the whole right side (no SHOOT button), in every aim mode; full auto never fires at nothing; a gun barrel nub shows aim; aim mode chosen in a settings panel and saved. (Approved plan.) |
 | 42 | 2026-11-14T05:50:22+00:00 | Combat | After testing: platforms are invisible to bullets (only the floor stops them) and no longer block auto-aim; the line-of-sight rule (#38) is dropped. |
 | 43 | 2026-11-14T05:50:22+00:00 | Controls | After testing: auto-aim is the nearest target in range, re-picked continuously, with a 15% tolerance before switching; no longer locked until death (#38). |
+| 44 | 2026-11-14T06:06:53+00:00 | UI / camera | Off-screen enemy markers (edge arrows in the enemy's colour, bigger/brighter when closer); the auto-aim target's arrow is highlighted; the camera zooms out up to 15% while the auto-aim target is off screen. |
 
 ---
 
@@ -372,6 +383,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `PracticeTargets.ts` temporary dummies; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/audio/sfx.ts` synthesised sound.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `PracticeTargets.ts` temporary dummies; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` sets its camera zoom on every resize (baseline 1600×900 view × `VIEW.zoom`, #35). In dev, the game is on `window.__game` for poking at from the console.

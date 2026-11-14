@@ -7,7 +7,18 @@ export const ARENA = { width: 2400, height: 1350 } as const
  * Camera zoom. The baseline is the zoom at which a 1600×900 area would fill the
  * screen (the original arena); `zoom` scales that (0.8 = 20% further out).
  */
-export const VIEW = { baseWidth: 1600, baseHeight: 900, zoom: 0.8 } as const
+export const VIEW = {
+  baseWidth: 1600,
+  baseHeight: 900,
+  zoom: 0.8,
+  /** When the auto-aim target is off screen, zoom out up to this fraction to bring it in (#44). */
+  targetZoomOut: 0.15,
+  /** Easing speeds (per second): out quickly, back in slowly. */
+  zoomOutSpeed: 3,
+  zoomInSpeed: 1.2,
+  /** Off-screen markers: inset from the screen edge, in CSS px. */
+  markerInset: 26,
+} as const
 
 export const PLAYER = {
   size: 48,

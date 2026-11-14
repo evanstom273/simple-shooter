@@ -11,6 +11,7 @@ const GREY = 0x8a8a9c
 
 class Dummy implements Target {
   readonly radius = DUMMY.radius
+  readonly colour = GREY
   alive = true
   private hp: number = DUMMY.health
   private o: Phaser.GameObjects.Arc

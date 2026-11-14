@@ -58,6 +58,10 @@ export class GameScene extends Phaser.Scene {
   private stepTimer = 0
   private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
   private shooter!: Shooter
+  /** Zoom that fills the screen (#35); the target zoom-out (#44) scales it down. */
+  private baseZoom = 1
+  private minZoom = 0.1
+  private zoomFactor = 1
   private targets: Target[] = []
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
@@ -143,6 +147,7 @@ export class GameScene extends Phaser.Scene {
     cam.startFollow(this.player, false, SCREEN.followLerp, SCREEN.followLerp)
     this.fitCamera()
     cam.centerOn(this.player.x, this.player.y)
+    this.scene.launch('markers')
     this.scene.launch('touch')
     this.scale.on(Phaser.Scale.Events.RESIZE, this.fitCamera, this)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.fitCamera, this))
@@ -159,8 +164,9 @@ export class GameScene extends Phaser.Scene {
     cam.setSize(width, height)
     const baseline = Math.max(width / VIEW.baseWidth, height / VIEW.baseHeight)
     // Never so far out that the view is bigger than the arena.
-    const minZoom = Math.max(width / ARENA.width, height / ARENA.height)
-    cam.setZoom(Math.max(baseline * VIEW.zoom, minZoom))
+    this.minZoom = Math.max(width / ARENA.width, height / ARENA.height)
+    this.baseZoom = Math.max(baseline * VIEW.zoom, this.minZoom)
+    cam.setZoom(Math.max(this.baseZoom * this.zoomFactor, this.minZoom))
   }
 
   private readControls(): Controls {
@@ -284,6 +290,7 @@ export class GameScene extends Phaser.Scene {
     this.lastVelY = b.velocity.y
 
     this.updateShooting(dt)
+    this.updateTargetZoom(dt)
     this.updateLookAhead(dt)
     this.updateDarkness()
     this.updateMotes(dt)
@@ -325,6 +332,37 @@ export class GameScene extends Phaser.Scene {
       if (!b.blocked.down) b.setVelocityY(b.velocity.y - shot.y * WEAPONS.pistol.recoil * 0.5)
       this.view.kick(1 - Math.abs(shot.x) * 0.06, 1 - Math.abs(shot.y) * 0.06)
     }
+  }
+
+  /** For the marker overlay. */
+  get markerInfo() {
+    return { targets: this.targets, target: this.shooter.target, player: this.player }
+  }
+
+  /**
+   * Target off screen (judged at the normal zoom, so it doesn't see-saw):
+   * zoom out just enough to bring it in, up to VIEW.targetZoomOut (#44).
+   */
+  private updateTargetZoom(dt: number) {
+    const cam = this.cameras.main
+    const t = this.shooter.target
+    let want = 1
+    if (t) {
+      const cx = cam.midPoint.x
+      const cy = cam.midPoint.y
+      const margin = t.radius + 40
+      const halfW = cam.width / this.baseZoom / 2
+      const halfH = cam.height / this.baseZoom / 2
+      const dx = Math.abs(t.x - cx) + margin
+      const dy = Math.abs(t.y - cy) + margin
+      if (dx > halfW || dy > halfH) {
+        const needed = Math.min(halfW / dx, halfH / dy)
+        want = Math.max(1 - VIEW.targetZoomOut, needed)
+      }
+    }
+    const speed = want < this.zoomFactor ? VIEW.zoomOutSpeed : VIEW.zoomInSpeed
+    this.zoomFactor += (want - this.zoomFactor) * Math.min(1, dt * speed)
+    cam.setZoom(Math.max(this.baseZoom * this.zoomFactor, this.minZoom))
   }
 
   /** The camera leads a little in the direction you're running. */
