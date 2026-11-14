@@ -32,7 +32,7 @@ export function Hud() {
   return (
     <div className="pointer-events-none absolute inset-0 p-3">
       <p className="hidden text-xs text-neutral-500 [@media(pointer:fine)]:block">
-        A / D move · Space jump (hold for higher, twice to double jump) · S drop through · Right-click dash
+        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash
       </p>
       <button
         type="button"

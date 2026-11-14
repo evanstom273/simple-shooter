@@ -106,7 +106,6 @@ export class TouchControlsScene extends Phaser.Scene {
     if (jumpHit && this.jumpPointer === null) {
       this.jumpPointer = p.id
       touchInput.jumpQueued = true
-      touchInput.jumpHeld = true
       this.jumpBtn.setFillStyle(0xffffff, 0.3)
       return
     }
@@ -149,7 +148,6 @@ export class TouchControlsScene extends Phaser.Scene {
     if (p.id === this.dashPointer) this.dashPointer = null
     if (p.id === this.jumpPointer) {
       this.jumpPointer = null
-      touchInput.jumpHeld = false
       this.jumpBtn.setFillStyle(0xffffff, 0.12)
     }
   }

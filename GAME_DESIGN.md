@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T05:08:55+00:00):**
+**Where the project stands (as of 2026-11-14T05:12:44+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Short hops removed; bigger arena experiment (2400×1350, 0.8× zoom, 10 platforms)** (2026-11-14T05:12:44+00:00).
 - **Sound, short hops, coyote time, jump buffering, one-way platforms, vibration, camera look-ahead, platform reactions and motes** (2026-11-14T05:08:55+00:00).
 - **Lighting, screen shake and smoother movement** (2026-11-14T05:00:48+00:00).
 - **Squash, stretch and movement effects built; dash cooldown shown on desktop** (2026-11-14T04:55:00+00:00).
@@ -64,7 +65,8 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Movement and controls *(2026-11-14T04:17:36+00:00 — History #9)*
 - **Desktop:** A/D move left and right; Space jumps; S drops through platforms (#33); the mouse aims a full 360°; left-click shoots.
 - **Mobile:** landscape orientation; a virtual joystick on the left for movement; tap or hold on the right side to aim and shoot; an on-screen jump button.
-- **Short hops:** let go of jump early for a lower jump; holding gives the full height, which the Jump Height upgrade (#12) raises. Applies to the double jump too. *(2026-11-14T05:08:55+00:00 — History #32)*
+- **Fixed jump height again: short hops removed** after playtesting (Lyra: didn't fit). Every jump, including the double jump, is full height. Supersedes #32. *(2026-11-14T05:12:44+00:00 — History #34)*
+- ~~**Short hops:**~~ *(Removed by #34.)* let go of jump early for a lower jump; holding gives the full height, which the Jump Height upgrade (#12) raises. Applies to the double jump too. *(2026-11-14T05:08:55+00:00 — History #32)*
 - **One-way platforms:** jump up through platforms from below; press down (S on desktop, joystick down on touch; down + jump also works) to drop through. The floor is solid. *(2026-11-14T05:08:55+00:00 — History #33)*
 - **Double jump:** press jump again in mid-air for one extra jump. *(2026-11-14T04:49:36+00:00 — History #30)*
 - **Dash:** right-click on desktop (towards the mouse); an on-screen dash button on mobile. *(2026-11-14T04:24:39+00:00 — History #21)*
@@ -73,6 +75,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - **Weapon switching (mobile):** an on-screen button that cycles through your weapons. *(2026-11-14T04:27:30+00:00 — History #25)*
 
 ### Arena *(2026-11-14T04:17:36+00:00 — History #10)*
+- **Arena size experiment:** 2400×1350 (was 1600×900), camera zoomed out to 0.8× the old baseline so more is visible and the camera scrolls around the arena; 8–10 platforms; player speed and dash distance unchanged. First experiment, to be judged in play. *(2026-11-14T05:12:44+00:00 — History #35)*
 - **Side-view arena with platforms at different heights.** Platforming and jumping are part of combat.
 - Enemies spawn into the arena and attack the player.
 - No exploration and no procedurally generated levels.
@@ -135,6 +138,10 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ---
 
 ## C. Current Development Scope
+
+### Step 6: Fixed jump, bigger arena — **BUILT** *(2026-11-14T05:12:44+00:00)*
+**In scope (done):** short hops removed (#34); arena 2400×1350 with a 0.8× zoom setting and 10 placeholder platforms in four tiers (#35); more motes for the bigger space.
+
 
 ### Step 5: Juice and platform movement — **BUILT** *(2026-11-14T05:08:55+00:00)*
 **In scope (done):** synthesised sound effects with a remembered mute button; short hops (#32); coyote time and jump buffering; one-way platforms with drop-through (#33); phone vibration; camera look-ahead; platforms dip and brighten when landed on; ambient motes caught in the light.
@@ -210,7 +217,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | GitHub Pages deployment | Implemented | `.github/workflows/pages.yml`: on push to `main` (or run by hand), runs `npm ci` and `npm run build` on Node 22 and deploys `dist/` (#6). Pages source is set to GitHub Actions (done by Lyra in the repo settings). *(updated 2026-11-14T04:15:39+00:00)* |
 | Project scaffold | Tested | `npm run build` (type-check + Vite build) and `npm run lint` pass; checked in headless Chromium via `vite preview`: canvas renders, no console errors. *(2026-11-14T04:15:39+00:00)* |
 | Movement (#9) | Tested | Square (48 px) with gravity, running (eased towards top speed) and a fixed-height jump; collides with platforms and the arena edges. Desktop: A/D, Space. Touch: floating joystick in the left 45% of the screen (appears where your thumb lands; horizontal only), jump button bottom-right; shown on touch screens (or after the first touch). Multi-touch works (move + jump together). All numbers in `src/game/tuning.ts`. *(2026-11-14T04:42:54+00:00)* |
-| Screen fitting (#29) | Tested | The arena is a fixed 1600×900 world. The camera zooms until the arena covers the whole screen (no margins) and follows the player, clamped to the arena edges. Visible area: desktop 1440×900 of the arena; cover landscape 1600×731 (top trimmed, follows vertically); cover portrait 411×900 (about a quarter of the width); inner ~857×900. *(updated 2026-11-14T04:45:51+00:00)* Previously fit-whole-arena with margins. Rendered at device pixel ratio (capped at 3). Checked in headless Chromium at desktop 1440×900, Fold cover landscape 900×411 and portrait 411×900, and an approximate inner screen 790×830, at the Fold's pixel density. *(2026-11-14T04:42:54+00:00)* |
+| Arena size and zoom (#35) | Tested | Arena 2400×1350. Zoom = the zoom at which the screen would show 1600×900 (the old arena), × `VIEW.zoom` (0.8), never so far out that the view exceeds the arena. Visible area: desktop 1440×900 → 1800×1125; cover landscape 2000×913; cover portrait 514×1125; inner ~1071×1125. 10 one-way platforms in four tiers 180 px apart; each tier reached from the one below with a single jump (checked). Single jump ≈ 192 px. 100 motes. *(2026-11-14T05:12:44+00:00)* |
+| Screen fitting (#29) | Tested | *(Arena and zoom since changed by #35.)* The arena is a fixed 1600×900 world. The camera zooms until the arena covers the whole screen (no margins) and follows the player, clamped to the arena edges. Visible area: desktop 1440×900 of the arena; cover landscape 1600×731 (top trimmed, follows vertically); cover portrait 411×900 (about a quarter of the width); inner ~857×900. *(updated 2026-11-14T04:45:51+00:00)* Previously fit-whole-arena with margins. Rendered at device pixel ratio (capped at 3). Checked in headless Chromium at desktop 1440×900, Fold cover landscape 900×411 and portrait 411×900, and an approximate inner screen 790×830, at the Fold's pixel density. *(2026-11-14T04:42:54+00:00)* |
 | Double jump (#30) | Tested | One extra jump in mid-air (90% of a normal jump's speed), with a small ring puff. Resets on landing. Walking off a ledge still leaves you the air jump. Jump Height (#12) will scale both. *(2026-11-14T04:49:36+00:00)* |
 | Dash (#21, #24) | Tested | Right-click: dashes towards the mouse in any direction (360°). Touch: DASH button beside JUMP; dashes the way the joystick points, or the way you're facing if the stick is idle. 0.15 s at 1500 px/s (~225 px), gravity off, keeps 35% of its speed after; cooldown 0.8 s. Square turns blue with an afterimage trail. `invulnerable` is true for the whole dash, for enemies to check later. Touch button shows the cooldown as a ring filling back up. Works in the air. *(2026-11-14T04:49:36+00:00)* |
 | Squash and stretch | Tested | The visible square (`PlayerView`) is separate from the physics box, so it deforms without affecting collisions. Scale runs on a damped spring (wobbles back to square). Jump: stretch 0.72×1.32; double jump 0.8×1.22; landing: squash up to 1.4×0.6 depending on impact speed; slight stretch with vertical speed in the air; lean into the run; dash: a 1.45×0.7 streak rotated along the dash (afterimages match); dashing into a wall, floor or ceiling ends the dash and flattens against it; coming out of a dash, a small stretch along its direction. Feet stay planted while squashing. *(2026-11-14T04:55:00+00:00)* |
@@ -220,7 +228,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Screen shake (#31) | Tested | Hard landings (only above ~a third of max impact; scales with it) and dash impacts. ~4 px, ~0.1 s. Respects `prefers-reduced-motion`. Numbers in `SCREEN` in `tuning.ts`. *(2026-11-14T05:00:48+00:00)* |
 | Lighting (#31) | Tested | A radial-gradient darkness image drawn between the arena (depth 0) and effects/player (5+), centred on the player and sized to the screen so it looks the same at every zoom. Lit core ~22% of its radius; ~92% dark at the radius (62% of the screen diagonal) and beyond. Touch controls are a separate scene, so unaffected. First tried as a camera vignette, which darkened the player too; Lyra liked the darkness, so it was kept but moved under the characters and centred on the player. *(2026-11-14T05:00:48+00:00)* |
 | Sound | Tested (plays without errors; not listened to by a person yet) | Web Audio synthesis, no files (`src/audio/sfx.ts`): jump, double jump, landing (scaled by impact), dash whoosh, dash impact, dash-ready ping, skid, footstep ticks while running. Slight random pitch variation. Starts on the first tap or key press (browser rule). Mute button top-right (React), saved in Dexie (`saves` record `settings`) and restored on load. *(2026-11-14T05:08:55+00:00)* |
-| Short hops (#32) | Tested | Releasing jump while rising cuts upward speed to 45%: a tap reached ~62 px, a full hold ~178 px. *(2026-11-14T05:08:55+00:00)* |
+| ~~Short hops (#32)~~ | Removed (#34) | Releasing jump while rising cuts upward speed to 45%: a tap reached ~62 px, a full hold ~178 px. *(2026-11-14T05:08:55+00:00)* |
 | Coyote time / jump buffer | Tested | 0.1 s after leaving a ledge still counts as a ground jump (keeps the double jump); a press up to 0.12 s before landing jumps on landing. *(2026-11-14T05:08:55+00:00)* |
 | One-way platforms (#33) | Tested | Every platform but the floor only collides from above. Down on a one-way platform drops you through (0.22 s of ignoring platforms). *(2026-11-14T05:08:55+00:00)* |
 | Vibration | Implemented (not testable headless) | `navigator.vibrate` on touch play only: 8–30 ms on landings by impact, 35 ms on dash impacts. Android Chrome; iOS has no vibration API. *(2026-11-14T05:08:55+00:00)* |
@@ -240,6 +248,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
+- **Placeholder platform layout for #35** (four tiers, each a single jump apart) is Claude's, not designed.
 - **16:9 arena** as a middle ground between desktop, the Fold's very wide cover screen and its near-square inner screen. Camera follow is slightly smoothed.
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
@@ -288,6 +297,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 31 | 2026-11-14T05:00:48+00:00 | Visuals | Dark arena edges with a pool of light following the player; characters and effects stay fully lit. Tiny screen shake on impacts (hard landings, dash impacts). |
 | 32 | 2026-11-14T05:08:55+00:00 | Movement | Variable jump height: release early for a short hop; works with the Jump Height upgrade (raises the full height). Supersedes the fixed-height interpretation. |
 | 33 | 2026-11-14T05:08:55+00:00 | Arena / controls | One-way platforms: jump up through from below; down (S / joystick down; down + jump also) drops through. Floor stays solid. |
+| 34 | 2026-11-14T05:12:44+00:00 | Movement | Short hops removed after playtesting: fixed jump height (all jumps full height). Supersedes #32. |
+| 35 | 2026-11-14T05:12:44+00:00 | Arena | Experiment: arena 2400×1350, camera 0.8× the previous baseline zoom, 8–10 platforms; player speed and dash distance unchanged. |
 
 ---
 
@@ -299,4 +310,4 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
 - **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute); `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
-- **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` fits its camera to the 1600×900 arena on every resize. In dev, the game is on `window.__game` for poking at from the console.
+- **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` sets its camera zoom on every resize (baseline 1600×900 view × `VIEW.zoom`, #35). In dev, the game is on `window.__game` for poking at from the console.

@@ -4,7 +4,7 @@ import { sfx } from '../audio/sfx.ts'
 import { burst, ring } from './fx.ts'
 import { buzz } from './haptics.ts'
 import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
-import { ARENA, DASH, GRAVITY, PLATFORMS, PLAYER, SCREEN } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, PLATFORMS, PLAYER, SCREEN, VIEW } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -47,8 +47,6 @@ export class GameScene extends Phaser.Scene {
   private sinceGrounded = 0
   /** Seconds left on a remembered jump press (jump buffering). */
   private jumpBuffered = 0
-  /** Rising from a jump that can still be cut short by letting go. */
-  private jumpCuttable = false
   /** Seconds left falling through platforms after pressing down. */
   private dropTime = 0
   private standingOn: Phaser.GameObjects.Rectangle | null = null
@@ -94,7 +92,7 @@ export class GameScene extends Phaser.Scene {
     // Physics box: invisible. What you see is PlayerView, which squashes and stretches.
     this.darkness = this.createDarkness()
 
-    this.player = this.add.rectangle(ARENA.width / 2, 780, PLAYER.size, PLAYER.size, 0xffffff).setVisible(false)
+    this.player = this.add.rectangle(ARENA.width / 2, ARENA.height - 120, PLAYER.size, PLAYER.size, 0xffffff).setVisible(false)
     this.view = new PlayerView(this)
 
     // Desktop dash cooldown: a thin bar under the square, hidden when ready.
@@ -138,15 +136,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Fill the whole screen, whatever its shape: zoom until the arena covers it,
-   * then follow the player within the arena. On screens close to 16:9 you see
-   * (nearly) all of it; on narrow or very wide screens you see a zoomed-in slice.
+   * Fill the whole screen, whatever its shape. Zoom is set so the screen would
+   * show a 1600×900 area, then pulled out by VIEW.zoom; the camera follows the
+   * player around the (bigger) arena.
    */
   private fitCamera() {
     const cam = this.cameras.main
     const { width, height } = this.scale
     cam.setSize(width, height)
-    cam.setZoom(Math.max(width / ARENA.width, height / ARENA.height))
+    const baseline = Math.max(width / VIEW.baseWidth, height / VIEW.baseHeight)
+    // Never so far out that the view is bigger than the arena.
+    const minZoom = Math.max(width / ARENA.width, height / ARENA.height)
+    cam.setZoom(Math.max(baseline * VIEW.zoom, minZoom))
   }
 
   private readControls(): Controls {
@@ -162,9 +163,8 @@ export class GameScene extends Phaser.Scene {
       dash = Math.hypot(touchInput.stickX, touchInput.stickY) > 0.3 ? { x: touchInput.stickX, y: touchInput.stickY } : { x: 0, y: 0 }
       touchInput.dashQueued = false
     }
-    const jumpHeld = this.keys.jump.isDown || touchInput.jumpHeld
     const down = this.keys.down.isDown || touchInput.stickY > 0.6
-    return { moveX, jump, jumpHeld, down, dash }
+    return { moveX, jump, down, dash }
   }
 
   update(_time: number, deltaMs: number) {
@@ -233,27 +233,18 @@ export class GameScene extends Phaser.Scene {
         this.jumpBuffered = 0
         if (canGroundJump) {
           this.sinceGrounded = PLAYER.coyoteTime
-          this.jumpCuttable = true
           sfx.jump()
           b.setVelocityY(-PLAYER.jumpSpeed)
           this.view.kick(0.72, 1.32)
           burst(this, this.player.x, feetY - 3, { count: 6, colour: COLOURS.dust, angle: -DOWN, spread: 1.2, speed: [60, 160], size: [5, 9], gravity: 200 })
         } else if (this.airJumpsLeft > 0) {
           this.airJumpsLeft--
-          this.jumpCuttable = true
           sfx.airJump()
           b.setVelocityY(-PLAYER.jumpSpeed * PLAYER.airJumpScale)
           this.view.kick(0.8, 1.22)
           ring(this, this.player.x, feetY, PLAYER.size * 1.2, PLAYER.size * 0.35, 0xffffff)
         }
       }
-
-      // Short hops: let go while rising and the jump is cut.
-      if (this.jumpCuttable && !c.jumpHeld && b.velocity.y < 0) {
-        b.setVelocityY(b.velocity.y * PLAYER.jumpCut)
-        this.jumpCuttable = false
-      }
-      if (b.velocity.y >= 0) this.jumpCuttable = false
     }
 
     touchInput.dashReady = 1 - this.dashCooldown / DASH.cooldown
@@ -412,7 +403,6 @@ export class GameScene extends Phaser.Scene {
     this.dashCooldown = DASH.cooldown
     this.body_.setAllowGravity(false)
     this.trailTimer = 0
-    this.jumpCuttable = false
     sfx.dash()
     burst(this, this.player.x, this.player.y, {
       count: 10, colour: COLOURS.dash, angle: this.dashDir.angle() + Math.PI, spread: 0.6, speed: [180, 420], size: [5, 10], life: 280,
