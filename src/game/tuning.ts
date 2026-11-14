@@ -11,6 +11,21 @@ export const PLAYER = {
   responsiveness: 18,
   /** Upward speed on jump, px/s. Jump height ≈ jumpSpeed² / (2 × gravity). */
   jumpSpeed: 980,
+  /** Jumps available in mid-air (1 = double jump). */
+  airJumps: 1,
+  /** Upward speed of an air jump, as a fraction of jumpSpeed. */
+  airJumpScale: 0.9,
+} as const
+
+export const DASH = {
+  /** Speed during the dash, px/s. Distance ≈ speed × duration. */
+  speed: 1500,
+  /** Seconds. You're invulnerable for the whole dash (#24). */
+  duration: 0.15,
+  /** Seconds from the start of one dash until the next is allowed. */
+  cooldown: 0.8,
+  /** Fraction of dash speed kept when it ends, so it doesn't stop dead. */
+  carry: 0.35,
 } as const
 
 export const GRAVITY = 2400

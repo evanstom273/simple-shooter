@@ -3,7 +3,7 @@ import { touchInput } from './controls.ts'
 
 // On-screen controls for touch devices, drawn over the game at screen scale.
 // Left part of the screen: a floating joystick (appears where your thumb lands).
-// Bottom-right: jump button.
+// Bottom-right: jump button, with the dash button beside it.
 const JOYSTICK_ZONE = 0.45 // fraction of screen width, from the left
 const DEADZONE = 0.2
 
@@ -13,6 +13,10 @@ export class TouchControlsScene extends Phaser.Scene {
   private knob!: Phaser.GameObjects.Arc
   private jumpBtn!: Phaser.GameObjects.Arc
   private jumpLabel!: Phaser.GameObjects.Text
+  private dashBtn!: Phaser.GameObjects.Arc
+  private dashLabel!: Phaser.GameObjects.Text
+  private dashRing!: Phaser.GameObjects.Graphics
+  private dashPointer: number | null = null
   private stickPointer: number | null = null
   private jumpPointer: number | null = null
   private home = new Phaser.Math.Vector2()
@@ -33,6 +37,12 @@ export class TouchControlsScene extends Phaser.Scene {
       .text(0, 0, 'JUMP', { fontFamily: 'system-ui, sans-serif', fontStyle: 'bold', color: '#ffffff' })
       .setOrigin(0.5)
       .setAlpha(0.6)
+    this.dashBtn = this.add.circle(0, 0, 1, 0x8fd3ff, 0.12).setStrokeStyle(2 * this.dpr, 0x8fd3ff, 0.35)
+    this.dashRing = this.add.graphics()
+    this.dashLabel = this.add
+      .text(0, 0, 'DASH', { fontFamily: 'system-ui, sans-serif', fontStyle: 'bold', color: '#8fd3ff' })
+      .setOrigin(0.5)
+      .setAlpha(0.7)
 
     this.layout()
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this)
@@ -71,6 +81,10 @@ export class TouchControlsScene extends Phaser.Scene {
     const jr = 46 * u
     this.jumpBtn.setRadius(jr).setPosition(width - margin - jr, height - margin - jr)
     this.jumpLabel.setPosition(this.jumpBtn.x, this.jumpBtn.y).setFontSize(Math.round(16 * u))
+
+    const dr = 38 * u
+    this.dashBtn.setRadius(dr).setPosition(this.jumpBtn.x - jr - 22 * u - dr, this.jumpBtn.y - jr * 0.9)
+    this.dashLabel.setPosition(this.dashBtn.x, this.dashBtn.y).setFontSize(Math.round(14 * u))
   }
 
   private placeStick(x: number, y: number) {
@@ -80,7 +94,7 @@ export class TouchControlsScene extends Phaser.Scene {
   }
 
   private setShown(shown: boolean) {
-    for (const o of [this.base, this.knob, this.jumpBtn, this.jumpLabel]) o.setVisible(shown)
+    for (const o of [this.base, this.knob, this.jumpBtn, this.jumpLabel, this.dashBtn, this.dashLabel, this.dashRing]) o.setVisible(shown)
   }
 
   private onDown(p: Phaser.Input.Pointer) {
@@ -92,6 +106,12 @@ export class TouchControlsScene extends Phaser.Scene {
       this.jumpPointer = p.id
       touchInput.jumpQueued = true
       this.jumpBtn.setFillStyle(0xffffff, 0.3)
+      return
+    }
+    const dashHit = Phaser.Math.Distance.Between(p.x, p.y, this.dashBtn.x, this.dashBtn.y) <= this.dashBtn.radius * 1.25
+    if (dashHit && this.dashPointer === null) {
+      this.dashPointer = p.id
+      touchInput.dashQueued = true
       return
     }
     if (p.x < this.scale.width * JOYSTICK_ZONE && this.stickPointer === null) {
@@ -111,18 +131,38 @@ export class TouchControlsScene extends Phaser.Scene {
     this.knob.setPosition(this.origin.x + dx * k, this.origin.y + dy * k)
     const x = dx / r
     touchInput.moveX = Math.abs(x) < DEADZONE ? 0 : x
+    touchInput.stickX = (dx * k) / r
+    touchInput.stickY = (dy * k) / r
   }
 
   private onUp(p: Phaser.Input.Pointer) {
     if (p.id === this.stickPointer) {
       this.stickPointer = null
       touchInput.moveX = 0
+      touchInput.stickX = 0
+      touchInput.stickY = 0
       this.placeStick(this.home.x, this.home.y)
       this.base.setAlpha(1)
     }
+    if (p.id === this.dashPointer) this.dashPointer = null
     if (p.id === this.jumpPointer) {
       this.jumpPointer = null
       this.jumpBtn.setFillStyle(0xffffff, 0.12)
+    }
+  }
+
+  update() {
+    if (!this.dashBtn.visible) return
+    // Cooldown: the ring fills back up; the button lights up when ready.
+    const ready = touchInput.dashReady
+    this.dashBtn.setFillStyle(0x8fd3ff, ready >= 1 ? (this.dashPointer !== null ? 0.35 : 0.18) : 0.05)
+    this.dashLabel.setAlpha(ready >= 1 ? 0.8 : 0.3)
+    this.dashRing.clear()
+    if (ready < 1) {
+      this.dashRing.lineStyle(3 * this.dpr, 0x8fd3ff, 0.8)
+      this.dashRing.beginPath()
+      this.dashRing.arc(this.dashBtn.x, this.dashBtn.y, this.dashBtn.radius, -Math.PI / 2, -Math.PI / 2 + ready * Math.PI * 2)
+      this.dashRing.strokePath()
     }
   }
 }

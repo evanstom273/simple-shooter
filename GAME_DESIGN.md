@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T04:42:54+00:00):**
+**Where the project stands (as of 2026-11-14T04:49:36+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Dash and double jump built** (2026-11-14T04:49:36+00:00).
 - **Movement built** (2026-11-14T04:42:54+00:00): the square runs and jumps around a placeholder arena, on desktop (A/D, Space) and touch (joystick, jump button).
 
 **Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser handles gameplay, physics, rendering and input; React handles menus, HUD and upgrade selection; Dexie handles local persistent data (History #5, #14). Deployed on GitHub Pages (History #2, #6).
@@ -58,6 +59,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Movement and controls *(2026-11-14T04:17:36+00:00 — History #9)*
 - **Desktop:** A/D move left and right; Space jumps; the mouse aims a full 360°; left-click shoots.
 - **Mobile:** landscape orientation; a virtual joystick on the left for movement; tap or hold on the right side to aim and shoot; an on-screen jump button.
+- **Double jump:** press jump again in mid-air for one extra jump. *(2026-11-14T04:49:36+00:00 — History #30)*
 - **Dash:** right-click on desktop (towards the mouse); an on-screen dash button on mobile. *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Weapon switching (desktop):** number keys (1, 2, 3…) and the mouse wheel. *(2026-11-14T04:24:39+00:00 — History #22)*
 - **The game fills the whole screen** in every shape: desktop, the Fold's cover screen in landscape and portrait, and its inner screen. Where the screen's shape doesn't match the arena, the view is zoomed in and follows the player (portrait gets a narrower, zoomed-in view). No margins. *(2026-11-14T04:45:51+00:00 — History #29)*
@@ -127,6 +129,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
 
 ## C. Current Development Scope
 
+### Step 2: Dash and double jump — **BUILT** *(2026-11-14T04:49:36+00:00)*
+**In scope (done):** double jump (#30); dash (#21, #24) on right-click towards the mouse and on a touch button, with a cooldown, invulnerability while dashing, and a trail.
+
+**Out of scope:** dash damage (no enemies yet; the dash state is there for enemies to check), aiming and shooting.
+
+
 ### Step 1: Movement — **BUILT** *(2026-11-14T04:42:54+00:00)*
 The player square in an arena, moving and jumping, on desktop and on Lyra's Pixel 10 Pro Fold (cover screen landscape and portrait, inner screen).
 
@@ -180,9 +188,13 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Project scaffold | Tested | `npm run build` (type-check + Vite build) and `npm run lint` pass; checked in headless Chromium via `vite preview`: canvas renders, no console errors. *(2026-11-14T04:15:39+00:00)* |
 | Movement (#9) | Tested | Square (48 px) with gravity, running (eased towards top speed) and a fixed-height jump; collides with platforms and the arena edges. Desktop: A/D, Space. Touch: floating joystick in the left 45% of the screen (appears where your thumb lands; horizontal only), jump button bottom-right; shown on touch screens (or after the first touch). Multi-touch works (move + jump together). All numbers in `src/game/tuning.ts`. *(2026-11-14T04:42:54+00:00)* |
 | Screen fitting (#29) | Tested | The arena is a fixed 1600×900 world. The camera zooms until the arena covers the whole screen (no margins) and follows the player, clamped to the arena edges. Visible area: desktop 1440×900 of the arena; cover landscape 1600×731 (top trimmed, follows vertically); cover portrait 411×900 (about a quarter of the width); inner ~857×900. *(updated 2026-11-14T04:45:51+00:00)* Previously fit-whole-arena with margins. Rendered at device pixel ratio (capped at 3). Checked in headless Chromium at desktop 1440×900, Fold cover landscape 900×411 and portrait 411×900, and an approximate inner screen 790×830, at the Fold's pixel density. *(2026-11-14T04:42:54+00:00)* |
+| Double jump (#30) | Tested | One extra jump in mid-air (90% of a normal jump's speed), with a small ring puff. Resets on landing. Walking off a ledge still leaves you the air jump. Jump Height (#12) will scale both. *(2026-11-14T04:49:36+00:00)* |
+| Dash (#21, #24) | Tested | Right-click: dashes towards the mouse in any direction (360°). Touch: DASH button beside JUMP; dashes the way the joystick points, or the way you're facing if the stick is idle. 0.15 s at 1500 px/s (~225 px), gravity off, keeps 35% of its speed after; cooldown 0.8 s. Square turns blue with an afterimage trail. `invulnerable` is true for the whole dash, for enemies to check later. Touch button shows the cooldown as a ring filling back up. Works in the air. *(2026-11-14T04:49:36+00:00)* |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
+- **No dash cooldown indicator on desktop** (only on the touch button).
+- **Dash doesn't damage anything yet**: there's nothing to hit.
 - **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
 - **Zoomed-in views see less of the arena** (#29): in portrait about a quarter of its width. Fine for movement; once enemies exist, ones off-screen may need an edge indicator (not decided).
 - **Touch controls sit over the game**, most noticeably in portrait, where the floor and the player run under the joystick and jump button.
@@ -194,6 +206,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
 - **16:9 arena** as a middle ground between desktop, the Fold's very wide cover screen and its near-square inner screen. Camera follow is slightly smoothed.
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
+- **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
+- **Air jump doesn't reset on dash**, and dashing doesn't use up a jump.
 - **Jump is a fixed height** (no shorter hop for a tap), so the Jump Height upgrade (#12) has one clear number to change.
 - Resuming at the upgrade screen (#17) means saving the run at the end of each wave, with health as it was then.
 
@@ -234,6 +248,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 27 | 2026-11-14T04:28:58+00:00 | Combat | Short invulnerability after taking a hit. |
 | 28 | 2026-11-14T04:28:58+00:00 | Weapons | Three weapons for now (pistol, automatic, shotgun), deliberately light; others may come later. |
 | 29 | 2026-11-14T04:45:51+00:00 | Screen layout | Fill the whole screen on desktop, cover landscape, cover portrait and the inner screen; zoom in and follow the player where the shape doesn't match the arena (portrait is a narrower, zoomed-in view). |
+| 30 | 2026-11-14T04:49:36+00:00 | Movement | Double jump: one extra jump in mid-air. |
 
 ---
 
