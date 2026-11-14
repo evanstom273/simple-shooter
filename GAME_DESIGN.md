@@ -8,9 +8,10 @@ Authoritative, living record of the game's design. Timestamps are Europe/London,
 
 A **simple shooter** (History #1). Nothing else about the game has been decided yet. Working title: none yet; the repository is `simple-shooter`.
 
-**Where the project stands (as of 2026-11-14T04:09:54+00:00):**
+**Where the project stands (as of 2026-11-14T04:15:39+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
-- Stack chosen (History #4). No design decisions beyond the concept. No game code.
+- Stack chosen (History #4). No design decisions beyond the concept.
+- **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer. No gameplay.
 
 **Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser renders the game; React handles UI panels (History #5). Deployed on GitHub Pages (History #2, #6).
 
@@ -40,10 +41,10 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 ## C. Current Development Scope
 
-### Repository setup — **DONE** *(2026-11-14T04:09:54+00:00)*
-**In scope (done):** GitHub Pages workflow, placeholder `index.html`, `GAME_DESIGN.md`, `TODO.md`.
+### Scaffold — **DONE** *(2026-11-14T04:15:39+00:00)*
+**In scope (done):** Vite + React + TypeScript + Tailwind CSS v4 + Phaser 4 + Dexie; Phaser lazily loaded in its own chunk and mounted under a React UI layer; placeholder scene; Dexie database with a `saves` table; Pages workflow building with Vite and deploying `dist/`.
 
-**Out of scope:** any game design or game code.
+**Out of scope:** any game design or gameplay.
 
 ---
 
@@ -66,19 +67,22 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 ## F. Implementation Status
 
-*Updated 2026-11-14T04:09:54+00:00.*
+*Updated 2026-11-14T04:15:39+00:00.*
 
 | Feature | Status | Notes |
 |---|---|---|
 | Design docs | Done | `GAME_DESIGN.md`, `TODO.md`. |
-| GitHub Pages deployment | Implemented | `.github/workflows/pages.yml`: on push to `main` (or run by hand), uploads the repository root and deploys it. Pages source is set to GitHub Actions (done by Lyra in the repo settings). |
-| Placeholder page | Done | `index.html` says there's nothing here yet, so the Pages site isn't a 404. To be replaced by the game. |
+| GitHub Pages deployment | Implemented | `.github/workflows/pages.yml`: on push to `main` (or run by hand), runs `npm ci` and `npm run build` on Node 22 and deploys `dist/` (#6). Pages source is set to GitHub Actions (done by Lyra in the repo settings). *(updated 2026-11-14T04:15:39+00:00)* |
+| Project scaffold | Tested | `npm run build` (type-check + Vite build) and `npm run lint` pass; checked in headless Chromium via `vite preview`: canvas renders, no console errors. *(2026-11-14T04:15:39+00:00)* |
+| Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
-- The workflow still publishes the repository root as-is. Switching it to build with Vite and deploy `dist/` (#6), with Vite's `base` set to `/simple-shooter/`, goes in with the scaffold: until there's a Vite project to build, the build step would fail and take the site down.
+- Phaser is a large chunk (~1.4 MB minified, ~360 KB gzipped). It loads lazily after the page, and the Vite size warning is raised to 1600 KB to stop it nagging.
+- No tests yet (Heat & Handle used Vitest; not added here until there's logic to test).
 
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
+- Phaser's scale mode is `RESIZE` (the canvas fills the window). Placeholder only: how the game should scale isn't decided.
 
 ---
 
@@ -101,4 +105,6 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 - **Repository:** `evanstom273/simple-shooter`. Working branch `ccr-fd64429e-dgca91`.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
-- **Deployment:** `.github/workflows/pages.yml` uses `actions/configure-pages`, `actions/upload-pages-artifact` (path `.`) and `actions/deploy-pages`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
+- **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`, `MainScene` placeholder); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie.
+- **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
