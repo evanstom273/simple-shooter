@@ -1,16 +1,45 @@
 import Phaser from 'phaser'
-import { MainScene } from './MainScene.ts'
+import { GameScene } from './GameScene.ts'
+import { TouchControlsScene } from './TouchControlsScene.ts'
 
-export function createGame(parent: HTMLElement): Phaser.Game {
-  return new Phaser.Game({
+// Renders at the screen's real pixel density: the canvas is CSS size × dpr,
+// shown at 1/dpr zoom, so shapes stay sharp on high-DPI phones.
+const dpr = () => Math.min(window.devicePixelRatio || 1, 3)
+
+export function createGame(parent: HTMLElement): { game: Phaser.Game; destroy: () => void } {
+  const ratio = dpr()
+  const size = () => ({
+    w: Math.max(1, Math.round(parent.clientWidth * ratio)),
+    h: Math.max(1, Math.round(parent.clientHeight * ratio)),
+  })
+  const { w, h } = size()
+
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    backgroundColor: '#0b0b10',
-    scale: {
-      mode: Phaser.Scale.RESIZE,
-      width: parent.clientWidth,
-      height: parent.clientHeight,
-    },
-    scene: [MainScene],
+    backgroundColor: '#07070a',
+    scale: { mode: Phaser.Scale.NONE, width: w, height: h, zoom: 1 / ratio },
+    physics: { default: 'arcade', arcade: { debug: false } },
+    input: { activePointers: 4 },
+    disableContextMenu: true,
+    callbacks: { preBoot: (g) => g.registry.set('dpr', ratio) },
+    scene: [GameScene, TouchControlsScene],
   })
+
+  // Handy for poking at the game from the console / automated checks in dev.
+  if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game
+
+  const observer = new ResizeObserver(() => {
+    const s = size()
+    if (s.w !== game.scale.width || s.h !== game.scale.height) game.scale.resize(s.w, s.h)
+  })
+  observer.observe(parent)
+
+  return {
+    game,
+    destroy: () => {
+      observer.disconnect()
+      game.destroy(true)
+    },
+  }
 }

@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T04:24:39+00:00):**
+**Where the project stands (as of 2026-11-14T04:42:54+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
-- **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer. No gameplay.
+- **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Movement built** (2026-11-14T04:42:54+00:00): the square runs and jumps around a placeholder arena, on desktop (A/D, Space) and touch (joystick, jump button).
 
 **Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser handles gameplay, physics, rendering and input; React handles menus, HUD and upgrade selection; Dexie handles local persistent data (History #5, #14). Deployed on GitHub Pages (History #2, #6).
 
@@ -125,6 +126,14 @@ The core design (History #7–#15) was worked out in a separate conversation and
 
 ## C. Current Development Scope
 
+### Step 1: Movement — **BUILT** *(2026-11-14T04:42:54+00:00)*
+The player square in an arena, moving and jumping, on desktop and on Lyra's Pixel 10 Pro Fold (cover screen landscape and portrait, inner screen).
+
+**In scope (done):** the square; gravity, running and jumping with Arcade physics; a placeholder arena (floor + five platforms); A/D and Space on desktop; on touch screens a joystick on the left and a jump button on the right; the arena scales to fit any screen shape; sharp rendering at the phone's real pixel density.
+
+**Out of scope:** aiming, shooting, dash, enemies, health, waves, upgrades, saving.
+
+
 ### Scaffold — **DONE** *(2026-11-14T04:15:39+00:00)*
 **In scope (done):** Vite + React + TypeScript + Tailwind CSS v4 + Phaser 4 + Dexie; Phaser lazily loaded in its own chunk and mounted under a React UI layer; placeholder scene; Dexie database with a `saves` table; Pages workflow building with Vite and deploying `dist/`.
 
@@ -161,22 +170,30 @@ The core design (History #7–#15) was worked out in a separate conversation and
 
 ## F. Implementation Status
 
-*Updated 2026-11-14T04:15:39+00:00.*
+*Updated 2026-11-14T04:42:54+00:00.*
 
 | Feature | Status | Notes |
 |---|---|---|
 | Design docs | Done | `GAME_DESIGN.md`, `TODO.md`. |
 | GitHub Pages deployment | Implemented | `.github/workflows/pages.yml`: on push to `main` (or run by hand), runs `npm ci` and `npm run build` on Node 22 and deploys `dist/` (#6). Pages source is set to GitHub Actions (done by Lyra in the repo settings). *(updated 2026-11-14T04:15:39+00:00)* |
 | Project scaffold | Tested | `npm run build` (type-check + Vite build) and `npm run lint` pass; checked in headless Chromium via `vite preview`: canvas renders, no console errors. *(2026-11-14T04:15:39+00:00)* |
+| Movement (#9) | Tested | Square (48 px) with gravity, running (eased towards top speed) and a fixed-height jump; collides with platforms and the arena edges. Desktop: A/D, Space. Touch: floating joystick in the left 45% of the screen (appears where your thumb lands; horizontal only), jump button bottom-right; shown on touch screens (or after the first touch). Multi-touch works (move + jump together). All numbers in `src/game/tuning.ts`. *(2026-11-14T04:42:54+00:00)* |
+| Screen fitting | Tested | The arena is a fixed 1600×900 world; the camera zooms to fit the whole arena on any screen, centred, with dark margins where the shapes don't match. Rendered at device pixel ratio (capped at 3). Checked in headless Chromium at desktop 1440×900, Fold cover landscape 900×411 and portrait 411×900, and an approximate inner screen 790×830, at the Fold's pixel density. *(2026-11-14T04:42:54+00:00)* |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
+- **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
+- **Portrait** works but the arena is small (it has to fit the width); the controls sit in the empty space below. The design says landscape for mobile (#9).
+- **Cover screen landscape:** the screen is wider than the arena, so the joystick and jump button partly overlap its edges.
+- Not yet tried on the physical Pixel 10 Pro Fold.
 - Phaser is a large chunk (~1.4 MB minified, ~360 KB gzipped). It loads lazily after the page, and the Vite size warning is raised to 1600 KB to stop it nagging.
 - No tests yet (Heat & Handle used Vitest; not added here until there's logic to test).
 
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
-- Phaser's scale mode is `RESIZE` (the canvas fills the window). Placeholder only: how the game should scale isn't decided.
+- **Arena fits the screen whole** (no scrolling camera), since the design has one arena with enemies spawning into it (#10). 16:9 chosen as a middle ground between desktop, the Fold's very wide cover screen and its near-square inner screen.
+- **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
+- **Jump is a fixed height** (no shorter hop for a tap), so the Jump Height upgrade (#12) has one clear number to change.
 - Resuming at the upgrade screen (#17) means saving the run at the end of each wave, with health as it was then.
 
 ---
@@ -223,5 +240,6 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - **Repository:** `evanstom273/simple-shooter`. Working branch `ccr-fd64429e-dgca91`.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`, `MainScene` placeholder); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
+- **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` fits its camera to the 1600×900 arena on every resize. In dev, the game is on `window.__game` for poking at from the console.

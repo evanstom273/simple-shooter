@@ -1,24 +1,23 @@
 import { useEffect, useRef } from 'react'
-import type Phaser from 'phaser'
 
 // Hosts the Phaser game. Phaser is imported lazily so it lands in its own chunk.
 export function PhaserView() {
   const host = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    let game: Phaser.Game | undefined
+    let destroy: (() => void) | undefined
     let cancelled = false
 
     void import('./createGame.ts').then(({ createGame }) => {
       if (cancelled || !host.current) return
-      game = createGame(host.current)
+      destroy = createGame(host.current).destroy
     })
 
     return () => {
       cancelled = true
-      game?.destroy(true)
+      destroy?.()
     }
   }, [])
 
-  return <div ref={host} className="absolute inset-0" />
+  return <div ref={host} className="absolute inset-0 touch-none select-none" />
 }

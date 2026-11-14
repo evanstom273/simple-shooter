@@ -11,10 +11,12 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 ## Next
 
 - Title (Lyra, deferred).
-- Plan the build order, step by step (#16).
+- Lyra to try movement on the Fold (cover and inner) and on desktop.
+- Plan the next step (#16).
 
 ## Done
 
+- [x] Step 1, movement: square, placeholder arena, A/D + Space, touch joystick + jump button, screen fitting for desktop and the Fold (cover landscape/portrait, inner). *(2026-11-14T04:42:54+00:00)*
 - [x] Hit invulnerability and three-weapon scope documented (History #27–#28). *(2026-11-14T04:28:58+00:00)*
 - [x] Damage, dash, mobile switching and weapon-improvement decisions documented (History #23–#26). *(2026-11-14T04:27:30+00:00)*
 - [x] Follow-up design questions answered and documented (History #16–#22). *(2026-11-14T04:24:39+00:00)*
