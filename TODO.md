@@ -10,11 +10,12 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
-- Remaining open questions (Lyra), `GAME_DESIGN.md` §E: title, player health/hits, dash details, how an owned weapon improves, mobile weapon switching.
+- Remaining open questions (Lyra), `GAME_DESIGN.md` §E: title (deferred), invulnerability after a hit, any weapons beyond pistol/automatic/shotgun.
 - Plan the build order, step by step (#16).
 
 ## Done
 
+- [x] Damage, dash, mobile switching and weapon-improvement decisions documented (History #23–#26). *(2026-11-14T04:27:30+00:00)*
 - [x] Follow-up design questions answered and documented (History #16–#22). *(2026-11-14T04:24:39+00:00)*
 - [x] Core design documented in `GAME_DESIGN.md` (History #7–#15). *(2026-11-14T04:17:36+00:00)*
 - [x] Scaffold: React, Vite, TypeScript, Tailwind CSS, Phaser, Dexie; placeholder scene. *(2026-11-14T04:15:39+00:00)*
