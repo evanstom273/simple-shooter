@@ -289,6 +289,43 @@ After playtesting the guns (Lyra: they made it too easy; the dash and stomp are 
 - **Improving a weapon you own** (now bought in the shop, #53). *(2026-11-14T04:24:39+00:00 — History #22)*
 - **Improving a weapon raises its damage.** There's no damage upgrade among the four stat upgrades, so this is how damage goes up. *(2026-11-14T04:27:30+00:00 — History #26)*
 
+### Random generation, hazards and wall jumping *(2026-11-14T23:33:06+00:00 — History #79–#82)*
+- **When:** one generated layout per story section, kept for all its waves; a new section (or a retry) gets a new one.
+- **Endless:** a new layout **every wave**. During the intermission the old pieces sink or fade and the new ones rise or slide into place around you.
+- **How it's built:** **hand-made chunks** (a shaft, a pillar pair, a spike pit, a ledge stack…) picked and stitched by the generator, with reachability checks.
+  - Chunks come from two places: Claude drafts a starter set, and Lyra makes more in a **chunk editor**.
+  - The editor is **in the game**, opened from the Testing section of settings, and works on desktop and touch. You can play-test a chunk straight away.
+- **Size:** arena size and shape **vary per layout** (some wide, some tall), within limits.
+- **Edges:** **solid walls** on both sides and a ceiling, so it's a closed room. The walls are wall-jumpable.
+- **Worlds:** each world has its **own palette of chunks and hazards**, matching its own enemy roster.
+- **Ramp:** hazards are introduced **gradually**. A world's first section introduces its first hazard gently; later sections add more types and density.
+- **Reachability (#77, #78):** everywhere must be reachable with the base kit: base jump, double jump, dash and wall jump, with no stat upgrades. The grapple is never required.
+- **Boss arenas are not generated:** mostly empty space, just the boss and maybe a few platforms, because bosses will be big.
+
+**Harmful hazards:**
+- **Spikes:** on floors, wall faces or platform undersides.
+- **Saw blades:** fixed, or travelling along a track.
+- **Fire / energy jets:** fire on a timer, with a visible wind-up.
+- **Pits.**
+
+**Environmental pieces:**
+- **Moving platforms.**
+- **Crumbling platforms:** shake, fall, come back.
+- **Bounce pads:** launch players and enemies.
+- **Conveyors / wind.**
+
+**Hazard rules:**
+- **Damage:** hazards take **1 stage** and bounce you away, with brief invulnerability.
+- **Hazards hurt enemies too.** Knocking enemies into spikes and saws is a melee-first tool.
+- **Pits are bottomless death.** Falling in ends the section (losing the gold you carry) or the endless run.
+- **Hits can't push you into a pit.** Knockback from enemy hits stops at a pit's edge. You can still walk, dash or jump in yourself, so pit deaths are always your own doing.
+- An **enemy that falls into a pit** dies; it counts as a kill and its gold pops out at the pit's edge.
+
+**Wall jumping (innate, #78):**
+- **Climb the same wall:** repeated wall jumps can scale a single wall (Mega Man X / Celeste-ish).
+- **Slow slide:** holding towards a wall in the air makes you cling and slide down slowly, with dust.
+- **Refresh:** a wall jump gives your double jump back. The dash cooldown is unchanged.
+
 ### Waves, first version *(2026-11-14T14:52:38+00:00 — History #60)*
 From Lyra (built while she was at work, so the details marked *Claude* are interpretations to check):
 - **Endless waves; you start on wave 1 with nothing.** Each wave is **10–15 enemies** (*Claude:* 10 in wave 1, +1 per wave, 15 from wave 6).
@@ -641,6 +678,10 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 76 | 2026-11-14T23:21:05+00:00 | Hub | Portals take a press to enter (W / ↑, or the touch button, which says ENTER), the same as buying, so you can walk past one portal to reach another. A prompt shows over the portal you're standing at. |
 | 77 | 2026-11-14T23:23:58+00:00 | Movement | Ideas for buyable movement abilities: Mario-style wall jumping and a grapple. Principle: abilities are useful but never gate anything. Everywhere must be reachable with the base kit (base jump, double jump, dash, no stat upgrades); abilities only make it faster, easier or safer. The platform generator (#67) must respect this. |
 | 78 | 2026-11-14T23:24:46+00:00 | Movement | Wall jumping is innate (base kit, alongside the double jump and dash), not bought: it's a technique, not a power. The generator may rely on it (shafts, pillars, narrow gaps). The grapple stays a purchase: useful, never required. |
+| 79 | 2026-11-14T23:33:06+00:00 | Generation | Random layouts: one per story section (endless: every wave, pieces sliding into place). Hand-made chunks stitched with reachability checks; Claude drafts a starter set and Lyra adds more in an in-game chunk editor (from Testing). Size varies per layout; closed rooms with solid walls; each world its own palette; hazards ramp up gradually. |
+| 80 | 2026-11-14T23:33:06+00:00 | Generation | Boss arenas are not generated: mostly empty space, just the boss and maybe a few platforms (bosses will be big). |
+| 81 | 2026-11-14T23:33:06+00:00 | Hazards | Spikes, saw blades, fire/energy jets and pits; moving, crumbling, bounce and conveyor/wind pieces. Hazards take 1 stage plus a bounce and hurt enemies too. Pits are bottomless death, but enemy hits can't push you in. Enemies dying in pits count as kills, with their gold at the edge. |
+| 82 | 2026-11-14T23:33:06+00:00 | Movement | Wall jump: you can climb the same wall; a slow slide while holding towards it; it refreshes the double jump, not the dash. |
 
 ---
 
