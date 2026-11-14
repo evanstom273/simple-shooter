@@ -10,9 +10,9 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T04:17:36+00:00):**
+**Where the project stands (as of 2026-11-14T04:24:39+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
-- Stack chosen (History #4). Core design documented (2026-11-14T04:17:36+00:00, History #7–#15); numbers (wave count, upgrade amounts, enemy stats) not yet set.
+- Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer. No gameplay.
 
 **Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser handles gameplay, physics, rendering and input; React handles menus, HUD and upgrade selection; Dexie handles local persistent data (History #5, #14). Deployed on GitHub Pages (History #2, #6).
@@ -22,6 +22,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - Small, polished and functional beats large and placeholder-filled.
 - The creative director (Lyra) makes design decisions; recommendations are not decisions until approved.
 - **Small scope, with the aim of actually finishing the game** (History #7, #15).
+- **Built methodically, step by step, not one-shotted** (History #16).
 
 ---
 
@@ -30,6 +31,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Concept
 - **A simple shooter.** *(2026-11-14T04:09:54+00:00 — History #1)*
 - **2D side-view, wave-based roguelite arena shooter.** The player survives increasingly difficult waves of enemies and picks upgrades between waves. Focus on simple, enjoyable combat and replayability. Small scope, with the aim of actually finishing the game. Refines #1. *(2026-11-14T04:17:36+00:00 — History #7)*
+
+### Runs, death and saving *(2026-11-14T04:24:39+00:00 — History #17)*
+- **Endless waves.** A run goes on until you die; the score is how far you got. *(2026-11-14T04:24:39+00:00 — History #18)*
+- **Dying ends the run, and that's the only way to lose it.** You start again fully from scratch: wave 1, no upgrades, no weapons.
+- **A run survives closing the browser.** The run is saved between waves; come back (even days later) and you're on the **upgrade screen before the wave you left**. Leaving mid-wave restarts that wave, with what you had at the start of it.
+- **Local high scores** kept in IndexedDB (Dexie): e.g. enemies killed and wave reached.
 
 ### Scope *(2026-11-14T04:17:36+00:00 — History #15)*
 - One playable character.
@@ -50,6 +57,8 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Movement and controls *(2026-11-14T04:17:36+00:00 — History #9)*
 - **Desktop:** A/D move left and right; Space jumps; the mouse aims a full 360°; left-click shoots.
 - **Mobile:** landscape orientation; a virtual joystick on the left for movement; tap or hold on the right side to aim and shoot; an on-screen jump button.
+- **Dash:** right-click on desktop (towards the mouse); an on-screen dash button on mobile. *(2026-11-14T04:24:39+00:00 — History #21)*
+- **Weapon switching (desktop):** number keys (1, 2, 3…) and the mouse wheel. Mobile switching not decided. *(2026-11-14T04:24:39+00:00 — History #22)*
 
 ### Arena *(2026-11-14T04:17:36+00:00 — History #10)*
 - **Side-view arena with platforms at different heights.** Platforming and jumping are part of combat.
@@ -74,10 +83,22 @@ The core design (History #7–#15) was worked out in a separate conversation and
 | **Movement Speed** | Increases movement speed. |
 | **Fire Rate** | Increases shooting speed. |
 
+- **Diminishing returns:** each repeat of the same upgrade adds a bit less than the last. Actual amounts are placeholders, tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #19)*
+- **Fire Rate applies to every weapon you carry** (a player stat, not per gun). *(2026-11-14T04:24:39+00:00 — History #22)*
+
+### Weapons and dash
+- **The player starts unarmed, with only a dash that does damage.** *(2026-11-14T04:24:39+00:00 — History #21)*
+- **The dash is kept for the whole run**, alongside any weapons. *(2026-11-14T04:24:39+00:00 — History #21)*
+- **Several weapons: pistol, automatic, shotgun, maybe others.** *(2026-11-14T04:24:39+00:00 — History #22)*
+- **Weapons are offered between waves in the same three-card pool as the stat upgrades**; you still pick exactly one. *(2026-11-14T04:24:39+00:00 — History #22)*
+- **You carry every weapon you've picked and switch between them** (#9 for inputs). *(2026-11-14T04:24:39+00:00 — History #22)*
+- **Picking a weapon you already own improves it.** How isn't decided. *(2026-11-14T04:24:39+00:00 — History #22)*
+
 ### Waves *(2026-11-14T04:17:36+00:00 — History #13)*
 - Enemies get progressively more difficult across waves.
 - Enemy numbers increase as waves progress.
 - New enemy types can be introduced in later waves.
+- **Enemy stats are placeholders**, set relative to each other (the tank much tougher, ranged keeps its distance) and tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #20)*
 - Upgrade selection happens between waves (#12).
 
 ### Technical architecture / platform
@@ -113,16 +134,18 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ## E. Open Questions
 
 1. **Title.**
-2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). Not finalised (Lyra, from the original conversation):
-   - **Wave count** (fixed number, or endless?).
-   - **Upgrade amounts** (the percentage or value each pick adds).
-   - **Enemy statistics** (health, speed, damage, fire rates).
-   - **Weapon selection** (whether there's more than one weapon).
-   - **Additional mechanics.**
+2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). The items left open in the original conversation:
+   - ~~**Wave count.**~~ Endless (#18).
+   - ~~**Upgrade amounts.**~~ Diminishing returns; values tuned in play (#19).
+   - ~~**Enemy statistics.**~~ Placeholders tuned in play (#20).
+   - ~~**Weapon selection.**~~ Several weapons (#22). Open: whether there are more than the three; **how picking an owned weapon improves it**.
+   - ~~**Additional mechanics.**~~ Unarmed start with a damaging dash (#21).
 3. ~~**Stack.**~~ Resolved (#4); Phaser/React split resolved (#5).
 4. ~~**Target devices.**~~ Resolved: desktop and mobile, mobile in landscape (#9, #15).
-5. **What Dexie stores** (#14): e.g. settings, best wave or a run in progress; not specified.
-6. **Player health and losing:** what damage does, whether there's invulnerability after a hit, what happens on death (presumably the run ends, as in a roguelite; not stated).
+5. ~~**What Dexie stores.**~~ Resolved: local high scores and the run in progress (#17).
+6. **Player health:** what damage does, whether there's invulnerability after a hit. ~~What happens on death.~~ Resolved: the run ends; start from scratch (#17).
+7. **Dash details:** cooldown, distance, damage, whether you're invulnerable while dashing.
+8. **Weapon switching on mobile** (#22 covers desktop only).
 
 ---
 
@@ -144,6 +167,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
 - Phaser's scale mode is `RESIZE` (the canvas fills the window). Placeholder only: how the game should scale isn't decided.
+- Resuming at the upgrade screen (#17) means saving the run at the end of each wave, with health as it was then.
 
 ---
 
@@ -168,6 +192,13 @@ The core design (History #7–#15) was worked out in a separate conversation and
 | 13 | 2026-11-14T04:17:36+00:00 | Waves | Difficulty and enemy numbers rise across waves; new enemy types can appear later; upgrade choice between waves. |
 | 14 | 2026-11-14T04:17:36+00:00 | Technical | Phaser: gameplay, physics, rendering, input. React: menus, HUD, upgrade selection. Dexie: local persistent data. GitHub Pages. Refines #5. |
 | 15 | 2026-11-14T04:17:36+00:00 | Scope | One character, one arena initially, three enemy types, four upgrade categories, geometric graphics, desktop and mobile. No unnecessary simulation, crafting, elaborate skill trees or complex progression. |
+| 16 | 2026-11-14T04:24:39+00:00 | Process | Build the game methodically, step by step, as a real game would be made; no one-shotting. |
+| 17 | 2026-11-14T04:24:39+00:00 | Saves / runs | Dexie stores local high scores (e.g. enemies killed, wave reached) and the run in progress. Runs are saved between waves; closing the browser and returning (even days later) resumes at the upgrade screen before the interrupted wave. Dying is the only way to lose a run; you restart fully from scratch (no upgrades). |
+| 18 | 2026-11-14T04:24:39+00:00 | Waves | Endless. |
+| 19 | 2026-11-14T04:24:39+00:00 | Upgrades | Diminishing returns on repeated picks of the same upgrade; values are placeholders tuned in play. |
+| 20 | 2026-11-14T04:24:39+00:00 | Enemies | Stats are placeholders tuned in play. |
+| 21 | 2026-11-14T04:24:39+00:00 | Weapons / dash | Player starts unarmed with a dash that does damage. Dash on right-click (towards the mouse) / mobile button; kept for the whole run. |
+| 22 | 2026-11-14T04:24:39+00:00 | Weapons | Several weapons: pistol, automatic, shotgun, maybe others. Offered in the same three-card pool as upgrades (pick one). Carry them all and switch with number keys and the mouse wheel. Picking an owned weapon improves it. Fire Rate applies to all weapons. |
 
 ---
 
