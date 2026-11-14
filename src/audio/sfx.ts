@@ -155,6 +155,10 @@ export const sfx = {
     tone('triangle', vary(900), 200, 0.25, 0.12)
   },
   spawn: () => tone('sine', vary(200), vary(500), 0.4, 0.06),
+  stomp: () => {
+    tone('square', vary(140), vary(520), 0.12, 0.16)
+    noise('lowpass', 1200, 200, 0.08, 0.2)
+  },
   targetPop: () => {
     tone('sine', vary(600), 120, 0.2, 0.2)
     noise('bandpass', 2000, 400, 0.15, 0.12, 1)

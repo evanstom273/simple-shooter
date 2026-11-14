@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { sfx } from '../../audio/sfx.ts'
 import { burst, ring } from '../fx.ts'
-import { GRAVITY, MELEE } from '../tuning.ts'
+import { GRAVITY, MELEE, STOMP } from '../tuning.ts'
 import { firstMove, platformAt, type NavGraph } from './nav.ts'
 import type { Enemy, PlayerInfo, Turns } from './types.ts'
 
@@ -50,6 +50,8 @@ export class MeleeEnemy implements Enemy {
   private sy = 1
   private flash = 0
   private look = { x: 0, y: 0 }
+  /** Seconds left flattened by a stomp (#59). */
+  private flat = 0
 
   constructor(scene: Phaser.Scene, x: number, y: number, nav: NavGraph, onKill: () => void, turns: Turns) {
     this.scene = scene
@@ -80,6 +82,27 @@ export class MeleeEnemy implements Enemy {
     return this.state === 'dead'
   }
 
+  get hittable() {
+    return this.alive && this.flat <= 0
+  }
+
+  get top() {
+    return this.o.y - this.radius
+  }
+
+  stomp(fromX: number) {
+    if (!this.hittable) return
+    // Cancels a wind-up (attacks themselves win, #59, so we're never mid-lunge here).
+    if (this.state === 'windup') {
+      this.state = 'chase'
+      this.turns.release(this)
+    }
+    const away = Math.sign(this.x - fromX) || 1
+    this.body.setVelocity(away * STOMP.knock.x, -STOMP.knock.y)
+    this.hit(STOMP.damage, { x: 0, y: 0 }, true)
+    if (this.alive) this.flat = STOMP.flatten
+  }
+
   get x() {
     return this.o.x
   }
@@ -96,13 +119,13 @@ export class MeleeEnemy implements Enemy {
     return this.body.blocked.down || this.body.touching.down
   }
 
-  hit(damage: number, dir: { x: number; y: number }) {
-    if (!this.alive) return
+  hit(damage: number, dir: { x: number; y: number }, fromStomp = false) {
+    if (!this.alive || this.flat > 0) return
     this.hp -= damage
     this.flash = 0.07
     this.kick(1.35, 0.7)
     sfx.enemyHit()
-    this.body.setVelocity(dir.x * MELEE.knockback, Math.min(this.body.velocity.y, -260 + dir.y * 200))
+    if (!fromStomp) this.body.setVelocity(dir.x * MELEE.knockback, Math.min(this.body.velocity.y, -260 + dir.y * 200))
     // A hit during the wind-up cancels the lunge (#40); a hit mid-roll or mid-leap knocks it out of it.
     if (this.state === 'windup' || this.state === 'roll' || this.state === 'leap') this.toDizzy()
     if (this.hp <= 0) this.die(dir)
@@ -124,6 +147,20 @@ export class MeleeEnemy implements Enemy {
     this.wasGrounded = grounded
     const b = this.body
     this.attackCooldown = Math.max(0, this.attackCooldown - dt)
+
+    // Flattened by a stomp: lies flat, slides to a stop, then pops back up (#59).
+    if (this.flat > 0) {
+      this.flat -= dt
+      if (grounded) b.setVelocityX(b.velocity.x * 0.85)
+      this.sx = 1.7
+      this.sy = 0.4
+      if (this.flat <= 0) {
+        this.kick(0.75, 1.3)
+        this.hopTimer = 0.2
+      }
+      this.draw(dt, player)
+      return
+    }
 
     switch (this.state) {
       case 'chase':
@@ -336,7 +373,7 @@ export class MeleeEnemy implements Enemy {
     const { x, y } = this
     // Squash eases back to round.
     const k = Math.min(1, dt * 14)
-    if (this.state !== 'windup') {
+    if (this.state !== 'windup' && this.flat <= 0) {
       this.sx += (1 - this.sx) * k
       this.sy += (1 - this.sy) * k
     }

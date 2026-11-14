@@ -63,7 +63,7 @@ export function Hud() {
         })}
       </div>
       <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
-        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash
+        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Land on enemies to stomp
       </p>
 
       {/* Testing (temporary, until waves): spawn each enemy by hand. */}

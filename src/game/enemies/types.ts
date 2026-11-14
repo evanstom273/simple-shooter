@@ -38,5 +38,11 @@ export interface Enemy extends Target {
   readonly damage: number
   /** Too heavy to knock back: your dash bounces off it (#58). */
   readonly heavy: boolean
+  /** Alive and not flattened: can be hit, stomped or dashed. Flattened enemies can't be hit (#59). */
+  readonly hittable: boolean
+  /** Top of its body (for judging a stomp from above). */
+  readonly top: number
+  /** Stomped from above (#59): 1 damage, knocked away (except the tank), flattened ~1 s. */
+  stomp(fromX: number): void
   update(dt: number, player: PlayerInfo): void
 }

@@ -14,7 +14,7 @@ import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
 import { debugBus } from '../state/debug.ts'
-import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, SPAWNER, TANK, VIEW, WEAPONS } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, SPAWNER, STOMP, TANK, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -76,6 +76,8 @@ export class GameScene extends Phaser.Scene {
   private dashHits = new Set<Target>()
   /** Seconds of invulnerability left after a dash ended. */
   private dashGrace = 0
+  /** The player's feet last frame, for judging stomps from above (#59). */
+  private prevBottom = 0
   /**
    * Taking turns (#49): only one enemy may wind up or lunge at a time. The rest
    * keep their distance until it's done, then a short gap before the next.
@@ -361,6 +363,7 @@ export class GameScene extends Phaser.Scene {
     this.cooldownBar.setVisible(showBar).setPosition(left, barY).setScale(touchInput.dashReady, 1)
 
     this.wasGrounded = grounded
+    this.prevBottom = this.body_.bottom
     this.lastVelY = b.velocity.y
 
     this.updateEnemies(dt)
@@ -495,8 +498,9 @@ export class GameScene extends Phaser.Scene {
       const nx = Phaser.Math.Clamp(t.x, b.left, b.right)
       const ny = Phaser.Math.Clamp(t.y, b.top, b.bottom)
       if (Phaser.Math.Distance.Between(nx, ny, t.x, t.y) > t.radius) continue
+      const e = t as Enemy
       if (this.dashing) {
-        if (this.dashHits.has(t)) continue
+        if (this.dashHits.has(t) || !e.hittable) continue
         this.dashHits.add(t)
         t.hit(1, { x: this.dashDir.x, y: this.dashDir.y })
         if ((t as Enemy).heavy) {
@@ -510,8 +514,14 @@ export class GameScene extends Phaser.Scene {
         this.shake(80, 0.004)
         burst(this, t.x, t.y, { count: 8, colour: 0xffffff, angle: this.dashDir.angle(), spread: 0.8, speed: [150, 380], size: [4, 8], life: 220 })
         this.freeze(PLAYER.dashHitStop)
-      } else if (t.attacking && !this.invulnerable) {
-        this.takeHit(t.x, (t as Enemy).damage)
+      } else if (t.attacking) {
+        // An attacking enemy always wins, even from above (#59).
+        if (!this.invulnerable) {
+          this.takeHit(t.x, e.damage)
+          return
+        }
+      } else if (e.hittable && b.velocity.y > 0 && this.prevBottom <= e.top + (t.y - e.top) * 2 * STOMP.fromAbove) {
+        this.stompOn(e)
         return
       }
     }
@@ -543,6 +553,28 @@ export class GameScene extends Phaser.Scene {
     burst(this, x, y + PLAYER.size * 0.3, { count: 10, colour: 0xffffff, angle: -DOWN, spread: 0.7, speed: [80, 200], size: [4, 7], life: 520, gravity: -150 })
     sfx.heal()
     buzz(20)
+  }
+
+  /** Landed on an enemy from above (#59): it's hit and flattened, you bounce up with your double jump back. */
+  private stompOn(e: Enemy) {
+    const b = this.body_
+    e.stomp(this.player.x)
+    if (e.heavy) {
+      // The tank doesn't budge: you're knocked away instead.
+      const away = Math.sign(this.player.x - e.x) || this.facing
+      b.setVelocity(away * STOMP.tankKnock.x, -STOMP.tankKnock.y)
+    } else {
+      b.setVelocityY(-STOMP.bounce)
+    }
+    this.airJumpsLeft = PLAYER.airJumps
+    this.view.kick(1.35, 0.7)
+    const feet = b.bottom
+    ring(this, this.player.x, feet, PLAYER.size * 1.6, PLAYER.size * 0.5, 0xffffff, { grow: 2, life: 240, alpha: 0.8 })
+    burst(this, this.player.x, feet, { count: 8, colour: e.colour, angle: DOWN, spread: 1.2, speed: [120, 300], size: [4, 8], life: 260 })
+    sfx.stomp()
+    buzz(30)
+    this.shake(90, 0.005)
+    this.freeze(PLAYER.dashHitStop)
   }
 
   private freeze(seconds: number) {

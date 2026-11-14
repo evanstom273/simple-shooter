@@ -10,7 +10,6 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
-- Build the stomp (#59).
 - Tune the ranged enemy and tank in play.
 - Wave system, then the shop (#53, #54).
 - Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.
@@ -23,6 +22,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Step 10: stomp (#59). *(2026-11-14T14:38:46+00:00)*
 - [x] Testing: automatic spawning off; on-screen spawn buttons for each enemy (touch and desktop). *(2026-11-14T14:33:08+00:00)*
 - [x] Step 9: ranged enemy (#56), tank (#58), health 5 × 4 with 2-stage hits (#57), hazards, spawner for all three. *(2026-11-14T07:12:19+00:00)*
 - [x] Dash cooldown 0.8 s → 1.6 s (#55). *(2026-11-14T06:53:18+00:00)*

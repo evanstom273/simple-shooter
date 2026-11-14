@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { sfx } from '../../audio/sfx.ts'
 import { burst, ring } from '../fx.ts'
-import { GRAVITY, TANK } from '../tuning.ts'
+import { GRAVITY, STOMP, TANK } from '../tuning.ts'
 import { firstMove, platformAt, type NavGraph } from './nav.ts'
 import { drawBar, lerpColour } from './RangedEnemy.ts'
 import type { Enemy, Hazard, PlayerInfo, Turns } from './types.ts'
@@ -115,6 +115,8 @@ export class TankEnemy implements Enemy {
   private flash = 0
   private stepTimer = 0
   private rumble = 0
+  /** Seconds left flattened by a stomp (#59). */
+  private flat = 0
 
   constructor(
     scene: Phaser.Scene,
@@ -161,6 +163,27 @@ export class TankEnemy implements Enemy {
   get dead() {
     return this.state === 'dead'
   }
+  get hittable() {
+    return this.alive && this.flat <= 0
+  }
+
+  get top() {
+    return this.body.bottom - TANK.size * 0.86
+  }
+
+  /** Stomped: 1 damage and flattened, but it doesn't move; the player is knocked away instead (#59). */
+  stomp() {
+    if (!this.hittable) return
+    if (this.state === 'windup') {
+      this.state = 'walk'
+      this.landMarker.setVisible(false)
+      this.turns.release(this)
+      this.cooldown = TANK.slamCooldown
+    }
+    this.hit(STOMP.damage)
+    if (this.alive) this.flat = STOMP.flatten
+  }
+
   get x() {
     return this.o.x
   }
@@ -176,7 +199,7 @@ export class TankEnemy implements Enemy {
   }
 
   hit(damage: number) {
-    if (!this.alive) return
+    if (!this.alive || this.flat > 0) return
     this.hp -= damage
     this.flash = 0.08
     this.sx = 1.12
@@ -193,6 +216,14 @@ export class TankEnemy implements Enemy {
       return
     }
     this.flash = Math.max(0, this.flash - dt)
+    if (this.flat > 0) {
+      this.flat -= dt
+      this.body.setVelocityX(0)
+      this.sx = 1.3
+      this.sy = 0.6
+      this.draw(dt, p)
+      return
+    }
     this.dropping = Math.max(0, this.dropping - dt)
     this.cooldown = Math.max(0, this.cooldown - dt)
     const b = this.body

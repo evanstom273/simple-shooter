@@ -224,3 +224,18 @@ export const TANK = {
  * All 0 while testing: spawn by hand with the on-screen buttons or E / R / T.
  */
 export const SPAWNER = { melee: 0, ranged: 0, tank: 0 } as const
+
+/** Stomp (#59). Placeholders, to tune in play. */
+export const STOMP = {
+  damage: 1,
+  /** Upward speed after a stomp (px/s); your double jump is refreshed too. */
+  bounce: 900,
+  /** Seconds the enemy stays flattened (can't be hit). */
+  flatten: 1,
+  /** How hard a stomped enemy is knocked away, px/s. */
+  knock: { x: 420, y: 220 },
+  /** Stomping the tank knocks you away instead, px/s. */
+  tankKnock: { x: 520, y: 700 },
+  /** Your feet must have been above this fraction of the enemy's height (0 = top, 1 = bottom) last frame. */
+  fromAbove: 0.45,
+} as const

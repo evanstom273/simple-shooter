@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { sfx } from '../../audio/sfx.ts'
 import { burst, ring } from '../fx.ts'
-import { ARENA, RANGED } from '../tuning.ts'
+import { ARENA, RANGED, STOMP } from '../tuning.ts'
 import type { Enemy, Hazard, PlayerInfo, Turns } from './types.ts'
 
 // The ranged enemy (#56): a small green flying triangle. Keeps a vantage point,
@@ -77,6 +77,8 @@ export class RangedEnemy implements Enemy {
   private bob = Math.random() * Math.PI * 2
   private flash = 0
   private side = Math.random() < 0.5 ? -1 : 1
+  /** Seconds left flattened by a stomp (#59). */
+  private flat = 0
 
   private body: Phaser.GameObjects.Triangle
   private line: Phaser.GameObjects.Graphics
@@ -106,8 +108,25 @@ export class RangedEnemy implements Enemy {
     return this.state === 'dead'
   }
 
+  get hittable() {
+    return this.alive && this.flat <= 0
+  }
+
+  get top() {
+    return this.y - this.radius
+  }
+
+  stomp(fromX: number) {
+    if (!this.hittable) return
+    if (this.state === 'charge' || this.state === 'lock') this.turns.release(this)
+    if (this.state !== 'dead') this.state = 'hover'
+    const away = Math.sign(this.x - fromX) || 1
+    this.hit(STOMP.damage, { x: away * 0.7, y: 0.7 })
+    if (this.alive) this.flat = STOMP.flatten
+  }
+
   hit(damage: number, dir: { x: number; y: number }) {
-    if (!this.alive) return
+    if (!this.alive || this.flat > 0) return
     this.hp -= damage
     this.flash = 0.07
     this.vx = dir.x * 600
@@ -124,6 +143,16 @@ export class RangedEnemy implements Enemy {
       return
     }
     this.flash = Math.max(0, this.flash - dt)
+    if (this.flat > 0) {
+      // Flattened: drifts, can't act or be hit (#59).
+      this.flat -= dt
+      this.vx *= 0.92
+      this.vy *= 0.92
+      this.x = Phaser.Math.Clamp(this.x + this.vx * dt, 30, ARENA.width - 30)
+      this.y = Phaser.Math.Clamp(this.y + this.vy * dt, 30, ARENA.height - 90)
+      this.draw()
+      return
+    }
     this.reload = Math.max(0, this.reload - dt)
     this.dartCooldown = Math.max(0, this.dartCooldown - dt)
     const dx = p.x - this.x
@@ -272,7 +301,9 @@ export class RangedEnemy implements Enemy {
     const heat = this.state === 'charge' ? 1 - this.timer / RANGED.charge : this.state === 'lock' ? 1 : 0
     const col = this.flash > 0 ? 0xffffff : heat > 0 ? lerpColour(RANGED.colour, RANGED.hotColour, heat) : RANGED.colour
     const pulse = this.state === 'lock' ? 1 + Math.sin(this.scene.time.now / 40) * 0.08 : 1 + heat * 0.15
-    this.body.setPosition(this.x, this.y).setRotation(this.angle).setFillStyle(col).setScale(pulse)
+    this.body.setPosition(this.x, this.y).setRotation(this.flat > 0 ? 0 : this.angle).setFillStyle(col)
+    if (this.flat > 0) this.body.setScale(1.5, 0.45)
+    else this.body.setScale(pulse)
 
     // Aim line: faint while tracking, bright and blinking once locked.
     this.line.clear()

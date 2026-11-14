@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T07:12:19+00:00):**
+**Where the project stands (as of 2026-11-14T14:38:46+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Stomp built** (#59) (2026-11-14T14:38:46+00:00).
 - **All three enemy types built** (ranged #56, tank #58) and health is 5 × 4 stages with 2-stage melee/ranged hits (#57) (2026-11-14T07:12:19+00:00).
 - **Contact damage removed entirely** (#52): only attacks hurt (2026-11-14T06:47:26+00:00).
 - **After playtesting the melee enemy ("very fucking hard"):** health is now 5 pips × 5 stages; contact costs a stage, attacks a pip; kills heal a stage; enemies take turns attacking; enemies 1.1× the player; enemy health bars (2026-11-14T06:44:50+00:00, #48–#51).
@@ -255,6 +256,10 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 
 ## C. Current Development Scope
 
+### Step 10: Stomp — **BUILT** *(2026-11-14T14:38:46+00:00)*
+Landing on an enemy from above stomps it (#59): 1 damage, knocked away and flattened ~1 s (can't be hit by anything), you bounce up with your double jump back; the tank flattens but knocks you away; an attacking enemy wins.
+
+
 ### Step 9: Ranged enemy, tank, health 5 × 4 — **BUILT** *(2026-11-14T07:12:19+00:00)*
 **In scope (done):** the ranged enemy (#56) and the tank (#58) as designed; health 20 = 5 pips × 4 stages, melee lunge 2 stages (#57); shared enemy types; hazards (enemy shots, shockwaves, slam impact); the temporary spawner handles all three.
 
@@ -420,6 +425,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Tank (#58) | Tested | `enemies/TankEnemy.ts`. Red pentagon, 96 px (2×), 8 HP, one eye. Walks at 95 px/s, uses the same route-finding with heavy jumps; landings shake the screen. Within 520 px and on its own turn: wind-up 1 s (crouches, heats red→white, rumble, growing camera shake, landing marker tracking you) → leap (0.7 s arc to where you are) → slam: impact zone + two shockwaves running to the platform's ends (700 px/s, 46 px tall), all 4 stages → 2 s recovery (squashed, wobbly eye) → 1.5 s before it can slam again. Not pushable; your dash damages it and bounces you back (520 px/s). Breaks into falling red pentagon chunks. Checked: full cycle; slam on a standing player 20→16; shockwave hits a standing player (−4) and misses a jumping one; dash: −1 HP, tank didn't move, player bounced; dies at 8. *(2026-11-14T07:12:19+00:00)* |
 | Hazards | Tested | Enemy shots, shockwaves and the slam impact are scene-level hazards: each frame, if one touches the player (not invulnerable) it deals its damage and disappears. *(2026-11-14T07:12:19+00:00)* |
 | Testing spawn buttons | Temporary | *(2026-11-14T14:33:08+00:00)* Automatic spawning off (`SPAWNER` all 0) while testing. A "SPAWN" pill at the top centre (React) with three buttons, orange circle / green triangle / red pentagon, spawns a melee / ranged / tank via `state/debug.ts`; works on touch and desktop (checked on the cover screen in portrait). E / R / T still work on desktop. Removed when waves exist. |
+| Stomp (#59) | Tested | A stomp is: player falling, touching a hittable, non-attacking enemy, with last frame's feet above its upper 45% (`STOMP.fromAbove`). Effect: 1 damage, enemy knocked away (420/220 px/s) and flattened 1 s (ignores stomps, dashes and bullets; melee/tank lie squashed, ranged squashes and drifts); a stomp during a wind-up cancels it. Player bounces up (900 px/s) with the double jump refreshed; off the tank: knocked away (520 sideways, 700 up). Ring, coloured burst, boing, 30 ms buzz, small shake, short freeze-frame. Checked: melee 3→2 + flattened + bounce; re-stomp while flat does nothing; landing on a (held) rolling melee hurts 2 stages; ranged stomp kills it; tank 8→7, flattened, didn't move, player knocked off; walking into a non-attacking enemy's side does nothing. *(2026-11-14T14:38:46+00:00)* |
 | Temporary spawner | Temporary | *(Updated 2026-11-14T07:12:19+00:00.)* Keeps 2 melee + 1 ranged in the arena; tanks only on demand. E / R / T spawn an extra melee / ranged / tank (desktop). |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
@@ -444,6 +450,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
 - ~~Platforms block bullets from every side.~~ Changed by #42: bullets pass through.
+- **Flattened enemies can't be hit by anything** (stomps, dashes, bullets), reading #59's "can't be hit" as total, so a stomp can't be chained straight into a dash.
 - **Tank slam impact zone:** the tank switched to recovering on the frame it landed, before the body-contact check, so a slam directly on you never counted. The slam now creates a brief damage zone over its footprint (Claude's fix).
 - **Ranged enemy has 1 HP**, so one bullet also kills it once weapons exist ("fragile").
 - **Tanks aren't kept in the arena by the test spawner**, only spawned with T, since they're meant for later waves.
