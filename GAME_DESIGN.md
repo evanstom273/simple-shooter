@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T06:35:05+00:00):**
+**Where the project stands (as of 2026-11-14T06:44:50+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **After playtesting the melee enemy ("very fucking hard"):** health is now 5 pips × 5 stages; contact costs a stage, attacks a pip; kills heal a stage; enemies take turns attacking; enemies 1.1× the player; enemy health bars (2026-11-14T06:44:50+00:00, #48–#51).
 - **Melee enemy built** (#40); practice dummies removed; a temporary spawner keeps two in the arena (2026-11-14T06:35:05+00:00).
 - **Heal on kills built** (#47) (2026-11-14T06:23:49+00:00).
 - **Player health built; gun removed (start unarmed); dash damages dummies; dash auto-aims in the auto modes** (2026-11-14T06:17:03+00:00).
@@ -114,9 +115,15 @@ The core design (History #7–#15) was worked out in a separate conversation and
 | **Ranged** | Shoots projectiles towards the player, potentially keeping its distance. |
 | **Tank** | Slow-moving, with significantly more health. |
 
+### Enemies attack in turns *(2026-11-14T06:44:50+00:00 — History #49)*
+- **Only one enemy winds up or lunges at a time.** The others hang back about 400 px away, hopping back and forth, until the attacker's dizzy spell ends; then a 0.5 s gap before the next can start.
+
+### Enemy health bars *(2026-11-14T06:44:50+00:00 — History #51)*
+- **A small segmented bar above each enemy** (one segment per hit point), shown once it's been hit; untouched enemies stay clean.
+
 ### Melee enemy *(2026-11-14T05:31:56+00:00 — History #40)*
 Designed with Lyra through a round of questions. All numbers are placeholders, tuned in play.
-- **Look:** an **orange circle**, **smaller than the player** (about ¾ of the square's size), with **one eye** that tracks you. Orange keeps red free for damage feedback.
+- **Look:** an **orange circle**, ~~smaller than the player (about ¾ of the square's size)~~ **1.1× the player's size** *(2026-11-14T06:44:50+00:00 — History #50)*, with **one eye** that tracks you. Orange keeps red free for damage feedback.
 - **Movement:** **quick little hops**: constant, bouncy and fairly fast.
 - **Pathing:** **properly navigates** between platforms to reach you (works out a route), rather than just hopping straight at you.
 - **Attack: a lunge, chosen by situation.** If you're on its level it **rolls** fast along the ground at you; if you're above or below it **leaps** through the air at you. Contact still hurts at any time (#23).
@@ -142,11 +149,17 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Diminishing returns:** each repeat of the same upgrade adds a bit less than the last. Actual amounts are placeholders, tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #19)*
 - **Fire Rate applies to every weapon you carry** (a player stat, not per gun). *(2026-11-14T04:24:39+00:00 — History #22)*
 
+### Health, revised after playtesting *(2026-11-14T06:44:50+00:00 — History #48)*
+- **25 health: 5 pips × 5 stages.** Each pip shows how many of its stages are left.
+- **Brushing an enemy costs 1 stage**, then 0.4 s invulnerability, with a light version of the hurt feedback (small nudge, small shake, short buzz; no red pulse, no freeze). Keeps #23 (touching hurts) without the unfairness.
+- **Being caught by an attack (a roll or leap) costs a whole pip**, then the full 1 s invulnerability, knockback and hurt feedback.
+- **Each kill restores 1 stage** (5 kills = a pip); wasted at full health. Replaces the random 3–5 and the reset-on-hit of #47.
+
 ### Health *(2026-11-14T06:17:03+00:00 — History #45)*
 - **5 hit points**, shown as five square pips top-left (React HUD). Placeholder number.
 - **Hurt feedback:** knockback, a red pulse at the screen edges, bigger screen shake, a hurt sound, a vibration on the phone and a short freeze-frame; the square flickers while invulnerable.
 - **Dying (temporary):** health refills with a white flash until runs exist (#17 is the real rule).
-- **Healing by kills:** every few kills gives one pip back. The number needed is **random between 3 and 5**, re-rolled for each pip. Kills while at full health are **wasted**; **getting hit resets** the partial progress; **every enemy counts as one kill**. *(2026-11-14T06:21:18+00:00 — History #47)*
+- ~~**Healing by kills:** every few kills gives one pip back.~~ *(Replaced by #48: one stage per kill.)* The number needed is **random between 3 and 5**, re-rolled for each pip. Kills while at full health are **wasted**; **getting hit resets** the partial progress; **every enemy counts as one kill**. *(2026-11-14T06:21:18+00:00 — History #47)*
 
 ### Taking damage *(2026-11-14T04:27:30+00:00 — History #23)*
 - **Touching an enemy damages you**, unless you're dashing (#24).
@@ -186,6 +199,10 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ---
 
 ## C. Current Development Scope
+
+### Step 8c: Difficulty pass after playtesting — **BUILT** *(2026-11-14T06:44:50+00:00)*
+Stage-based health (#48), contact scrape vs attack hit, one stage healed per kill, turn-taking (#49), bigger enemies (#50), enemy health bars (#51). Enemy health (3) and count (2) unchanged at Lyra's request.
+
 
 ### Step 8b: The melee enemy — **BUILT** *(2026-11-14T06:35:05+00:00)*
 **In scope (done):** everything in #40: look (orange circle, tracking eye), quick hops, platform route-finding, wind-up tell (glow + rising whine), roll on the same level / leap otherwise, dizzy afterwards with missed rolls bouncing off walls, 3 HP, dash damage and wind-up cancel, arc-shard death, spawn marker, bumping. Kills feed healing (#47). A temporary spawner (keeps 2; E spawns more). Practice dummies removed.
@@ -316,15 +333,19 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Auto-aim | Tested | *(Updated 2026-11-14T05:50:22+00:00, #42–#43.)* Nearest living target within 700 px, re-checked every frame; keeps the current target unless another is ≥15% closer (`AIM.switchMargin`); drops it when it dies or leaves range. Platforms ignored. Checked: a 6% difference kept the old target, 33% switched. *Previously:* line of sight + locked until death. Rotating corner bracket on the locked target. *(2026-11-14T05:45:20+00:00)* |
 | Shot feel | Tested | Muzzle star flash, additive glow, barrel kicks back, small recoil push (sideways; lift when firing down in the air), tiny squash, shot sound; impact sparks + tick. *(2026-11-14T05:45:20+00:00)* |
 | Off-screen markers (#44) | Tested | `MarkersScene` (screen space, drawn under the touch controls): for each living target outside the view, an arrowhead where the line from screen centre to the target meets the edge (inset 26 CSS px). Size 9–15 px and opacity by distance (fades out to 1600 px). Auto-aim target: yellow, 16–19 px pulsing, with a pulsing ring. Each target supplies its marker colour. *(2026-11-14T06:06:53+00:00)* |
-| Health (#45) | Tested | `hudStore` (plain TS) shared with React. Touching a target without invulnerability: −1 HP, knockback away and up (520/480 px/s), 1 s invulnerability with flicker, 0.08 s freeze-frame, shake, red edge pulse (CSS), sound, 80 ms vibration. At 0 HP: refill, 1.5 s invulnerability, white flash and chime (temporary). *(2026-11-14T06:17:03+00:00)* |
+| Health (#45) | Superseded by #48 | `hudStore` (plain TS) shared with React. Touching a target without invulnerability: −1 HP, knockback away and up (520/480 px/s), 1 s invulnerability with flicker, 0.08 s freeze-frame, shake, red edge pulse (CSS), sound, 80 ms vibration. At 0 HP: refill, 1.5 s invulnerability, white flash and chime (temporary). *(2026-11-14T06:17:03+00:00)* |
 | Dash damage | Tested | Dashing through a target hits it once per dash (1 damage), with white sparks, a thud, a small shake, 25 ms vibration and a 0.05 s freeze-frame. Three dashes pop a dummy. *(2026-11-14T06:17:03+00:00)* |
 | Dash grace | Tested | 0.12 s of invulnerability after a dash ends (`DASH.grace`), added after testing showed a dash ending just inside a dummy hurt the player. *(2026-11-14T06:17:03+00:00)* |
 | Dash auto-aim (#46) | Tested | Auto modes, no movement input: dash direction = towards the auto-aim target (checked: mouse ignored, dash went to the target); with A held it went straight left. *(2026-11-14T06:17:03+00:00)* |
 | Unarmed start (#21) | Tested | Gun switched off (`armed = false`): no shooting, no barrel; auto-aim still runs (bracket and markers show the dash target). Shooting code kept for the weapons step. *(2026-11-14T06:17:03+00:00)* |
-| Heal on kills (#47) | Tested | Each kill while hurt counts towards the next pip; the number needed is rolled 3–5 (`HEAL`) and re-rolled after each heal. Kills at full health are ignored; a hit resets the count. HUD: the first empty pip fills from the bottom (kills ÷ needed); the restored pip pops in; in game a ring, rising white sparks, a chime and a short buzz. Dummy pops count as kills. *(2026-11-14T06:23:49+00:00)* |
+| Heal on kills (#47) | Superseded by #48 | Each kill while hurt counts towards the next pip; the number needed is rolled 3–5 (`HEAL`) and re-rolled after each heal. Kills at full health are ignored; a hit resets the count. HUD: the first empty pip fills from the bottom (kills ÷ needed); the restored pip pops in; in game a ring, rising white sparks, a chime and a short buzz. Dummy pops count as kills. *(2026-11-14T06:23:49+00:00)* |
 | Melee enemy (#40) | Tested | `enemies/MeleeEnemy.ts`. Radius 18 (¾ of the square), 3 HP. Invisible physics circle + a visible circle that squashes; eye tracks the player (spins with the body when rolling, wobbles when dizzy, with orbiting stars). States: spawning (1 s marker) → chase (hops 240×380 px/s, 0.06 s pause) → wind-up 0.5 s (heats orange→white, shivers, rising whine) → roll (880 px/s, ends after 2 wall bounces or 1.6 s) or leap (0.55 s ballistic arc to where you were) → dizzy 1 s → 0.8 s before it can lunge again. Lunges when within 300 px: roll if on your platform (or within 40 px vertically), else leap. Hit: white flash, squash, knockback; a hit in the wind-up, roll or leap makes it dizzy. Death: six curved orange arc shards, sparks, ring, shatter sound, counts as a kill (#47). Checked: spawn → drop to the floor → hop over → wind-up → roll hits you → wall bounce → dizzy; climbs to the top platform; leaps up from below. *(2026-11-14T06:35:05+00:00)* |
 | Enemy route-finding | Tested | `enemies/nav.ts`: graph of moves between platforms (jump straight up through a one-way platform above, drop through one below, hop across a gap up or down), shortest route by breadth-first search. Every platform reachable from the floor and back. Target = the platform you're on, or the one below you if you're in the air. *(2026-11-14T06:35:05+00:00)* |
 | Temporary spawner | Temporary | Keeps 2 enemies in the arena, a new one 2 s after a kill, on a random platform ≥600 px from you; E (desktop) spawns an extra. Until waves exist. *(2026-11-14T06:35:05+00:00)* |
+| Stage health (#48) | Tested | Health counted in stages (25). Contact with a non-attacking enemy: −1 stage, 0.4 s invulnerability (glued to one: −1 stage every ~0.42 s). Roll/leap hit: −5 stages (checked 25→20→15). Kill: +1 stage (checked 20→21); the pip that refills pops. HUD pips fill from the bottom by stages. Temporary refill at 0 kept. *(2026-11-14T06:44:50+00:00)* |
+| Turn-taking (#49) | Tested | Scene-level token: an enemy must get the turn to wind up; released when its dizzy spell ends (or it dies), then 0.5 s gap. Others within 480 px hop away to ~400 px or shuffle. Checked over 9 s with two enemies: never more than one attacking at once; they alternated. *(2026-11-14T06:44:50+00:00)* |
+| Enemy size (#50) | Done | Radius 26 (1.1 × the 48 px square). *(2026-11-14T06:44:50+00:00)* |
+| Enemy health bar (#51) | Tested | Three 12×5 px segments above the enemy, orange for remaining HP; drawn once it's taken a hit. *(2026-11-14T06:44:50+00:00)* |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
 | ~~Practice dummies~~ | Removed (replaced by the melee enemy) | Five grey circles floating above platforms; 3 hits (dash or shot) to pop, respawn after 2.5 s; touching one hurts (to test health). Removed when the melee enemy goes in. |
@@ -412,6 +433,10 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 45 | 2026-11-14T06:17:03+00:00 | Combat | Player health: 5 HP (placeholder), HUD pips, hurt feedback (knockback, red pulse, shake, sound, vibration, freeze-frame, flicker); temporary refill on death. Start unarmed (gun removed). Dash damages targets. |
 | 46 | 2026-11-14T06:17:03+00:00 | Controls | In the auto-aim modes the dash aims at the auto-aim target unless you're moving (joystick pushed / A or D held). |
 | 47 | 2026-11-14T06:21:18+00:00 | Combat | Heal on kills: one pip back every 3–5 kills (random per pip); kills at full health are wasted; getting hit resets the partial progress; all enemies count as one. |
+| 48 | 2026-11-14T06:44:50+00:00 | Combat | After playtesting: health is 25 (5 pips × 5 stages); contact costs 1 stage (0.4 s invulnerability, light feedback), an attack costs a pip (full feedback); each kill heals 1 stage. Supersedes the HP count in #45 and the heal rule in #47. |
+| 49 | 2026-11-14T06:44:50+00:00 | Enemies | Enemies take turns: only one winds up or lunges at a time; the rest keep ~400 px away until its dizzy spell ends, then a 0.5 s gap. |
+| 50 | 2026-11-14T06:44:50+00:00 | Enemies | Melee enemy is 1.1× the player's size (was ¾). |
+| 51 | 2026-11-14T06:44:50+00:00 | UI | Enemy health bars: small segments above each enemy, shown once it's been hit. |
 
 ---
 

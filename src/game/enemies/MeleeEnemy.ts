@@ -11,6 +11,13 @@ import { firstMove, platformAt, type NavGraph } from './nav.ts'
 
 type State = 'spawning' | 'chase' | 'windup' | 'roll' | 'leap' | 'dizzy' | 'dead'
 
+/** Taking turns (#49): only one enemy attacks at a time. */
+export interface Turns {
+  request(e: MeleeEnemy): boolean
+  release(e: MeleeEnemy): void
+  isOthers(e: MeleeEnemy): boolean
+}
+
 export interface PlayerInfo {
   x: number
   y: number
@@ -33,6 +40,9 @@ export class MeleeEnemy implements Target {
   private pupil: Phaser.GameObjects.Arc
   private stars: Phaser.GameObjects.Star[] = []
   private marker: Phaser.GameObjects.Arc | null = null
+  /** Health bar: one segment per hit point, shown once it's been hit. */
+  private bar: Phaser.GameObjects.Graphics
+  private turns: Turns
 
   private scene: Phaser.Scene
   private nav: NavGraph
@@ -53,8 +63,10 @@ export class MeleeEnemy implements Target {
   private flash = 0
   private look = { x: 0, y: 0 }
 
-  constructor(scene: Phaser.Scene, x: number, y: number, nav: NavGraph, onKill: () => void) {
+  constructor(scene: Phaser.Scene, x: number, y: number, nav: NavGraph, onKill: () => void, turns: Turns) {
     this.scene = scene
+    this.turns = turns
+    this.bar = scene.add.graphics().setDepth(9)
     this.nav = nav
     this.onKill = onKill
     this.o = scene.add.circle(x, y, MELEE.radius, 0xffffff, 0).setVisible(false)
@@ -81,6 +93,11 @@ export class MeleeEnemy implements Target {
   }
   get y() {
     return this.o.y
+  }
+
+  /** Mid-lunge: touching it now is a real hit (#48). */
+  get attacking() {
+    return this.state === 'roll' || this.state === 'leap'
   }
 
   private get grounded() {
@@ -171,6 +188,7 @@ export class MeleeEnemy implements Target {
           this.state = 'chase'
           this.attackCooldown = MELEE.attackCooldown
           this.spin = 0
+          this.turns.release(this)
         }
         break
     }
@@ -186,7 +204,14 @@ export class MeleeEnemy implements Target {
     const here = platformAt(this.nav, this.x, this.body.bottom)
     const sameLevel = (here >= 0 && here === player.platform) || Math.abs(dy) < 40
 
-    if (this.attackCooldown === 0 && dist < MELEE.attackRange) {
+    // Someone else is attacking: keep your distance, hopping back and forth (#49).
+    if (this.turns.isOthers(this) && dist < MELEE.waitDistance + 80) {
+      const away = -Math.sign(dx) || 1
+      this.hop(dist < MELEE.waitDistance ? away : Math.random() < 0.5 ? 1 : -1, 0.6)
+      return
+    }
+
+    if (this.attackCooldown === 0 && dist < MELEE.attackRange && this.turns.request(this)) {
       this.lunge = sameLevel ? 'roll' : 'leap'
       this.state = 'windup'
       this.timer = MELEE.windup
@@ -225,8 +250,8 @@ export class MeleeEnemy implements Target {
     sfx.enemyHop()
   }
 
-  private hop(dir: number) {
-    this.body.setVelocity(dir * MELEE.hopSpeedX, -MELEE.hopSpeedY)
+  private hop(dir: number, scale = 1) {
+    this.body.setVelocity(dir * MELEE.hopSpeedX * scale, -MELEE.hopSpeedY)
     this.kick(0.82, 1.2)
     sfx.enemyHop()
   }
@@ -275,6 +300,8 @@ export class MeleeEnemy implements Target {
   private die(dir: { x: number; y: number }) {
     this.alive = false
     this.state = 'dead'
+    this.turns.release(this)
+    this.bar.destroy()
     this.body.enable = false
     const { x, y } = this
     // Shatter into curved shards of the circle (#40).
@@ -346,6 +373,20 @@ export class MeleeEnemy implements Target {
     const py = this.state === 'dizzy' ? Math.sin(wob) * 3 : Math.sin(Math.atan2(player.y - y, player.x - x)) * 2.5
     this.eye.setPosition(x + ex * this.sx, y + offY + ey * this.sy)
     this.pupil.setPosition(this.eye.x + px, this.eye.y + py)
+
+    // Health bar: shown once it's been hit; one segment per hit point.
+    this.bar.clear()
+    if (this.hp < MELEE.health) {
+      const seg = 12
+      const gap = 3
+      const total = MELEE.health * seg + (MELEE.health - 1) * gap
+      const bx = x - total / 2
+      const by = y - this.radius - 16
+      for (let i = 0; i < MELEE.health; i++) {
+        this.bar.fillStyle(i < this.hp ? MELEE.colour : 0xffffff, i < this.hp ? 0.95 : 0.15)
+        this.bar.fillRect(bx + i * (seg + gap), by, seg, 5)
+      }
+    }
 
     // Dizzy stars orbiting overhead.
     if (this.state === 'dizzy') {

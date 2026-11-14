@@ -38,10 +38,15 @@ export const PLAYER = {
   jumpBuffer: 0.12,
   /** Seconds that platforms ignore you after pressing down to drop through. */
   dropThrough: 0.22,
-  /** Hit points (#23). Placeholder. */
-  maxHealth: 5,
-  /** Seconds of invulnerability after a hit (#27). */
+  /** Health (#48): pips × stages per pip. 5 × 5 = 25. */
+  pips: 5,
+  stagesPerPip: 5,
+  /** Damage in stages: brushing an enemy vs being caught by an attack (#48). */
+  contactDamage: 1,
+  attackDamage: 5,
+  /** Seconds of invulnerability after a real hit (#27) and after a contact scrape (#48). */
   hurtInvulnerability: 1,
+  contactInvulnerability: 0.4,
   /** Knockback when hit: sideways away from the source, and up, px/s. */
   hurtKnockback: { x: 520, y: 480 },
   /** Freeze-frames, seconds: on taking a hit, and on landing a dash hit. */
@@ -126,16 +131,13 @@ export const AIM = {
   switchMargin: 0.15,
 } as const
 
-/** Heal on kills (#47): one pip back after a random number of kills in this range. */
-export const HEAL = { minKills: 3, maxKills: 5 } as const
-
 
 /** Melee enemy (#40). All placeholders, to tune in play. */
 export const MELEE = {
   colour: 0xff8a2a,
   hotColour: 0xfff0d8,
-  /** Radius: diameter ≈ ¾ of the player's square. */
-  radius: 18,
+  /** Radius: diameter ≈ 1.1× the player's square (#50). */
+  radius: 26,
   health: 3,
   /** Quick little hops. */
   hopSpeedX: 240,
@@ -159,5 +161,9 @@ export const MELEE = {
   /** Temporary spawner (until waves): keep this many in the arena. */
   keepAlive: 2,
   respawnDelay: 2,
+  /** Taking turns (#49): enemies without the attack turn keep about this far away. */
+  waitDistance: 400,
+  /** Seconds between one enemy's turn ending and the next one's starting. */
+  turnGap: 0.5,
   spawnWarning: 1,
 } as const

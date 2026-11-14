@@ -44,17 +44,19 @@ export function Hud() {
       {hud.hurtCount > 0 && <div key={`h${hud.hurtCount}`} className="hurt-pulse absolute inset-0" />}
       {hud.deathCount > 0 && <div key={`d${hud.deathCount}`} className="revive-flash absolute inset-0" />}
 
-      <div className="relative flex items-center gap-1.5" aria-label={`Health ${hud.health} of ${hud.maxHealth}`} role="img">
-        {Array.from({ length: hud.maxHealth }, (_, i) => {
-          const full = i < hud.health
-          // The first empty pip fills from the bottom as kills build towards a heal (#47).
-          const filling = i === hud.health ? hud.healProgress : 0
+      {/* Health (#48): each pip shows how many of its stages are left, filling from the bottom. */}
+      <div className="relative flex items-center gap-1.5" aria-label={`Health ${hud.health} of ${hud.pips * hud.stagesPerPip}`} role="img">
+        {Array.from({ length: hud.pips }, (_, i) => {
+          const stages = Math.max(0, Math.min(hud.stagesPerPip, hud.health - i * hud.stagesPerPip))
+          const full = stages === hud.stagesPerPip
           return (
             <span
               key={i === hud.healedPip ? `p${i}-${hud.healCount}` : `p${i}`}
-              className={`relative h-3.5 w-3.5 overflow-hidden rounded-[3px] transition-all duration-200 ${full ? 'bg-neutral-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]' : 'scale-75 bg-white/10 ring-1 ring-white/20'} ${full && i === hud.healedPip ? 'heal-pop' : ''}`}
+              className={`relative h-3.5 w-3.5 overflow-hidden rounded-[3px] ring-1 transition-all duration-200 ${full ? 'bg-neutral-100 shadow-[0_0_8px_rgba(255,255,255,0.35)] ring-white/0' : 'bg-white/10 ring-white/20'} ${stages === 0 ? 'scale-75' : ''} ${full && i === hud.healedPip ? 'heal-pop' : ''}`}
             >
-              {!full && <span className="absolute inset-x-0 bottom-0 bg-white/60 transition-[height] duration-300" style={{ height: `${filling * 100}%` }} />}
+              {!full && stages > 0 && (
+                <span className="absolute inset-x-0 bottom-0 bg-neutral-100 transition-[height] duration-200" style={{ height: `${(stages / hud.stagesPerPip) * 100}%` }} />
+              )}
             </span>
           )
         })}

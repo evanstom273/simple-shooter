@@ -2,13 +2,13 @@
 // Plain TS (no Phaser import) so React can use it without loading the game.
 
 interface HudState {
+  /** Health in stages (#48): pips × stagesPerPip. */
   health: number
-  maxHealth: number
-  /** 0…1: how far the next empty pip has filled towards a heal (#47). */
-  healProgress: number
+  pips: number
+  stagesPerPip: number
   /** Increments on every heal, so the UI can animate the pip. */
   healCount: number
-  /** Index of the pip restored by the last heal (-1 = none). */
+  /** Index of the pip that just became full again (-1 = none). */
   healedPip: number
   /** Increments on every hit taken, so the UI can play a hurt pulse. */
   hurtCount: number
@@ -16,7 +16,7 @@ interface HudState {
   deathCount: number
 }
 
-let state: HudState = { health: 5, maxHealth: 5, healProgress: 0, healCount: 0, healedPip: -1, hurtCount: 0, deathCount: 0 }
+let state: HudState = { health: 25, pips: 5, stagesPerPip: 5, healCount: 0, healedPip: -1, hurtCount: 0, deathCount: 0 }
 const listeners = new Set<() => void>()
 
 export const hudStore = {

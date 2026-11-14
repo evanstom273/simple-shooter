@@ -10,7 +10,7 @@ import { Shooter } from './Shooter.ts'
 import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
-import { ARENA, DASH, GRAVITY, HEAL, MELEE, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -62,7 +62,8 @@ export class GameScene extends Phaser.Scene {
   private shooter!: Shooter
   /** No gun at the start of a run (#21); weapons come from upgrade offers later. */
   private armed = false
-  private health: number = PLAYER.maxHealth
+  /** Health in stages (#48). */
+  private health: number = PLAYER.pips * PLAYER.stagesPerPip
   /** Seconds of post-hit invulnerability left (#27). */
   private hurtTime = 0
   /** Seconds of freeze-frame left. */
@@ -71,9 +72,28 @@ export class GameScene extends Phaser.Scene {
   private dashHits = new Set<Target>()
   /** Seconds of invulnerability left after a dash ended. */
   private dashGrace = 0
-  /** Heal on kills (#47): kills counted towards the next pip, and how many it needs. */
-  private healKills = 0
-  private healNeeded = Phaser.Math.Between(HEAL.minKills, HEAL.maxKills)
+  /**
+   * Taking turns (#49): only one enemy may wind up or lunge at a time. The rest
+   * keep their distance until it's done, then a short gap before the next.
+   */
+  private turns = {
+    holder: null as MeleeEnemy | null,
+    gap: 0,
+    request: (e: MeleeEnemy) => {
+      const t = this.turns
+      if (t.holder && t.holder !== e && t.holder.alive) return false
+      if (t.holder !== e && t.gap > 0) return false
+      t.holder = e
+      return true
+    },
+    release: (e: MeleeEnemy) => {
+      const t = this.turns
+      if (t.holder !== e) return
+      t.holder = null
+      t.gap = MELEE.turnGap
+    },
+    isOthers: (e: MeleeEnemy) => !!this.turns.holder && this.turns.holder !== e && this.turns.holder.alive,
+  }
   /** Zoom that fills the screen (#35); the target zoom-out (#44) scales it down. */
   private baseZoom = 1
   private minZoom = 0.1
@@ -176,7 +196,7 @@ export class GameScene extends Phaser.Scene {
       if (p.wasTouch || !p.rightButtonDown()) return
       this.mouseDash = { x: p.worldX - this.player.x, y: p.worldY - this.player.y }
     })
-    hudStore.set({ health: this.health, maxHealth: PLAYER.maxHealth })
+    hudStore.set({ health: this.health, pips: PLAYER.pips, stagesPerPip: PLAYER.stagesPerPip })
 
     const cam = this.cameras.main
     cam.setBounds(0, 0, ARENA.width, ARENA.height)
@@ -400,6 +420,8 @@ export class GameScene extends Phaser.Scene {
     this.playerInfo.y = this.player.y
     this.playerInfo.platform = plat >= 0 ? plat : platformBelow(this.nav, this.player.x, b.bottom)
 
+    this.turns.gap = Math.max(0, this.turns.gap - dt)
+    if (this.turns.holder && !this.turns.holder.alive) this.turns.holder = null
     for (const e of this.enemies) e.update(dt, this.playerInfo)
     this.enemies = this.enemies.filter((e) => e.state !== 'dead')
 
@@ -420,7 +442,7 @@ export class GameScene extends Phaser.Scene {
     const pool = far.length ? far : [...PLATFORMS]
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]
     const x = Phaser.Math.Between(p.x + 40, p.x + p.w - 40)
-    const e = new MeleeEnemy(this, x, p.y - MELEE.radius - 2, this.nav, () => this.onKill())
+    const e = new MeleeEnemy(this, x, p.y - MELEE.radius - 2, this.nav, () => this.onKill(), this.turns)
     this.enemyGroup.add(e.o)
     ;(e.o.body as Phaser.Physics.Arcade.Body).setCircle(MELEE.radius).setCollideWorldBounds(true)
     ;(e.o.body as Phaser.Physics.Arcade.Body).enable = false
@@ -448,26 +470,30 @@ export class GameScene extends Phaser.Scene {
         burst(this, t.x, t.y, { count: 8, colour: 0xffffff, angle: this.dashDir.angle(), spread: 0.8, speed: [150, 380], size: [4, 8], life: 220 })
         this.freeze(PLAYER.dashHitStop)
       } else if (!this.invulnerable) {
-        this.takeHit(t.x)
+        this.takeHit(t.x, t.attacking)
         return
       }
     }
   }
 
   /** A kill counts towards healing one pip, unless you're already at full health (#47). */
+  /** Each kill restores one stage (#48); wasted at full health. A pip refilling gets the bigger effect. */
   private onKill() {
-    if (this.health >= PLAYER.maxHealth) return // wasted at full health
-    this.healKills++
-    if (this.healKills >= this.healNeeded) {
-      this.health += 1
-      this.healKills = 0
-      this.healNeeded = Phaser.Math.Between(HEAL.minKills, HEAL.maxKills)
+    const max = PLAYER.pips * PLAYER.stagesPerPip
+    if (this.health >= max) return
+    this.health += 1
+    const pipDone = this.health % PLAYER.stagesPerPip === 0
+    if (pipDone) {
       this.healEffect()
-      hudStore.set({ health: this.health, healProgress: 0, healCount: hudStore.get().healCount + 1, healedPip: this.health - 1 })
+      const hud = hudStore.get()
+      hudStore.set({ health: this.health, healCount: hud.healCount + 1, healedPip: this.health / PLAYER.stagesPerPip - 1 })
     } else {
-      hudStore.set({ healProgress: this.healKills / this.healNeeded })
+      ring(this, this.player.x, this.player.y, PLAYER.size * 1.1, PLAYER.size * 1.1, 0xffffff, { grow: 1.6, life: 260, alpha: 0.5 })
+      sfx.dashReady()
+      hudStore.set({ health: this.health })
     }
   }
+
 
   private healEffect() {
     const { x, y } = this.player
@@ -484,32 +510,46 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Knockback, lose a hit point, short invulnerability (#23, #27). */
-  private takeHit(fromX: number) {
-    this.health -= 1
-    this.hurtTime = PLAYER.hurtInvulnerability
-    // Getting hit resets the heal progress (#47).
-    this.healKills = 0
+  /**
+   * Getting hurt (#48). An attack (a lunge) costs a whole pip with full feedback
+   * and knockback; brushing an enemy costs one stage with a lighter version.
+   */
+  private takeHit(fromX: number, attack: boolean) {
+    const max = PLAYER.pips * PLAYER.stagesPerPip
+    this.health -= attack ? PLAYER.attackDamage : PLAYER.contactDamage
+    this.hurtTime = attack ? PLAYER.hurtInvulnerability : PLAYER.contactInvulnerability
     const away = Math.sign(this.player.x - fromX) || -this.facing
-    this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
-    this.view.kick(1.35, 0.7)
-    this.view.pulse(0.12)
-    burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
-    this.shake(170, 0.012)
-    sfx.hurt()
-    buzz(80)
-    this.freeze(PLAYER.hurtHitStop)
     const hud = hudStore.get()
+    if (attack) {
+      this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
+      this.view.kick(1.35, 0.7)
+      this.view.pulse(0.12)
+      burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
+      this.shake(170, 0.012)
+      sfx.hurt()
+      buzz(80)
+      this.freeze(PLAYER.hurtHitStop)
+    } else {
+      // A scrape: small nudge, small effects, no freeze, no red pulse.
+      this.body_.setVelocityX(this.body_.velocity.x + away * 220)
+      this.view.kick(1.12, 0.9)
+      burst(this, this.player.x, this.player.y, { count: 5, colour: 0xff8a8a, angle: 0, spread: Math.PI, speed: [100, 220], size: [3, 6], life: 220 })
+      this.shake(70, 0.004)
+      sfx.enemyHit()
+      buzz(25)
+    }
     if (this.health <= 0) {
       // Temporary until runs exist: refill and carry on.
-      this.health = PLAYER.maxHealth
+      this.health = max
       this.hurtTime = PLAYER.hurtInvulnerability * 1.5
       ring(this, this.player.x, this.player.y, PLAYER.size * 2, PLAYER.size * 2, 0xffffff, { grow: 4, life: 600, line: 5 })
       this.time.delayedCall(120, () => sfx.revive())
-      hudStore.set({ health: this.health, healProgress: 0, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
+      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
     } else {
-      hudStore.set({ health: this.health, healProgress: 0, hurtCount: hud.hurtCount + 1 })
+      hudStore.set({ health: this.health, hurtCount: attack ? hud.hurtCount + 1 : hud.hurtCount })
     }
   }
+
 
   /** For the marker overlay. */
   get markerInfo() {
