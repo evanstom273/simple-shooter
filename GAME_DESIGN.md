@@ -144,6 +144,7 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **5 hit points**, shown as five square pips top-left (React HUD). Placeholder number.
 - **Hurt feedback:** knockback, a red pulse at the screen edges, bigger screen shake, a hurt sound, a vibration on the phone and a short freeze-frame; the square flickers while invulnerable.
 - **Dying (temporary):** health refills with a white flash until runs exist (#17 is the real rule).
+- **Healing by kills:** every few kills gives one pip back. The number needed is **random between 3 and 5**, re-rolled for each pip. Kills while at full health are **wasted**; **getting hit resets** the partial progress; **every enemy counts as one kill**. *(2026-11-14T06:21:18+00:00 — History #47)*
 
 ### Taking damage *(2026-11-14T04:27:30+00:00 — History #23)*
 - **Touching an enemy damages you**, unless you're dashing (#24).
@@ -396,6 +397,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 44 | 2026-11-14T06:06:53+00:00 | UI / camera | Off-screen enemy markers (edge arrows in the enemy's colour, bigger/brighter when closer); the auto-aim target's arrow is highlighted; the camera zooms out up to 15% while the auto-aim target is off screen. |
 | 45 | 2026-11-14T06:17:03+00:00 | Combat | Player health: 5 HP (placeholder), HUD pips, hurt feedback (knockback, red pulse, shake, sound, vibration, freeze-frame, flicker); temporary refill on death. Start unarmed (gun removed). Dash damages targets. |
 | 46 | 2026-11-14T06:17:03+00:00 | Controls | In the auto-aim modes the dash aims at the auto-aim target unless you're moving (joystick pushed / A or D held). |
+| 47 | 2026-11-14T06:21:18+00:00 | Combat | Heal on kills: one pip back every 3–5 kills (random per pip); kills at full health are wasted; getting hit resets the partial progress; all enemies count as one. |
 
 ---
 

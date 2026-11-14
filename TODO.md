@@ -10,6 +10,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
+- Heal on kills (#47): build now (dummy pops count as kills) or with the melee enemy, Lyra's call.
 - Step 8b: the melee enemy (#40) with the combat juice that applies; remove the practice dummies.
 - Weapons step: automatic, shotgun, switching (number keys, wheel, mobile cycle button).
 - When combat exists, add its juice: hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash + recoil (shotgun shove), damage feedback (bigger shake, red edge pulse, light dims at low health), last-kill slow motion, wave banners, animated upgrade cards.
