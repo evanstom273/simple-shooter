@@ -83,6 +83,8 @@ export class RangedEnemy implements Enemy {
   lastHitSource: HitSource = 'dash'
 
   private body: Phaser.GameObjects.Triangle
+  /** Stylised Geometry (#61): one narrow browed eye and tiny floating fins, drawn each frame. */
+  private deco: Phaser.GameObjects.Graphics
   private line: Phaser.GameObjects.Graphics
   private bar: Phaser.GameObjects.Graphics
   private marker: Phaser.GameObjects.Arc | null
@@ -96,7 +98,8 @@ export class RangedEnemy implements Enemy {
     this.y = y
     const r = RANGED.radius
     // A long, pointy triangle pointing right (angle 0), so its facing reads at a glance; rotated to face its aim.
-    this.body = scene.add.triangle(x, y, r * 1.25, 0, -r * 0.75, -r * 0.6, -r * 0.75, r * 0.6, RANGED.colour).setDepth(7).setVisible(false)
+    this.body = scene.add.triangle(x, y, r * 1.25, 0, -r * 0.75, -r * 0.6, -r * 0.75, r * 0.6, RANGED.colour).setStrokeStyle(2.5, 0x1a1a26).setDepth(7).setVisible(false)
+    this.deco = scene.add.graphics().setDepth(8)
     this.body.setDisplayOrigin(0, 0)
     this.line = scene.add.graphics().setDepth(6)
     this.bar = scene.add.graphics().setDepth(9)
@@ -227,6 +230,54 @@ export class RangedEnemy implements Enemy {
     this.draw()
   }
 
+  /** Eye, brow and fins, placed in the triangle's own (rotated) frame. */
+  private drawDeco(col: number) {
+    const g = this.deco
+    g.clear()
+    if (!this.body.visible) return
+    const r = this.radius
+    const a = this.flat > 0 ? 0 : this.angle
+    const c = Math.cos(a)
+    const sn = Math.sin(a)
+    const sy = this.flat > 0 ? 0.45 : 1
+    const P = (lx: number, ly: number) => ({ x: this.x + lx * c - ly * sy * sn, y: this.y + lx * sn + ly * sy * c })
+    g.setAlpha(this.body.alpha)
+    // Fins trailing behind, bobbing.
+    const bob = Math.sin(this.scene.time.now / 160) * r * 0.08
+    for (const side of [-1, 1]) {
+      const p1 = P(-r * 1.0, side * (r * 0.62 + bob))
+      const p2 = P(-r * 1.55, side * (r * 0.95 + bob))
+      const p3 = P(-r * 1.35, side * (r * 0.35 + bob))
+      g.fillStyle(col)
+      g.fillTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+      g.lineStyle(2, 0x1a1a26)
+      g.strokeTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+    }
+    if (this.flat > 0) {
+      const e1 = P(-r * 0.15, 0)
+      const e2 = P(r * 0.35, 0)
+      g.lineStyle(3, 0x1a1a26)
+      g.lineBetween(e1.x, e1.y, e2.x, e2.y)
+      return
+    }
+    // The eye: narrow and browed normally, wide open when locked on or darting away.
+    const wide = this.state === 'lock' || this.state === 'dart'
+    const e = P(r * 0.05, 0)
+    g.fillStyle(0xffffff)
+    g.fillCircle(e.x, e.y, r * (wide ? 0.42 : 0.36))
+    g.lineStyle(2, 0x1a1a26)
+    g.strokeCircle(e.x, e.y, r * (wide ? 0.42 : 0.36))
+    const pp = P(r * (this.state === 'dart' ? -0.1 : 0.18), 0)
+    g.fillStyle(0x103018)
+    g.fillCircle(pp.x, pp.y, r * (wide ? 0.13 : 0.17))
+    if (!wide) {
+      const b1 = P(-r * 0.32, -r * 0.42)
+      const b2 = P(r * 0.42, -r * 0.2)
+      g.lineStyle(3, 0x1a1a26)
+      g.lineBetween(b1.x, b1.y, b2.x, b2.y)
+    }
+  }
+
   private steer(tx: number, ty: number, speed: number, dt: number) {
     const dx = tx - this.x
     const dy = ty - this.y
@@ -295,6 +346,7 @@ export class RangedEnemy implements Enemy {
     ring(this.scene, this.x, this.y, this.radius * 2, this.radius * 2, 0xffffff, { grow: 2.2, life: 240 })
     sfx.shatter()
     this.body.destroy()
+    this.deco.destroy()
     this.line.destroy()
     this.bar.destroy()
     this.onKill()
@@ -305,6 +357,7 @@ export class RangedEnemy implements Enemy {
     const col = this.flash > 0 ? 0xffffff : heat > 0 ? lerpColour(RANGED.colour, RANGED.hotColour, heat) : RANGED.colour
     const pulse = this.state === 'lock' ? 1 + Math.sin(this.scene.time.now / 40) * 0.08 : 1 + heat * 0.15
     this.body.setPosition(this.x, this.y).setRotation(this.flat > 0 ? 0 : this.angle).setFillStyle(col)
+    this.drawDeco(col)
     if (this.flat > 0) this.body.setScale(1.5, 0.45)
     else this.body.setScale(pulse)
 

@@ -67,6 +67,8 @@ export class Shooter {
   private ammo: Partial<Record<WeaponId, number>> = {}
   /** Seconds left reloading the current weapon (0 = not reloading). */
   private reloadLeft = 0
+  /** Where the player's front hand holds the gun (null when unarmed or dashing). */
+  grip: { x: number; y: number } | null = null
 
   /** Damage multiplier per weapon from buying it again (#26). */
   damageBonus: Partial<Record<WeaponId, number>> = {}
@@ -272,7 +274,10 @@ export class Shooter {
     const show = !!id && !s.dashing
     this.barrel.setVisible(show)
     this.barrel2.setVisible(show && !!id && !!WEAPONS[id].barrel.double)
-    if (!id || !show) return
+    if (!id || !show) {
+      this.grip = null
+      return
+    }
     const w = WEAPONS[id]
     this.barrelKick = Math.max(0, this.barrelKick - dt * 12)
     const len = PLAYER.size * w.barrel.length
@@ -283,6 +288,7 @@ export class Shooter {
     const a = this.aimAngle + spin
     const px = s.x + Math.cos(this.aimAngle) * out
     const py = s.y + Math.sin(this.aimAngle) * out
+    this.grip = { x: px, y: py }
     const col = this.reloading ? 0x9a9aae : 0xd8d8e4
     if (w.barrel.double) {
       const nx = -Math.sin(a) * thick * 0.3

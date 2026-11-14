@@ -28,6 +28,9 @@ export class MeleeEnemy implements Enemy {
   private v: Phaser.GameObjects.Arc
   private eye: Phaser.GameObjects.Arc
   private pupil: Phaser.GameObjects.Arc
+  /** Stylised Geometry (#61): little floating hands and a brow for the wind-up. */
+  private hands: Phaser.GameObjects.Arc[]
+  private brow: Phaser.GameObjects.Graphics
   private stars: Phaser.GameObjects.Star[] = []
   private marker: Phaser.GameObjects.Arc | null = null
   /** Health bar: one segment per hit point, shown once it's been hit. */
@@ -70,8 +73,10 @@ export class MeleeEnemy implements Enemy {
     this.body.enable = false
     this.o.setData('enemy', this)
 
-    this.v = scene.add.circle(x, y, MELEE.radius, MELEE.colour).setDepth(7).setVisible(false)
-    this.eye = scene.add.circle(x, y, MELEE.radius * 0.36, 0xffffff).setDepth(8).setVisible(false)
+    this.v = scene.add.circle(x, y, MELEE.radius, MELEE.colour).setStrokeStyle(3, 0x1a1a26).setDepth(7).setVisible(false)
+    this.eye = scene.add.circle(x, y, MELEE.radius * 0.36, 0xffffff).setStrokeStyle(2, 0x1a1a26).setDepth(8).setVisible(false)
+    this.hands = [0, 1].map(() => scene.add.circle(x, y, MELEE.radius * 0.26, MELEE.colour).setStrokeStyle(2.5, 0x1a1a26).setDepth(8).setVisible(false))
+    this.brow = scene.add.graphics().setDepth(9)
     this.pupil = scene.add.circle(x, y, MELEE.radius * 0.18, 0x1a1020).setDepth(9).setVisible(false)
 
     // Warning marker first, then it fades in (#40).
@@ -324,7 +329,7 @@ export class MeleeEnemy implements Enemy {
     this.alive = true
     this.body.enable = true
     this.body.reset(this.o.x, this.o.y)
-    for (const p of [this.v, this.eye, this.pupil]) {
+    for (const p of [this.v, this.eye, this.pupil, ...this.hands]) {
       p.setVisible(true).setAlpha(0)
       this.scene.tweens.add({ targets: p, alpha: 1, duration: 250 })
     }
@@ -364,6 +369,8 @@ export class MeleeEnemy implements Enemy {
     for (const s of this.stars) s.destroy()
     this.stars = []
     this.v.destroy()
+    for (const h of this.hands) h.destroy()
+    this.brow.destroy()
     this.eye.destroy()
     this.pupil.destroy()
     this.o.destroy()
@@ -408,6 +415,37 @@ export class MeleeEnemy implements Enemy {
     const py = this.state === 'dizzy' ? Math.sin(wob) * 3 : Math.sin(Math.atan2(player.y - y, player.x - x)) * 2.5
     this.eye.setPosition(x + ex * this.sx, y + offY + ey * this.sy)
     this.pupil.setPosition(this.eye.x + px, this.eye.y + py)
+
+    // Hands: up when hopping, pulled back in the wind-up, tucked away when rolling, drooping when dizzy or flat.
+    const hr = this.radius
+    const facing = Math.sign(player.x - x) || 1
+    const t = this.scene.time.now / 1000
+    const rolling = this.state === 'roll'
+    for (const h of this.hands) h.setVisible(!rolling).setFillStyle(colour)
+    const [hb, hf] = facing > 0 ? this.hands : [this.hands[1], this.hands[0]]
+    if (this.flat > 0 || this.state === 'dizzy') {
+      hb.setPosition(x - facing * hr * 1.35, y + hr * 0.55)
+      hf.setPosition(x + facing * hr * 1.35, y + hr * 0.65)
+    } else if (this.state === 'windup') {
+      hb.setPosition(x - facing * hr * 1.55, y - hr * 0.5)
+      hf.setPosition(x - facing * hr * 1.25, y + hr * 0.35)
+    } else if (this.state === 'leap') {
+      hb.setPosition(x - facing * hr * 1.2, y - hr * 1.0)
+      hf.setPosition(x + facing * hr * 1.2, y - hr * 1.0)
+    } else {
+      const air = this.grounded ? 0 : -hr * 0.6
+      hb.setPosition(x - facing * hr * 1.35, y - hr * 0.2 + air + Math.sin(t * 5) * 2)
+      hf.setPosition(x + facing * hr * 1.35, y - hr * 0.25 + air + Math.sin(t * 5 + 1) * 2)
+    }
+
+    // Angry brow over the eye during the wind-up.
+    this.brow.clear()
+    if (this.state === 'windup') {
+      this.brow.lineStyle(3.5, 0x1a1a26)
+      const bx = this.eye.x
+      const by = this.eye.y - hr * 0.42
+      this.brow.lineBetween(bx - hr * 0.42 * facing, by - 3, bx + hr * 0.4 * facing, by + 3)
+    }
 
     // Health bar: shown once it's been hit; one segment per hit point (partly filled for half-hits).
     this.bar.clear()

@@ -96,6 +96,8 @@ export class TankEnemy implements Enemy {
   private v: Phaser.GameObjects.Polygon
   private eye: Phaser.GameObjects.Arc
   private pupil: Phaser.GameObjects.Arc
+  /** Stylised Geometry (#61): heavy brow, big floating fists, block feet. */
+  private deco: Phaser.GameObjects.Graphics
   private landMarker: Phaser.GameObjects.Ellipse
   private bar: Phaser.GameObjects.Graphics
   private marker: Phaser.GameObjects.Arc | null
@@ -151,9 +153,10 @@ export class TankEnemy implements Enemy {
       const a = -Math.PI / 2 + (i * Math.PI * 2) / 5
       pts.push(Math.cos(a) * s * 0.55, Math.sin(a) * s * 0.55 + s * 0.05)
     }
-    this.v = scene.add.polygon(x, y, pts, TANK.colour).setDepth(7).setVisible(false)
+    this.v = scene.add.polygon(x, y, pts, TANK.colour).setStrokeStyle(3.5, 0x1a1a26).setDepth(7).setVisible(false)
     this.v.setDisplayOrigin(0, 0)
-    this.eye = scene.add.circle(x, y, s * 0.13, 0xffffff).setDepth(8).setVisible(false)
+    this.eye = scene.add.circle(x, y, s * 0.13, 0xffffff).setStrokeStyle(2.5, 0x1a1a26).setDepth(8).setVisible(false)
+    this.deco = scene.add.graphics().setDepth(8)
     this.pupil = scene.add.circle(x, y, s * 0.065, 0x200a0a).setDepth(9).setVisible(false)
     this.landMarker = scene.add.ellipse(0, 0, s * 1.3, 18).setStrokeStyle(3, TANK.colour, 0.9).setDepth(6).setVisible(false)
     this.bar = scene.add.graphics().setDepth(9)
@@ -415,8 +418,59 @@ export class TankEnemy implements Enemy {
     this.shake(220, 0.012)
     sfx.shatter()
     sfx.dashImpact()
-    for (const o of [this.v, this.eye, this.pupil, this.landMarker, this.bar, this.o]) o.destroy()
+    for (const o of [this.v, this.eye, this.pupil, this.landMarker, this.bar, this.deco, this.o]) o.destroy()
     this.onKill()
+  }
+
+  /** Feet, fists and brow. The fists double as the slam tell: raised high in the wind-up (#58, concept). */
+  private drawDeco(col: number, baseY: number, half: number, ex: number, ey: number, ang: number) {
+    const g = this.deco
+    g.clear()
+    if (!this.v.visible) return
+    g.setAlpha(this.v.alpha)
+    const S = TANK.size
+    const ink = 0x1a1a26
+    // Block feet.
+    g.fillStyle(0x3a2020)
+    g.lineStyle(2.5, ink)
+    for (const fx of [-S * 0.3, S * 0.06]) {
+      g.fillRoundedRect(this.x + fx, baseY - 2, S * 0.25, 13, 3)
+      g.strokeRoundedRect(this.x + fx, baseY - 2, S * 0.25, 13, 3)
+    }
+    // Fists.
+    const facing = Math.cos(ang) >= 0 ? 1 : -1
+    const fist = S * 0.28
+    const t = this.scene.time.now / 1000
+    let l: [number, number]
+    let r: [number, number]
+    if (this.state === 'windup') {
+      const k = 1 - this.timer / TANK.windup
+      const up = S * (0.55 + 1.1 * k)
+      l = [this.x - S * 0.62, baseY - up - Math.sin(t * 30) * 3 * k]
+      r = [this.x + S * 0.62, baseY - up - Math.cos(t * 30) * 3 * k]
+    } else if (this.state === 'leap') {
+      l = [this.x - S * 0.45, baseY - S * 1.55]
+      r = [this.x + S * 0.45, baseY - S * 1.55]
+    } else if (this.state === 'recover' || this.flat > 0) {
+      l = [this.x - S * 0.78, baseY - fist * 0.5]
+      r = [this.x + S * 0.78, baseY - fist * 0.5]
+    } else {
+      const bob = Math.sin(t * 2.5) * 4
+      l = [this.x - S * 0.78, baseY - half * this.sy - S * 0.05 + bob]
+      r = [this.x + S * 0.78, baseY - half * this.sy - S * 0.02 - bob]
+    }
+    g.fillStyle(col)
+    g.lineStyle(3, ink)
+    for (const [fx, fy] of [l, r]) {
+      g.fillRoundedRect(fx - fist / 2, fy - fist / 2, fist, fist * 0.92, 7)
+      g.strokeRoundedRect(fx - fist / 2, fy - fist / 2, fist, fist * 0.92, 7)
+    }
+    // Heavy brow (none while recovering: it's dazed).
+    if (this.state !== 'recover' && this.flat <= 0) {
+      g.lineStyle(5, ink)
+      const w = S * 0.17
+      g.lineBetween(ex - w * facing, ey - S * 0.17 * this.sy - 4, ex + w * facing, ey - S * 0.12 * this.sy)
+    }
   }
 
   private draw(dt: number, p: PlayerInfo) {
@@ -428,7 +482,8 @@ export class TankEnemy implements Enemy {
     const heat = this.state === 'windup' ? 1 - this.timer / TANK.windup : 0
     const col = this.flash > 0 ? 0xffffff : heat > 0 ? lerpColour(TANK.colour, TANK.hotColour, heat) : TANK.colour
     const half = TANK.size * 0.43
-    const baseY = this.body.bottom
+    // The body stands on its boots: lifted by their height.
+    const baseY = this.body.bottom - 11
     // Scale from the base so it squashes onto the ground.
     this.v.setFillStyle(col).setScale(this.sx, this.sy).setPosition(this.x, baseY - half * this.sy)
     const ang = Math.atan2(p.y - this.y, p.x - this.x)
@@ -437,6 +492,7 @@ export class TankEnemy implements Enemy {
     this.eye.setPosition(ex, ey).setScale(1, this.sy)
     const wob = this.state === 'recover' ? this.scene.time.now / 120 : 0
     this.pupil.setPosition(ex + Math.cos(wob ? wob : ang) * 4, ey + Math.sin(wob ? wob : ang) * 4)
+    this.drawDeco(col, baseY, half, ex, ey, ang)
     this.bar.clear()
     if (this.hp < TANK.health) drawBar(this.bar, this.x, baseY - TANK.size * 0.95 * this.sy - 8, this.hp, TANK.health, TANK.colour)
   }

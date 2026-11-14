@@ -473,6 +473,7 @@ export class GameScene extends Phaser.Scene {
         this.pushTime = 0.18
       }
     }
+    this.view.holdGun(this.shooter.grip)
     touchInput.weaponCount = this.shooter.status().weapons.length
     // Keep the HUD's weapon icons current (ammo, reload) without flooding React.
     this.hudWeaponsTimer -= dt
@@ -697,6 +698,7 @@ export class GameScene extends Phaser.Scene {
   private healEffect() {
     const { x, y } = this.player
     this.view.pulse(0.25)
+    this.view.grin()
     ring(this, x, y, PLAYER.size * 1.3, PLAYER.size * 1.3, 0xffffff, { grow: 2.4, life: 420, alpha: 0.8 })
     burst(this, x, y + PLAYER.size * 0.3, { count: 10, colour: 0xffffff, angle: -DOWN, spread: 0.7, speed: [80, 200], size: [4, 7], life: 520, gravity: -150 })
     sfx.heal()
@@ -717,6 +719,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.airJumpsLeft = PLAYER.airJumps
     this.view.kick(1.35, 0.7)
+    this.view.grin()
     const feet = b.bottom
     ring(this, this.player.x, feet, PLAYER.size * 1.6, PLAYER.size * 0.5, 0xffffff, { grow: 2, life: 240, alpha: 0.8 })
     burst(this, this.player.x, feet, { count: 8, colour: e.colour, angle: DOWN, spread: 1.2, speed: [120, 300], size: [4, 8], life: 260 })
@@ -742,6 +745,7 @@ export class GameScene extends Phaser.Scene {
     this.pushTime = 0.3
     this.view.kick(1.35, 0.7)
     this.view.pulse(0.12)
+    this.view.ouch()
     burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
     this.shake(170, 0.012)
     sfx.hurt()
@@ -950,7 +954,7 @@ export class GameScene extends Phaser.Scene {
     if (this.trailTimer <= 0) {
       this.trailTimer = 0.025
       // Afterimage matching the stretched streak.
-      const v = this.view.rect
+      const v = this.view
       const ghost = this.add
         .rectangle(this.player.x, this.player.y, PLAYER.size, PLAYER.size, COLOURS.dash, 0.45)
         .setDepth(5)
