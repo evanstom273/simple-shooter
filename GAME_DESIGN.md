@@ -57,7 +57,7 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
 - **A section is 5 waves, then a boss.** Bosses are **Soulsborne-style fights**: a massive health bar, massive tells, **one or two phases**.
 - **Worlds can be tackled in any order**; sections within a world go in sequence.
 - **Checkpoints:** progress within a world is kept. Clear 1-1, die in 1-2, and the archstone takes you back into 1-2.
-- **The hub:** where you **shop, level up and save**. You return there **after completing a section** (5 waves + boss) and **when you die**. No shop or levelling mid-section.
+- **The hub:** where you **shop, level up and save**. **"Levelling up" is the shop** (#53): buying upgrades to the four attributes, weapons and weapon improvements. **No Souls-style attribute or levelling system.** The shop keeps its **rotating random selection of 3 or 4 items each visit** (#54), which keeps the roguelike element. *(2026-11-14T21:14:19+00:00 — History #63)* You return there **after completing a section** (5 waves + boss) and **when you die**. No shop or levelling mid-section.
 - **Death: you lose all the currency you're carrying, with no way to recover it.** Levels, upgrades and weapons are kept. (Souls-like progression; the unrecoverable currency keeps a roguelike edge.)
 - **Endless waves and the high score stay as a separate mode.**
 
@@ -387,7 +387,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
-1h. **Structure (#62), open:** how many worlds and sections to start with, and their names and themes; what "level up" means (what you spend on, and how that differs from the shop); whether the shop still rotates (#54); whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
+1h. **Structure (#62), open:** how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
 1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
@@ -573,6 +573,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 60 | 2026-11-14T14:52:38+00:00 | Waves | Basic waves: endless; 10–15 enemies; wave 1 melee only, wave 2 mostly melee + some ranged, building gradually (tanks later); gold per kill 50 / 50 / 150 at wave 1, scaling gradually to ~250 for a melee by wave 10; between waves a count of gold earned. Built with Claude's interpretations listed in §B. |
 | 61 | 2026-11-14T20:00:20+00:00 | Art | Art direction "Stylised Geometry": bright, bold geometric characters with eyes, faces, floating hands and feet; SVG. Player concept from Lyra's sketch approved (`concepts/player-concept.svg`). |
 | 62 | 2026-11-14T21:13:05+00:00 | Structure | Restructure (Demon's Souls archstones): worlds of numbered, named sections, each 5 waves + a Soulsborne-style boss (1–2 phases); worlds in any order, sections in sequence with per-world checkpoints; a hub for shop, levelling and saving, returned to after each section and on death; death loses all carried currency with no recovery, keeping levels/upgrades/weapons; endless waves + high score kept as a separate mode. Supersedes the between-wave shop (#53) and, for story mode, death resetting everything (#17). |
+| 63 | 2026-11-14T21:14:19+00:00 | Structure | "Levelling up" in the hub is the existing shop: the four attributes, weapons and weapon improvements, from a random 3–4 items each visit. No Souls-style attribute/levelling system. |
 
 ---
 
