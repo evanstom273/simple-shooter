@@ -19,7 +19,9 @@ export function createGame(parent: HTMLElement): { game: Phaser.Game; destroy: (
     parent,
     backgroundColor: '#07070a',
     scale: { mode: Phaser.Scale.NONE, width: w, height: h, zoom: 1 / ratio },
-    physics: { default: 'arcade', arcade: { debug: false } },
+    // fixedStep off: physics steps once per drawn frame, so movement is smooth on
+    // 90/120 Hz screens instead of updating every other frame (#31).
+    physics: { default: 'arcade', arcade: { debug: false, fixedStep: false } },
     input: { activePointers: 4 },
     disableContextMenu: true,
     callbacks: { preBoot: (g) => g.registry.set('dpr', ratio) },

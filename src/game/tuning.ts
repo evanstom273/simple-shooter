@@ -39,3 +39,20 @@ export const PLATFORMS: ReadonlyArray<{ x: number; y: number; w: number; h: numb
   { x: 120, y: 380, w: 260, h: 24 },
   { x: 1220, y: 380, w: 260, h: 24 },
 ]
+
+/** Screen feel. Shake intensity is a fraction of the screen size. */
+export const SCREEN = {
+  /** Camera follow smoothing per 60 Hz frame (1 = locked to the player). */
+  followLerp: 0.2,
+  /** Hard landing: shake scales with impact, nothing for small hops. */
+  landShake: { duration: 110, intensity: 0.004 },
+  /** Dashing into a wall, floor or ceiling. */
+  dashImpactShake: { duration: 90, intensity: 0.005 },
+  /**
+   * Darkness around a pool of light that follows the player. Sits under the
+   * player, effects (and later enemies and bullets), so only the arena darkens.
+   * radius: fraction of the screen diagonal where it reaches full darkness.
+   * clear: fraction of that radius that's fully lit. edge: darkness at the radius (0–1).
+   */
+  light: { radius: 0.62, clear: 0.22, edge: 0.92 },
+}

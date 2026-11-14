@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { touchInput, type Controls } from './controls.ts'
 import { burst, ring } from './fx.ts'
 import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
-import { ARENA, DASH, GRAVITY, PLATFORMS, PLAYER } from './tuning.ts'
+import { ARENA, DASH, GRAVITY, PLATFORMS, PLAYER, SCREEN } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -12,6 +12,9 @@ const COLOURS = {
 }
 
 const DOWN = Math.PI / 2
+
+/** Respect the OS "reduce motion" setting: no screen shake. */
+const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle
@@ -36,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   /** Vertical speed last frame: the collision has zeroed it by the time we see a landing. */
   private lastVelY = 0
   private skidCooldown = 0
+  private darkness!: Phaser.GameObjects.Image
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
   get invulnerable() {
@@ -62,6 +66,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Physics box: invisible. What you see is PlayerView, which squashes and stretches.
+    this.darkness = this.createDarkness()
+
     this.player = this.add.rectangle(ARENA.width / 2, 780, PLAYER.size, PLAYER.size, 0xffffff).setVisible(false)
     this.view = new PlayerView(this)
 
@@ -88,7 +94,7 @@ export class GameScene extends Phaser.Scene {
 
     const cam = this.cameras.main
     cam.setBounds(0, 0, ARENA.width, ARENA.height)
-    cam.startFollow(this.player, false, 0.12, 0.12)
+    cam.startFollow(this.player, false, SCREEN.followLerp, SCREEN.followLerp)
     this.fitCamera()
     cam.centerOn(this.player.x, this.player.y)
     this.scene.launch('touch')
@@ -127,6 +133,9 @@ export class GameScene extends Phaser.Scene {
   update(_time: number, deltaMs: number) {
     const c = this.readControls()
     const dt = deltaMs / 1000
+    // Same camera smoothing whatever the screen's refresh rate.
+    const lerp = 1 - Math.pow(1 - SCREEN.followLerp, dt * 60)
+    this.cameras.main.setLerp(lerp, lerp)
     const b = this.body_
     const grounded = b.blocked.down || b.touching.down
     const feetY = b.bottom
@@ -190,6 +199,44 @@ export class GameScene extends Phaser.Scene {
 
     this.wasGrounded = grounded
     this.lastVelY = b.velocity.y
+
+    this.updateDarkness()
+  }
+
+  /**
+   * A big radial gradient: clear in the middle, dark towards the edge, solid
+   * dark beyond. Drawn once; scaled and moved with the player each frame.
+   */
+  private createDarkness() {
+    const key = 'darkness'
+    if (!this.textures.exists(key)) {
+      const size = 512
+      const tex = this.textures.createCanvas(key, size, size)!
+      const ctx = tex.getContext()
+      const c = size / 2
+      // The gradient reaches full darkness at half the texture's radius; the rest is solid.
+      const g = ctx.createRadialGradient(c, c, 0, c, c, c / 2)
+      const { clear, edge } = SCREEN.light
+      g.addColorStop(0, 'rgba(0,0,0,0)')
+      g.addColorStop(clear, 'rgba(0,0,0,0)')
+      g.addColorStop(clear + (1 - clear) * 0.5, `rgba(0,0,0,${edge * 0.55})`)
+      g.addColorStop(1, `rgba(0,0,0,${edge})`)
+      // Canvas gradients carry the last colour on past their radius, so this fills the rest solid.
+      ctx.fillStyle = g
+      ctx.fillRect(0, 0, size, size)
+      tex.refresh()
+    }
+    // Above the arena and platforms (depth 0), below effects (5+) and the player (10).
+    return this.add.image(0, 0, key).setDepth(4)
+  }
+
+  private updateDarkness() {
+    const cam = this.cameras.main
+    // Radius in world units, relative to what's on screen, so it looks the same at any zoom.
+    const diag = Math.hypot(cam.width, cam.height) / cam.zoom
+    const r = diag * SCREEN.light.radius
+    // The texture's gradient ends at half its size, so draw it 4r across.
+    this.darkness.setPosition(this.player.x, this.player.y).setDisplaySize(r * 4, r * 4)
   }
 
   /** Squash and dust, scaled by how hard you hit the ground. */
@@ -199,8 +246,14 @@ export class GameScene extends Phaser.Scene {
     this.view.kick(1 + 0.4 * k, 1 - 0.4 * k)
     const feetY = this.body_.bottom
     const n = Math.round(3 + 6 * k)
+    if (k > 0.35) this.shake(SCREEN.landShake.duration, SCREEN.landShake.intensity * k)
     burst(this, this.player.x - PLAYER.size * 0.3, feetY - 3, { count: n, colour: COLOURS.dust, angle: Math.PI + 0.3, spread: 0.25, speed: [90, 120 + 220 * k], size: [5, 9], gravity: -120 })
     burst(this, this.player.x + PLAYER.size * 0.3, feetY - 3, { count: n, colour: COLOURS.dust, angle: -0.3, spread: 0.25, speed: [90, 120 + 220 * k], size: [5, 9], gravity: -120 })
+  }
+
+  private shake(duration: number, intensity: number) {
+    if (reduceMotion()) return
+    this.cameras.main.shake(duration, intensity, true)
   }
 
   /** The dash is back: flash and a ring, so you notice without looking for the bar. */
@@ -230,6 +283,7 @@ export class GameScene extends Phaser.Scene {
     const hit = (bl.left && this.dashDir.x < -0.3) || (bl.right && this.dashDir.x > 0.3) || (bl.up && this.dashDir.y < -0.3) || (bl.down && this.dashDir.y > 0.3)
     if (hit && this.dashTime < DASH.duration - 0.02) {
       this.endDash(0)
+      this.shake(SCREEN.dashImpactShake.duration, SCREEN.dashImpactShake.intensity)
       if (bl.left || bl.right) this.view.kick(0.6, 1.3)
       else this.view.kick(1.4, 0.65)
       const x = bl.left ? this.body_.left : bl.right ? this.body_.right : this.player.x

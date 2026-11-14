@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T04:55:00+00:00):**
+**Where the project stands (as of 2026-11-14T05:00:48+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Lighting, screen shake and smoother movement** (2026-11-14T05:00:48+00:00).
 - **Squash, stretch and movement effects built; dash cooldown shown on desktop** (2026-11-14T04:55:00+00:00).
 - **Dash and double jump built** (2026-11-14T04:49:36+00:00).
 - **Movement built** (2026-11-14T04:42:54+00:00): the square runs and jumps around a placeholder arena, on desktop (A/D, Space) and touch (joystick, jump button).
@@ -56,6 +57,8 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - **Enemies: different geometric shapes** per type.
 - Simple platforms and projectiles.
 - No elaborate character art or animations required.
+- **Dark arena, lit around the player.** The edges of the screen fall away into darkness and a soft pool of light follows the player. Characters and effects (player, dust, trails, later enemies and bullets) are never darkened. *(2026-11-14T05:00:48+00:00 — History #31)*
+- **A tiny amount of screen shake** on impacts (hard landings, dashing into walls), off when the device's reduce-motion setting is on. *(2026-11-14T05:00:48+00:00 — History #31)*
 
 ### Movement and controls *(2026-11-14T04:17:36+00:00 — History #9)*
 - **Desktop:** A/D move left and right; Space jumps; the mouse aims a full 360°; left-click shoots.
@@ -130,10 +133,14 @@ The core design (History #7–#15) was worked out in a separate conversation and
 
 ## C. Current Development Scope
 
+### Step 4: Lighting, shake, smoother movement — **BUILT** *(2026-11-14T05:00:48+00:00)*
+**In scope (done):** fix for the blur when moving (physics now steps once per drawn frame); refresh-rate-independent camera follow; tiny shake on hard landings and dash impacts; darkness around a pool of light that follows the player, under characters and effects (#31).
+
+
 ### Step 3: Feel — squash, stretch and effects — **BUILT** *(2026-11-14T04:55:00+00:00)*
 **In scope (done):** springy squash and stretch on jump, double jump, landing, air speed, running lean, dash streak and wall impacts; dust on take-off, landing and skids; a dash-start burst; a dash cooldown bar under the square on desktop; a flash and ring when the dash is ready again (desktop and touch).
 
-**Out of scope:** screen shake (saved for hits and enemy deaths, so it means something).
+**Out of scope:** bigger screen shake (saved for hits and enemy deaths). A tiny amount on impacts was added afterwards (#31).
 
 
 ### Step 2: Dash and double jump — **BUILT** *(2026-11-14T04:49:36+00:00)*
@@ -200,6 +207,9 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Squash and stretch | Tested | The visible square (`PlayerView`) is separate from the physics box, so it deforms without affecting collisions. Scale runs on a damped spring (wobbles back to square). Jump: stretch 0.72×1.32; double jump 0.8×1.22; landing: squash up to 1.4×0.6 depending on impact speed; slight stretch with vertical speed in the air; lean into the run; dash: a 1.45×0.7 streak rotated along the dash (afterimages match); dashing into a wall, floor or ceiling ends the dash and flattens against it; coming out of a dash, a small stretch along its direction. Feet stay planted while squashing. *(2026-11-14T04:55:00+00:00)* |
 | Movement effects | Tested | Small tumbling squares (`fx.ts`): dust on take-off, sideways dust on landing (more on hard landings), skid dust when turning round at speed, a blue burst behind you at dash start, sparks on dash impacts. *(2026-11-14T04:55:00+00:00)* |
 | Dash cooldown display | Tested | Desktop: thin bar under the square that fills while recharging, hidden when ready (hidden when touch controls are showing; they have the button ring). Both: the square flashes white with a blue outline and a ring pulses out when the dash is ready again. *(2026-11-14T04:55:00+00:00)* |
+| Smooth movement on fast screens | Tested | Blur when moving (reported by Lyra) was most likely 60 Hz physics on a 90/120 Hz screen, moving things only every other frame. Arcade physics now runs with `fixedStep: false` (one step per drawn frame), and the camera's follow smoothing is corrected for frame rate. Not yet confirmed on the Fold. *(2026-11-14T05:00:48+00:00)* |
+| Screen shake (#31) | Tested | Hard landings (only above ~a third of max impact; scales with it) and dash impacts. ~4 px, ~0.1 s. Respects `prefers-reduced-motion`. Numbers in `SCREEN` in `tuning.ts`. *(2026-11-14T05:00:48+00:00)* |
+| Lighting (#31) | Tested | A radial-gradient darkness image drawn between the arena (depth 0) and effects/player (5+), centred on the player and sized to the screen so it looks the same at every zoom. Lit core ~22% of its radius; ~92% dark at the radius (62% of the screen diagonal) and beyond. Touch controls are a separate scene, so unaffected. First tried as a camera vignette, which darkened the player too; Lyra liked the darkness, so it was kept but moved under the characters and centred on the player. *(2026-11-14T05:00:48+00:00)* |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
@@ -258,6 +268,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 28 | 2026-11-14T04:28:58+00:00 | Weapons | Three weapons for now (pistol, automatic, shotgun), deliberately light; others may come later. |
 | 29 | 2026-11-14T04:45:51+00:00 | Screen layout | Fill the whole screen on desktop, cover landscape, cover portrait and the inner screen; zoom in and follow the player where the shape doesn't match the arena (portrait is a narrower, zoomed-in view). |
 | 30 | 2026-11-14T04:49:36+00:00 | Movement | Double jump: one extra jump in mid-air. |
+| 31 | 2026-11-14T05:00:48+00:00 | Visuals | Dark arena edges with a pool of light following the player; characters and effects stay fully lit. Tiny screen shake on impacts (hard landings, dash impacts). |
 
 ---
 
