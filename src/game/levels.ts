@@ -9,6 +9,27 @@ export interface LevelPlat {
   w: number
   h: number
   solid?: boolean
+  /** The room's own walls and ceiling: not somewhere to stand or spawn. */
+  edge?: boolean
+  /** Part of the floor. */
+  floor?: boolean
+  /** Crumbles when stood on, comes back (#81). */
+  crumble?: boolean
+  /** Conveyor: carries you at this speed, px/s (negative = left) (#81). */
+  conveyor?: number
+}
+
+/** Hazards and moving pieces, in world px (#81). Types as in gen/chunks.ts. */
+export interface LevelEnv {
+  t: 'spikes' | 'saw' | 'jet' | 'bounce' | 'wind' | 'mover'
+  x: number
+  y: number
+  w: number
+  h: number
+  dir?: 'up' | 'down' | 'left' | 'right'
+  /** Travel for movers and saws, px. */
+  dx?: number
+  dy?: number
 }
 
 export interface Level {
@@ -16,6 +37,11 @@ export interface Level {
   height: number
   platforms: LevelPlat[]
   spawn: { x: number; y: number }
+  /** Top of the floor: bullets stop here, gold settles here. */
+  floorY: number
+  env?: LevelEnv[]
+  /** Gaps in the floor: bottomless (#81). */
+  pits?: { x: number; w: number }[]
 }
 
 export const ARENA_LEVEL: Level = {
@@ -23,6 +49,7 @@ export const ARENA_LEVEL: Level = {
   height: 1350,
   platforms: [...PLATFORMS],
   spawn: { x: 1200, y: 1230 },
+  floorY: 1310,
 }
 
 /** Hub geometry. FLOOR is the hall floor; the endless chamber sits beneath it. */
@@ -61,6 +88,7 @@ export const HUB_LEVEL: Level = {
     { x: H.hole.x + 6, y: H.lower - 500, w: H.hole.w - 12, h: 16 },
   ],
   spawn: { x: 1620, y: H.floor - 30 },
+  floorY: H.floor,
 }
 
 /**
@@ -75,10 +103,10 @@ export const TEST_ROOM: Level = (() => {
     width: W,
     height: H,
     platforms: [
-      { x: 0, y: floor, w: W, h: H - floor, solid: true },
-      { x: 0, y: 0, w: 40, h: floor, solid: true },
-      { x: W - 40, y: 0, w: 40, h: floor, solid: true },
-      { x: 40, y: 0, w: W - 80, h: 40, solid: true },
+      { x: 0, y: floor, w: W, h: H - floor, solid: true, floor: true },
+      { x: 0, y: 0, w: 40, h: floor, solid: true, edge: true },
+      { x: W - 40, y: 0, w: 40, h: floor, solid: true, edge: true },
+      { x: 40, y: 0, w: W - 80, h: 40, solid: true, edge: true },
       // Shaft: two walls 160 apart.
       { x: 500, y: 700, w: 40, h: floor - 700, solid: true },
       { x: 700, y: 700, w: 40, h: floor - 700, solid: true },
@@ -92,5 +120,6 @@ export const TEST_ROOM: Level = (() => {
       { x: W - 400, y: 640, w: 360, h: 30, solid: true },
     ],
     spawn: { x: 950, y: floor - 40 },
+    floorY: floor,
   }
 })()

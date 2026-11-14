@@ -18,7 +18,9 @@ import { runStore } from '../state/run.ts'
 import { navStore } from '../state/nav.ts'
 import { arriveInHub, buy as shopBuy, progressStore, reroll as shopReroll, storyStats } from '../state/progress.ts'
 import { Hub } from './Hub.ts'
-import { ARENA_LEVEL, HUB, HUB_LEVEL, type Level } from './levels.ts'
+import { ARENA_LEVEL, HUB_LEVEL, type Level } from './levels.ts'
+import { generate } from './gen/generate.ts'
+import { customChunks } from '../state/chunks.ts'
 import { loadScores, recordRun } from '../persist/scores.ts'
 import { Gold } from './Gold.ts'
 import { goldFor, maxAlive, waveOrder, waveSize, type EnemyKind } from './waves.ts'
@@ -167,7 +169,15 @@ export class GameScene extends Phaser.Scene {
       this.world = dest.world
       this.section = dest.section
     }
-    this.level = dest.mode === 'hub' ? HUB_LEVEL : dest.mode === 'sandbox' ? dest.level : ARENA_LEVEL
+    // Story sections get a generated room (#79); a retry gets a new one.
+    this.level =
+      dest.mode === 'hub'
+        ? HUB_LEVEL
+        : dest.mode === 'sandbox'
+          ? dest.level
+          : dest.mode === 'section'
+            ? generate({ world: dest.world, section: dest.section, extra: customChunks() })
+            : ARENA_LEVEL
     this.solids = this.level.platforms.filter((p) => p.solid)
     ARENA.width = this.level.width
     ARENA.height = this.level.height
@@ -183,7 +193,8 @@ export class GameScene extends Phaser.Scene {
 
     const platforms = this.physics.add.staticGroup()
     for (const p of this.level.platforms) {
-      const r = this.add.rectangle(p.x, p.y, p.w, p.h, this.mode === 'hub' && p.solid ? 0x1b1c2a : COLOURS.platform).setOrigin(0)
+      const colour = this.mode === 'hub' && p.solid ? 0x1b1c2a : p.edge ? 0x1f2030 : p.solid && !p.floor ? 0x2c2e44 : COLOURS.platform
+      const r = this.add.rectangle(p.x, p.y, p.w, p.h, colour).setOrigin(0)
       platforms.add(r)
       r.setData('baseY', p.y)
       if (!p.solid) {
@@ -210,7 +221,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.existing(this.player)
 
     // Shooting. Bullets pass through platforms; only the floor stops them (#42).
-    const floorY = this.mode === 'hub' ? HUB.floor : (this.level.platforms.find((p) => p.solid)?.y ?? ARENA.height)
+    const floorY = this.level.floorY
     this.shooter = new Shooter(this, floorY, () => this.targets)
     this.gold = new Gold(this, floorY, (v) => this.collectGold(v))
 
@@ -254,7 +265,7 @@ export class GameScene extends Phaser.Scene {
 
     // Enemies (#40): route-finding graph, a physics group so they bump each other,
     // and platform collisions that let them drop through one-way platforms.
-    this.nav = buildNav(this.level.platforms)
+    this.nav = buildNav(this.level.platforms.filter((p) => !p.edge))
     this.enemyGroup = this.physics.add.group({ collideWorldBounds: true })
     this.physics.add.collider(this.enemyGroup, this.enemyGroup)
     this.physics.add.collider(this.enemyGroup, platforms, undefined, (eo, plat) => {
@@ -874,7 +885,8 @@ export class GameScene extends Phaser.Scene {
 
   /** Spawn one enemy: walkers on a random platform, fliers in the air; preferably well away from the player. */
   private spawnEnemy(kind: EnemyKind): Enemy {
-    const plats = this.level.platforms
+    // Somewhere to stand: not the room's walls or ceiling, and wide enough (#79).
+    const plats = this.level.platforms.filter((p) => !p.edge && p.w >= (kind === 'tank' ? 160 : 80))
     const far = plats.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
     const pool = far.length ? far : [...plats]
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { PhaserView } from './game/PhaserView.tsx'
 import { navStore } from './state/nav.ts'
 import { loadProgress } from './state/progress.ts'
+import { loadChunks } from './state/chunks.ts'
 import { restartBus } from './state/run.ts'
 import { Hud } from './ui/Hud.tsx'
 
@@ -10,7 +11,7 @@ export default function App() {
   // Story progress loads from Dexie before the hub appears (#70).
   const [ready, setReady] = useState(false)
   useEffect(() => {
-    void loadProgress().then(() => setReady(true))
+    void Promise.all([loadProgress(), loadChunks()]).then(() => setReady(true))
   }, [])
   // Going anywhere (hub, a section, endless) or restarting remounts the game,
   // so every system starts fresh (#17, #72). A short fade covers the swap.

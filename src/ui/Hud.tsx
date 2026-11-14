@@ -7,6 +7,8 @@ import { debugBus, type EnemyKind } from '../state/debug.ts'
 import { navStore } from '../state/nav.ts'
 import { restartBus, runStore } from '../state/run.ts'
 import { TEST_ROOM } from '../game/levels.ts'
+import { generate } from '../game/gen/generate.ts'
+import { customChunks } from '../state/chunks.ts'
 
 // React UI layer over the Phaser canvas. pointer-events-none so the game still
 // gets input; give interactive children pointer-events-auto.
@@ -267,6 +269,9 @@ export function Hud() {
           <div className="mb-1.5 flex flex-wrap gap-1">
             <button type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'sandbox', level: TEST_ROOM, title: 'Wall-jump test room' }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
               Test room
+            </button>
+            <button type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'sandbox', level: generate({ world: 1, section: 4, extra: customChunks() }), title: 'Random room' }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
+              Random room
             </button>
           </div>
           <div className="mb-1.5 flex items-center gap-1">
