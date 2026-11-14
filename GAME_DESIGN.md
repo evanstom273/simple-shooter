@@ -90,12 +90,14 @@ The core design (History #7–#15) was worked out in a separate conversation and
 ### Taking damage *(2026-11-14T04:27:30+00:00 — History #23)*
 - **Touching an enemy damages you**, unless you're dashing (#24).
 - **Getting hit knocks you back a bit and takes some of your health.**
+- **A short invulnerability after a hit**, so contact damage can't drain you in one go. Length tuned in play. *(2026-11-14T04:28:58+00:00 — History #27)*
 
 ### Weapons and dash
 - **The player starts unarmed, with only a dash that does damage.** *(2026-11-14T04:24:39+00:00 — History #21)*
 - **The dash is kept for the whole run**, alongside any weapons. *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Dash: has a cooldown, damages enemies it hits, and makes you invulnerable while dashing**, so it's how you get through enemies without the contact damage (#23). Numbers tuned in play. *(2026-11-14T04:27:30+00:00 — History #24)*
 - **Several weapons: pistol, automatic, shotgun, maybe others.** *(2026-11-14T04:24:39+00:00 — History #22)*
+- **Three weapons for now, deliberately.** Others may be considered later (§D). *(2026-11-14T04:28:58+00:00 — History #28)*
 - **Weapons are offered between waves in the same three-card pool as the stat upgrades**; you still pick exactly one. *(2026-11-14T04:24:39+00:00 — History #22)*
 - **You carry every weapon you've picked and switch between them** (#9 for inputs). *(2026-11-14T04:24:39+00:00 — History #22)*
 - **Picking a weapon you already own improves it.** *(2026-11-14T04:24:39+00:00 — History #22)*
@@ -135,6 +137,7 @@ The core design (History #7–#15) was worked out in a separate conversation and
 *Proposals only — not confirmed features.*
 
 - **Moving to Cloudflare** if the game outgrows GitHub Pages (#6).
+- **More weapons** beyond pistol, automatic and shotgun (Lyra: kept light for now, #28).
 
 ---
 
@@ -145,12 +148,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
    - ~~**Wave count.**~~ Endless (#18).
    - ~~**Upgrade amounts.**~~ Diminishing returns; values tuned in play (#19).
    - ~~**Enemy statistics.**~~ Placeholders tuned in play (#20).
-   - ~~**Weapon selection.**~~ Several weapons (#22). Open: whether there are more than the three. ~~How picking an owned weapon improves it.~~ Damage (#26).
+   - ~~**Weapon selection.**~~ Several weapons (#22). ~~Whether there are more than the three.~~ Three for now (#28). ~~How picking an owned weapon improves it.~~ Damage (#26).
    - ~~**Additional mechanics.**~~ Unarmed start with a damaging dash (#21).
 3. ~~**Stack.**~~ Resolved (#4); Phaser/React split resolved (#5).
 4. ~~**Target devices.**~~ Resolved: desktop and mobile, mobile in landscape (#9, #15).
 5. ~~**What Dexie stores.**~~ Resolved: local high scores and the run in progress (#17).
-6. **Player health:** ~~what damage does~~ (knockback + health loss, #23); ~~what happens on death~~ (run ends, #17). Still open: whether there's a short invulnerability after a hit.
+6. **Player health:** ~~what damage does~~ (knockback + health loss, #23); ~~what happens on death~~ (run ends, #17). ~~Invulnerability after a hit.~~ Yes, short (#27).
 7. ~~**Dash details.**~~ Resolved: cooldown, damages enemies, invulnerable while dashing (#24). Numbers tuned in play.
 8. ~~**Weapon switching on mobile.**~~ Resolved: a cycle button (#25).
 
@@ -210,6 +213,8 @@ The core design (History #7–#15) was worked out in a separate conversation and
 | 24 | 2026-11-14T04:27:30+00:00 | Dash | Dash has a cooldown, damages enemies and makes you invulnerable while dashing. |
 | 25 | 2026-11-14T04:27:30+00:00 | Controls | Mobile weapon switching: an on-screen button that cycles weapons. |
 | 26 | 2026-11-14T04:27:30+00:00 | Weapons | Picking an owned weapon raises its damage (there's no damage stat upgrade). Title deferred. |
+| 27 | 2026-11-14T04:28:58+00:00 | Combat | Short invulnerability after taking a hit. |
+| 28 | 2026-11-14T04:28:58+00:00 | Weapons | Three weapons for now (pistol, automatic, shotgun), deliberately light; others may come later. |
 
 ---
 
