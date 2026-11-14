@@ -114,7 +114,21 @@ The core design (History #7–#15) was worked out in a separate conversation and
 |---|---|
 | **Melee** | Chases the player and attacks at close range. |
 | **Ranged** | Shoots projectiles towards the player, potentially keeping its distance. Designed in full: #56. |
-| **Tank** | Slow-moving, with significantly more health. |
+| **Tank** | Slow-moving, with significantly more health. Designed in full: #58. |
+
+### Tank enemy *(2026-11-14T07:02:23+00:00 — History #58)*
+Designed with Lyra through a round of questions. All numbers are placeholders, tuned in play.
+- **Look:** a **red pentagon**, **2× the player's size**.
+- **Movement:** **slow walk with heavy jumps** to climb; landings shake the ground (visual).
+- **Attack: a ground slam.** It leaps and slams down; a **shockwave travels both ways along its platform** to the ends. Jump to avoid it.
+- **Tell:** it **crouches and glows** (red heating to white), a **marker shows where it'll land**, a **deep rumble builds**, and the **camera shakes a little** as it winds up.
+- **Damage:** **4 stages (a whole pip)**, slam or shockwave.
+- **After the slam:** a **long recovery** (a couple of seconds pulling itself up): the big punish window.
+- **Toughness:** **8 hits**.
+- **Your dash:** **damages it but doesn't move it**; you bounce off it after the hit.
+- **Turns:** **its own turn**: it can attack alongside a melee or ranged enemy (it's slow, so it's background pressure). Melee and ranged still share theirs (#49, #56).
+- **Death:** **breaks into heavy red pentagon chunks** that fall.
+- Spawn: assumed the same warning marker as the others (not asked).
 
 ### Ranged enemy *(2026-11-14T06:58:51+00:00 — History #56)*
 Designed with Lyra through a round of questions. All numbers are placeholders, tuned in play.
@@ -320,6 +334,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
 1d. **Ranged enemy (#56), open:** numbers (charge length, lock length, shot speed, how close before it darts, dart distance, time between shots, health if not one-hit), what "leading" predicts from (your current velocity), and whether a shot can be dashed through (dash invulnerability says yes).
 1c. **Shop (#53, #54), open:** how many items per shop; whether you can reroll the selection; prices and how fast they escalate; what healing costs and whether it escalates; how much currency each enemy drops (per type?); whether weapons and improvements share the rotation with stat upgrades; shop UI.
 1b. **Melee enemy (#40), open:** numbers (hop speed and height, health, damage, wind-up length, dizzy length, lunge speed), and whether "properly navigates" means planning routes across several platforms or one platform at a time.
@@ -482,6 +497,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 55 | 2026-11-14T06:53:18+00:00 | Dash | Dash cooldown doubled, 0.8 s → 1.6 s, to stop stun-locking enemies (it's now longer than their 1 s dizzy). |
 | 56 | 2026-11-14T06:58:51+00:00 | Enemies | Ranged enemy: smaller green triangle that points at you; flies; darts a short way off when you get close; single fast leading shot with a heavy tell (points, glows, charging sound, aim line that tracks then locks before firing); shots pass through platforms; only fires when on screen; 2 stages per hit; shares the one-attacker turn with the melee; one dash hit kills it; shatters into green triangles. |
 | 57 | 2026-11-14T06:58:51+00:00 | Combat | Health 20 = 5 pips × 4 stages; melee lunge and ranged shot each cost 2 stages; kills still heal 1 stage. Supersedes the numbers in #48. |
+| 58 | 2026-11-14T07:02:23+00:00 | Enemies | Tank: red pentagon, 2× the player; slow walk with heavy jumps; ground slam whose shockwave runs both ways along its platform (jump it); tell = crouch and glow, landing marker, rumble, slight camera shake; 4 stages per hit; long recovery after a slam; 8 hits; dash damages it without moving it (you bounce off); has its own attack turn alongside the others; breaks into red pentagon chunks. |
 
 ---
 

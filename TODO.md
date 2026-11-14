@@ -12,6 +12,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 - Health change (#57): 5 × 4 stages, melee lunge 2 stages (small code change).
 - Build the ranged enemy (#56).
+- Build the tank (#58).
 - Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.
 - Tune the melee enemy in play after the difficulty pass (#48–#51): wind-up, roll speed, dizzy, cooldown if still too hard.
 - Weapons step: automatic, shotgun, switching (number keys, wheel, mobile cycle button).
