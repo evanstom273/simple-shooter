@@ -10,9 +10,9 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 **Where the project stands (as of 2026-11-14T04:09:54+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
-- No design decisions beyond the concept. No game code.
+- Stack chosen (History #4). No design decisions beyond the concept. No game code.
 
-**Stack:** not decided. Deployment is GitHub Pages (History #2).
+**Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Deployed on GitHub Pages (History #2).
 
 **Guiding principles** *(carried over from Lyra's previous project's design document; flag if any don't apply here)*:
 - Discuss → Decide → Document → Implement → Test → Expand.
@@ -27,6 +27,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 - **A simple shooter.** *(2026-11-14T04:09:54+00:00 — History #1)*
 
 ### Technical architecture / platform
+- **Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js**, the same as Lyra's previous project. *(2026-11-14T04:12:26+00:00 — History #4)*
 - **Deployed on GitHub Pages**, built and published by GitHub Actions on every push to `main`. *(2026-11-14T04:09:54+00:00 — History #2)*
 
 ### Documentation
@@ -55,7 +56,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 1. **Title.**
 2. **Everything about the game itself** beyond "simple shooter".
-3. **Stack** (plain HTML/JS, a framework, an engine…). GitHub Pages serves static files, so whatever is chosen needs to build to static output.
+3. ~~**Stack.**~~ Resolved (#4). Open: how the work is split between Phaser and React (in the previous project Phaser rendered the game and React handled UI panels; not decided for this one).
 4. **Target devices** (desktop, phone, both).
 
 ---
@@ -71,7 +72,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 | Placeholder page | Done | `index.html` says there's nothing here yet, so the Pages site isn't a 404. To be replaced by the game. |
 
 ### Known issues and limitations
-- The workflow publishes the repository root as-is. Once the game has a build step, the workflow needs a build job and should upload the build output instead.
+- The workflow publishes the repository root as-is. With Vite (#4) it will need a build step uploading `dist/` instead, and Vite's `base` set to `/simple-shooter/` for the Pages URL. To do when the project is scaffolded.
 
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
@@ -87,6 +88,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 | 1 | 2026-11-14T04:09:54+00:00 | Concept | A simple shooter. |
 | 2 | 2026-11-14T04:09:54+00:00 | Deployment | GitHub Pages, deployed by GitHub Actions on push to `main`. |
 | 3 | 2026-11-14T04:09:54+00:00 | Documentation | Living `GAME_DESIGN.md` (format of Lyra's previous project) and `TODO.md`. |
+| 4 | 2026-11-14T04:12:26+00:00 | Technical | Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js (same as the previous project). |
 
 ---
 

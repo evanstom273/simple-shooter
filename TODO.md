@@ -11,6 +11,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 ## Next
 
 - Design the game (Lyra).
+- Scaffold the project with the chosen stack (React, Vite, TypeScript, Tailwind, Phaser, Dexie), and switch the Pages workflow to build with Vite and deploy `dist/`.
 
 ## Done
 
