@@ -10,10 +10,11 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
-- Design the game (Lyra).
+- Settle the open numbers and details (Lyra): wave count, upgrade amounts, enemy stats, weapon selection, any additional mechanics. See `GAME_DESIGN.md` §E.
 
 ## Done
 
+- [x] Core design documented in `GAME_DESIGN.md` (History #7–#15). *(2026-11-14T04:17:36+00:00)*
 - [x] Scaffold: React, Vite, TypeScript, Tailwind CSS, Phaser, Dexie; placeholder scene. *(2026-11-14T04:15:39+00:00)*
 - [x] Pages workflow builds with Vite and deploys `dist/`. *(2026-11-14T04:15:39+00:00)*
 - [x] GitHub Pages deployment workflow (`.github/workflows/pages.yml`), deploying on push to `main`. *(2026-11-14T04:09:54+00:00)*

@@ -6,19 +6,22 @@ Authoritative, living record of the game's design. Timestamps are Europe/London,
 
 ## A. Project Overview
 
-A **simple shooter** (History #1). Nothing else about the game has been decided yet. Working title: none yet; the repository is `simple-shooter`.
+A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The player, a square, survives increasingly difficult waves of geometric enemies in a single arena with platforms, choosing one of three upgrades between waves. The focus is simple, enjoyable combat and replayability, at a small enough scope to actually finish. Working title: none yet; the repository is `simple-shooter`.
 
-**Where the project stands (as of 2026-11-14T04:15:39+00:00):**
+The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
+
+**Where the project stands (as of 2026-11-14T04:17:36+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
-- Stack chosen (History #4). No design decisions beyond the concept.
+- Stack chosen (History #4). Core design documented (2026-11-14T04:17:36+00:00, History #7–#15); numbers (wave count, upgrade amounts, enemy stats) not yet set.
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer. No gameplay.
 
-**Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser renders the game; React handles UI panels (History #5). Deployed on GitHub Pages (History #2, #6).
+**Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser handles gameplay, physics, rendering and input; React handles menus, HUD and upgrade selection; Dexie handles local persistent data (History #5, #14). Deployed on GitHub Pages (History #2, #6).
 
 **Guiding principles** *(carried over from Lyra's previous project's design document; flag if any don't apply here)*:
 - Discuss → Decide → Document → Implement → Test → Expand.
 - Small, polished and functional beats large and placeholder-filled.
 - The creative director (Lyra) makes design decisions; recommendations are not decisions until approved.
+- **Small scope, with the aim of actually finishing the game** (History #7, #15).
 
 ---
 
@@ -26,10 +29,61 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 ### Concept
 - **A simple shooter.** *(2026-11-14T04:09:54+00:00 — History #1)*
+- **2D side-view, wave-based roguelite arena shooter.** The player survives increasingly difficult waves of enemies and picks upgrades between waves. Focus on simple, enjoyable combat and replayability. Small scope, with the aim of actually finishing the game. Refines #1. *(2026-11-14T04:17:36+00:00 — History #7)*
+
+### Scope *(2026-11-14T04:17:36+00:00 — History #15)*
+- One playable character.
+- One arena initially.
+- Three enemy types (#11).
+- Four upgrade categories (#12).
+- Simple geometric graphics (#8).
+- Desktop and mobile support (#9).
+- **Not in scope:** unnecessary simulation systems, crafting, elaborate skill trees or complex progression mechanics.
+
+### Graphics *(2026-11-14T04:17:36+00:00 — History #8)*
+- **Minimalist geometric shapes** instead of traditional sprites.
+- **Player: a square.**
+- **Enemies: different geometric shapes** per type.
+- Simple platforms and projectiles.
+- No elaborate character art or animations required.
+
+### Movement and controls *(2026-11-14T04:17:36+00:00 — History #9)*
+- **Desktop:** A/D move left and right; Space jumps; the mouse aims a full 360°; left-click shoots.
+- **Mobile:** landscape orientation; a virtual joystick on the left for movement; tap or hold on the right side to aim and shoot; an on-screen jump button.
+
+### Arena *(2026-11-14T04:17:36+00:00 — History #10)*
+- **Side-view arena with platforms at different heights.** Platforming and jumping are part of combat.
+- Enemies spawn into the arena and attack the player.
+- No exploration and no procedurally generated levels.
+
+### Enemies *(2026-11-14T04:17:36+00:00 — History #11)*
+| Enemy | Behaviour |
+|---|---|
+| **Melee** | Chases the player and attacks at close range. |
+| **Ranged** | Shoots projectiles towards the player, potentially keeping its distance. |
+| **Tank** | Slow-moving, with significantly more health. |
+
+### Upgrades *(2026-11-14T04:17:36+00:00 — History #12)*
+- **Four upgrades; three offered at random between waves; the player picks exactly one.**
+- **Upgrades can be picked repeatedly and stack.**
+
+| Upgrade | Effect |
+|---|---|
+| **Health** | Increases player health. |
+| **Jump Height** | Increases jump height. |
+| **Movement Speed** | Increases movement speed. |
+| **Fire Rate** | Increases shooting speed. |
+
+### Waves *(2026-11-14T04:17:36+00:00 — History #13)*
+- Enemies get progressively more difficult across waves.
+- Enemy numbers increase as waves progress.
+- New enemy types can be introduced in later waves.
+- Upgrade selection happens between waves (#12).
 
 ### Technical architecture / platform
 - **Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js**, the same as Lyra's previous project. *(2026-11-14T04:12:26+00:00 — History #4)*
 - **Phaser renders the game; React handles UI panels**, the same split as the previous project. *(2026-11-14T04:13:47+00:00 — History #5)*
+- **Phaser handles gameplay, physics, rendering and input; React handles menus, HUD and upgrade selection; Dexie handles local persistent data.** Refines #5. *(2026-11-14T04:17:36+00:00 — History #14)*
 - **Deployed on GitHub Pages**, built and published by GitHub Actions on every push to `main`. *(2026-11-14T04:09:54+00:00 — History #2)*
 - **Stay on GitHub Pages** unless the game gets big enough to warrant Cloudflare. *(2026-11-14T04:13:47+00:00 — History #6)*
 - **Vite builds to `dist/`, and the Pages workflow deploys `dist/`.** *(2026-11-14T04:13:47+00:00 — History #6)*
@@ -59,9 +113,16 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 ## E. Open Questions
 
 1. **Title.**
-2. **Everything about the game itself** beyond "simple shooter".
+2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). Not finalised (Lyra, from the original conversation):
+   - **Wave count** (fixed number, or endless?).
+   - **Upgrade amounts** (the percentage or value each pick adds).
+   - **Enemy statistics** (health, speed, damage, fire rates).
+   - **Weapon selection** (whether there's more than one weapon).
+   - **Additional mechanics.**
 3. ~~**Stack.**~~ Resolved (#4); Phaser/React split resolved (#5).
-4. **Target devices** (desktop, phone, both).
+4. ~~**Target devices.**~~ Resolved: desktop and mobile, mobile in landscape (#9, #15).
+5. **What Dexie stores** (#14): e.g. settings, best wave or a run in progress; not specified.
+6. **Player health and losing:** what damage does, whether there's invulnerability after a hit, what happens on death (presumably the run ends, as in a roguelite; not stated).
 
 ---
 
@@ -98,6 +159,15 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 | 4 | 2026-11-14T04:12:26+00:00 | Technical | Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js (same as the previous project). |
 | 5 | 2026-11-14T04:13:47+00:00 | Technical | Phaser renders the game; React handles UI panels (same split as the previous project). |
 | 6 | 2026-11-14T04:13:47+00:00 | Deployment | Stay on GitHub Pages unless the game gets big enough to warrant Cloudflare. Vite builds to `dist/`, which the Pages workflow deploys. |
+| 7 | 2026-11-14T04:17:36+00:00 | Concept | 2D side-view, wave-based roguelite arena shooter: survive increasingly difficult waves, pick upgrades between waves; simple, enjoyable combat and replayability; small scope, aiming to finish. Refines #1. Decided in a separate conversation; timestamp is documentation time (applies to #7–#15). |
+| 8 | 2026-11-14T04:17:36+00:00 | Graphics | Minimalist geometric shapes, no sprites. Player is a square; enemies are different shapes; simple platforms and projectiles; no elaborate art or animation. |
+| 9 | 2026-11-14T04:17:36+00:00 | Controls | Desktop: A/D move, Space jump, mouse 360° aim, left-click shoot. Mobile: landscape; left virtual joystick moves; tap/hold on the right aims and shoots; on-screen jump button. |
+| 10 | 2026-11-14T04:17:36+00:00 | Arena | One side-view arena with platforms at different heights; platforming is part of combat; enemies spawn in. No exploration or procedural levels. |
+| 11 | 2026-11-14T04:17:36+00:00 | Enemies | Three types: Melee (chases, close-range attacks), Ranged (shoots at the player, may keep distance), Tank (slow, much more health). |
+| 12 | 2026-11-14T04:17:36+00:00 | Upgrades | Four upgrades (Health, Jump Height, Movement Speed, Fire Rate). Three offered at random between waves; pick exactly one; repeats allowed and stack. |
+| 13 | 2026-11-14T04:17:36+00:00 | Waves | Difficulty and enemy numbers rise across waves; new enemy types can appear later; upgrade choice between waves. |
+| 14 | 2026-11-14T04:17:36+00:00 | Technical | Phaser: gameplay, physics, rendering, input. React: menus, HUD, upgrade selection. Dexie: local persistent data. GitHub Pages. Refines #5. |
+| 15 | 2026-11-14T04:17:36+00:00 | Scope | One character, one arena initially, three enemy types, four upgrade categories, geometric graphics, desktop and mobile. No unnecessary simulation, crafting, elaborate skill trees or complex progression. |
 
 ---
 
