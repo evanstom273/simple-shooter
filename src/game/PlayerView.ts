@@ -202,6 +202,8 @@ export class PlayerView {
       grounded: boolean
       dashing: boolean
       dashAngle: number
+      /** Sliding down a wall on this side (#82), else 0. */
+      wall?: number
     },
   ) {
     this.advanceBeam(dt)
@@ -218,6 +220,7 @@ export class PlayerView {
     this.sx += this.vx * dt
     this.sy += this.vy * dt
     if (Math.abs(s.velX) > 30) this.facing = Math.sign(s.velX)
+    if (s.wall) this.facing = -s.wall
     this.moodTime = Math.max(0, this.moodTime - dt)
     const mood: Mood = s.dashing ? 'dash' : this.moodTime > 0 ? this.mood : 'normal'
     const running = s.grounded && Math.abs(s.velX) > 60 && !s.dashing
@@ -349,7 +352,7 @@ export class PlayerView {
     }
   }
 
-  private drawHands(s: { x: number; centreY: number; grounded: boolean; dashing: boolean; dashAngle: number; velX: number }, mood: Mood, alpha: number) {
+  private drawHands(s: { x: number; centreY: number; grounded: boolean; dashing: boolean; dashAngle: number; velX: number; wall?: number }, mood: Mood, alpha: number) {
     const [back, front] = this.facing > 0 ? this.hands : [this.hands[1], this.hands[0]]
     const t = performance.now() / 1000
     for (const h of this.hands) h.setAlpha(alpha)
@@ -367,6 +370,13 @@ export class PlayerView {
       // Arms thrown up.
       back.setPosition(s.x - this.facing * 40, s.centreY - 30)
       front.setPosition(s.x + this.facing * 40, s.centreY - 34)
+      return
+    }
+    if (s.wall) {
+      // Wall slide (#82): both hands pressed against the wall.
+      const wx = s.x + s.wall * (HALF + 6)
+      back.setPosition(wx, s.centreY - 14)
+      front.setPosition(wx, s.centreY + 10)
       return
     }
     const bob = s.grounded ? Math.sin(t * 3) * 2 : -10

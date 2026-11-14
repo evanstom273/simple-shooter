@@ -2,7 +2,7 @@
 // Plain TS, no Phaser import.
 
 export type Phase = 'fighting' | 'intermission' | 'over' | 'hub' | 'cleared' | 'dead'
-export type RunMode = 'hub' | 'section' | 'endless'
+export type RunMode = 'hub' | 'section' | 'endless' | 'sandbox'
 
 export interface RunState {
   wave: number

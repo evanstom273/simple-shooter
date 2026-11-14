@@ -62,3 +62,35 @@ export const HUB_LEVEL: Level = {
   ],
   spawn: { x: 1620, y: H.floor - 30 },
 }
+
+/**
+ * Wall-jump test room (#82): closed room with a shaft (two walls), a tall
+ * pillar to climb on its own, a ledge stack and a high shelf on the right wall.
+ */
+export const TEST_ROOM: Level = (() => {
+  const W = 2400
+  const H = 1600
+  const floor = 1540
+  return {
+    width: W,
+    height: H,
+    platforms: [
+      { x: 0, y: floor, w: W, h: H - floor, solid: true },
+      { x: 0, y: 0, w: 40, h: floor, solid: true },
+      { x: W - 40, y: 0, w: 40, h: floor, solid: true },
+      { x: 40, y: 0, w: W - 80, h: 40, solid: true },
+      // Shaft: two walls 160 apart.
+      { x: 500, y: 700, w: 40, h: floor - 700, solid: true },
+      { x: 700, y: 700, w: 40, h: floor - 700, solid: true },
+      // Tall pillar: climb the same wall.
+      { x: 1200, y: 480, w: 80, h: floor - 480, solid: true },
+      // Ledge stack.
+      { x: 1650, y: 1370, w: 220, h: 24 },
+      { x: 1750, y: 1190, w: 220, h: 24 },
+      { x: 1650, y: 1010, w: 220, h: 24 },
+      // High shelf off the right wall: climb the wall to get there.
+      { x: W - 400, y: 640, w: 360, h: 30, solid: true },
+    ],
+    spawn: { x: 950, y: floor - 40 },
+  }
+})()

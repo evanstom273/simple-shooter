@@ -82,12 +82,18 @@ export class GameScene extends Phaser.Scene {
    * push (getting hit, the shotgun's kick, bouncing off the tank) actually carries.
    */
   private pushTime = 0
+  /** Walls (#82): which side a wall was last touched on, seconds since, steering lock after a wall jump, slide dust. */
+  private wallSide = 0
+  private sinceWall = 1
+  private wallLock = 0
+  private slideDust = 0
+  private solids: { x: number; y: number; w: number; h: number }[] = []
   /** Dash and stomp damage multiplier: the shop's new dash/stomp upgrade (#69) raises it. */
   impactBonus = 1
   /** Health in stages (#48). */
   private health: number = PLAYER.pips * PLAYER.stagesPerPip
   /** Where we are (#62, #70): the hub, a story section, or endless mode. */
-  private mode: 'hub' | 'section' | 'endless' = 'endless'
+  private mode: 'hub' | 'section' | 'endless' | 'sandbox' = 'endless'
   private world: 1 | 2 | 3 | 4 = 1
   private section = 1
   private level: Level = ARENA_LEVEL
@@ -161,7 +167,8 @@ export class GameScene extends Phaser.Scene {
       this.world = dest.world
       this.section = dest.section
     }
-    this.level = this.mode === 'hub' ? HUB_LEVEL : ARENA_LEVEL
+    this.level = dest.mode === 'hub' ? HUB_LEVEL : dest.mode === 'sandbox' ? dest.level : ARENA_LEVEL
+    this.solids = this.level.platforms.filter((p) => p.solid)
     ARENA.width = this.level.width
     ARENA.height = this.level.height
     this.applyStats(true)
@@ -229,6 +236,8 @@ export class GameScene extends Phaser.Scene {
       })
     } else if (this.mode === 'section') {
       runStore.set({ phase: 'intermission', mode: 'section', wave: 1, countdown: 3, gold: prog.gold, world: this.world, section: this.section })
+    } else if (this.mode === 'sandbox') {
+      runStore.set({ phase: 'hub', mode: 'sandbox' })
     } else {
       runStore.set({ phase: 'intermission', mode: 'endless', wave: 1, countdown: 3 })
     }
@@ -238,7 +247,7 @@ export class GameScene extends Phaser.Scene {
       this.hub?.setEndlessBest(d.best, top?.wave ?? 0)
     })
     // Story modes: you have the weapons you've bought, improved as bought (#26, #63).
-    if (this.mode !== 'endless') {
+    if (this.mode === 'hub' || this.mode === 'section') {
       for (const w of prog.weapons) this.shooter.give(w)
       for (const [w, n] of Object.entries(prog.improved)) this.shooter.damageBonus[w as keyof typeof WEAPONS] = 1 + 0.25 * (n ?? 0)
     }
@@ -415,6 +424,25 @@ export class GameScene extends Phaser.Scene {
     }
     if (c.moveX !== 0) this.facing = Math.sign(c.moveX)
 
+    // Walls (#82): slide down slowly while holding towards one in the air.
+    const wall = grounded ? 0 : this.wallBeside()
+    if (wall !== 0) {
+      this.wallSide = wall
+      this.sinceWall = 0
+    } else {
+      this.sinceWall += dt
+    }
+    this.wallLock = Math.max(0, this.wallLock - dt)
+    const sliding = wall !== 0 && c.moveX === wall && b.velocity.y > 0 && !this.dashing
+    if (sliding) {
+      b.setVelocityY(Math.min(b.velocity.y, PLAYER.wallSlideSpeed))
+      this.slideDust -= dt
+      if (this.slideDust <= 0) {
+        this.slideDust = 0.07
+        burst(this, this.player.x + wall * (PLAYER.size / 2), this.player.y + 10, { count: 2, colour: COLOURS.dust, angle: -Math.PI / 2 - wall * 0.6, spread: 0.5, speed: [40, 110], size: [3, 6], gravity: 120 })
+      }
+    }
+
     const wasCooling = this.dashCooldown > 0
     this.dashCooldown = Math.max(0, this.dashCooldown - dt)
     if (wasCooling && this.dashCooldown === 0) this.onDashReady()
@@ -426,7 +454,7 @@ export class GameScene extends Phaser.Scene {
       this.pushTime = Math.max(0, this.pushTime - dt)
       const target = c.moveX * this.runSpeed
       // While being pushed, steer only gently so the push carries.
-      const t = Math.min(1, dt * PLAYER.responsiveness * (this.pushTime > 0 ? 0.15 : 1))
+      const t = Math.min(1, dt * PLAYER.responsiveness * (this.pushTime > 0 ? 0.15 : 1) * (this.wallLock > 0 ? 0.1 : 1))
       b.setVelocityX(b.velocity.x + (target - b.velocity.x) * t)
 
       // Ground jump: on the ground, or just after leaving it (coyote time); a press
@@ -441,6 +469,17 @@ export class GameScene extends Phaser.Scene {
           b.setVelocityY(-this.jumpSpeed)
           this.view.kick(0.72, 1.32)
           burst(this, this.player.x, feetY - 3, { count: 6, colour: COLOURS.dust, angle: -DOWN, spread: 1.2, speed: [60, 160], size: [5, 9], gravity: 200 })
+        } else if (wall !== 0 || this.sinceWall < PLAYER.wallCoyote) {
+          // Wall jump (#82): up and away; gives the double jump back.
+          const side = wall || this.wallSide
+          this.sinceWall = 1
+          this.wallLock = PLAYER.wallLock
+          this.airJumpsLeft = PLAYER.airJumps
+          this.facing = -side
+          b.setVelocity(-side * PLAYER.wallJump.x, -PLAYER.wallJump.y)
+          sfx.jump()
+          this.view.kick(0.75, 1.3)
+          burst(this, this.player.x + side * (PLAYER.size / 2), this.player.y, { count: 6, colour: COLOURS.dust, angle: side > 0 ? Math.PI : 0, spread: 0.9, speed: [80, 220], size: [4, 8], gravity: 150 })
         } else if (this.airJumpsLeft > 0) {
           this.airJumpsLeft--
           sfx.airJump()
@@ -462,6 +501,7 @@ export class GameScene extends Phaser.Scene {
       grounded,
       dashing: this.dashing,
       dashAngle: this.dashDir.angle(),
+      wall: sliding ? wall : 0,
     })
 
     // Cooldown bar (desktop only; touch has the ring on its DASH button).
@@ -490,6 +530,20 @@ export class GameScene extends Phaser.Scene {
     this.updateDarkness()
     this.updateMotes(dt)
     this.drawBeam()
+  }
+
+  /** Is there a wall right beside the player? -1 left, 1 right, 0 none (solid blocks and the arena's sides). */
+  private wallBeside(): number {
+    const b = this.body_
+    const reach = 3
+    if (b.left <= reach) return -1
+    if (b.right >= ARENA.width - reach) return 1
+    for (const s of this.solids) {
+      if (b.bottom <= s.y + 6 || b.top >= s.y + s.h) continue
+      if (Math.abs(b.left - (s.x + s.w)) <= reach) return -1
+      if (Math.abs(b.right - s.x) <= reach) return 1
+    }
+    return 0
   }
 
   /** Start the beam-in after the fade (#75). */
@@ -676,7 +730,7 @@ export class GameScene extends Phaser.Scene {
    * all dead, the wave's cleared. Between waves, a countdown to the next.
    */
   private updateWaves(dt: number) {
-    if (this.mode === 'hub' || this.cine === 'arrive') return
+    if (this.mode === 'hub' || this.mode === 'sandbox' || this.cine === 'arrive') return
     const run = runStore.get()
     if (run.phase === 'fighting') {
       const alive = [...this.waveEnemies].filter((e) => !e.dead).length
@@ -766,7 +820,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Re-read upgrades and weapons after a purchase (#63) and apply them now. */
   private applyStats(initial: boolean) {
-    if (this.mode === 'endless') {
+    if (this.mode === 'endless' || this.mode === 'sandbox') {
       this.runSpeed = PLAYER.runSpeed
       this.jumpSpeed = PLAYER.jumpSpeed
       this.pips = PLAYER.pips

@@ -6,6 +6,7 @@ import { hudStore } from '../state/hud.ts'
 import { debugBus, type EnemyKind } from '../state/debug.ts'
 import { navStore } from '../state/nav.ts'
 import { restartBus, runStore } from '../state/run.ts'
+import { TEST_ROOM } from '../game/levels.ts'
 
 // React UI layer over the Phaser canvas. pointer-events-none so the game still
 // gets input; give interactive children pointer-events-auto.
@@ -157,6 +158,9 @@ export function Hud() {
         </div>
       )}
 
+      {/* Sandbox (testing): what this is and a way back. */}
+      {run.mode === 'sandbox' && <SandboxBar />}
+
       {/* Story section cleared (#62): gold and damage carry back to the hub. */}
       {run.phase === 'cleared' && (
         <div className="wave-banner absolute inset-x-0 top-[26%] text-center">
@@ -260,6 +264,11 @@ export function Hud() {
             ))}
           </div>
           <p className="mt-3 mb-1 text-xs font-semibold tracking-wide text-neutral-400 uppercase">Testing</p>
+          <div className="mb-1.5 flex flex-wrap gap-1">
+            <button type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'sandbox', level: TEST_ROOM, title: 'Wall-jump test room' }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
+              Test room
+            </button>
+          </div>
           <div className="mb-1.5 flex items-center gap-1">
             <span className="mr-1 w-10 text-xs text-neutral-400">Give</span>
             {(['pistol', 'automatic', 'shotgun'] as const).map((id) => (
@@ -332,4 +341,18 @@ const WEAPON_ICONS: Record<'pistol' | 'automatic' | 'shotgun', { label: string; 
   pistol: { label: 'Pistol', colour: '#fff2b0', path: 'M3 4h16v4h-9v5H5V8H3z' },
   automatic: { label: 'Automatic', colour: '#ffd27a', path: 'M1 4h26v3H16v2h-3v4H8V7H1z' },
   shotgun: { label: 'Shotgun', colour: '#ffb38a', path: 'M2 3h20v3H2zM2 7h20v3H11v3H6v-3H2z' },
+}
+
+/** Testing rooms (#82, #79): the room's name and a way back. */
+function SandboxBar() {
+  const dest = navStore.get()
+  if (dest.mode !== 'sandbox') return null
+  return (
+    <div className="pointer-events-auto absolute top-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 py-1 pr-1 pl-3 ring-1 ring-white/10">
+      <span className="text-xs font-semibold text-neutral-300">{dest.title}</span>
+      <button type="button" onClick={() => navStore.go({ mode: 'hub' })} className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-neutral-100 hover:bg-white/20">
+        Back to hub
+      </button>
+    </div>
+  )
 }

@@ -48,6 +48,15 @@ export const PLAYER = {
   /** Freeze-frames, seconds: on taking a hit, and on landing a dash hit. */
   hurtHitStop: 0.08,
   dashHitStop: 0.05,
+  /** Wall sliding and wall jumping (#82, innate). */
+  /** Top falling speed while holding towards a wall, px/s. */
+  wallSlideSpeed: 170,
+  /** Wall jump: up and away from the wall, px/s. */
+  wallJump: { x: 430, y: 940 },
+  /** Seconds after a wall jump that steering is weak, so the kick-off carries (short, so you can steer back and climb the same wall). */
+  wallLock: 0.1,
+  /** Seconds after leaving a wall that a wall jump still counts. */
+  wallCoyote: 0.1,
 } as const
 
 export const DASH = {
