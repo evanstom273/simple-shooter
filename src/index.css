@@ -48,3 +48,21 @@ body {
 .heal-pop {
   animation: heal-pop 380ms ease-out;
 }
+
+/* Wave start: the big number drops in and fades. */
+@keyframes wave-banner {
+  0% { opacity: 0; transform: translateY(-12px) scale(1.15); }
+  15% { opacity: 1; transform: none; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.wave-banner {
+  animation: wave-banner 1800ms ease-out forwards;
+}
+@keyframes run-over {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.run-over {
+  animation: run-over 600ms ease-out 400ms both;
+}

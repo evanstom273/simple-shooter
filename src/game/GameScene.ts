@@ -14,7 +14,11 @@ import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
 import { debugBus } from '../state/debug.ts'
-import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, SPAWNER, STOMP, TANK, VIEW, WEAPONS } from './tuning.ts'
+import { runStore } from '../state/run.ts'
+import { loadScores, recordRun } from '../persist/scores.ts'
+import { Gold } from './Gold.ts'
+import { goldFor, maxAlive, waveOrder, waveSize, type EnemyKind } from './waves.ts'
+import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, STOMP, TANK, VIEW, WAVES, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -95,8 +99,15 @@ export class GameScene extends Phaser.Scene {
   private enemyGroup!: Phaser.Physics.Arcade.Group
   private nav!: NavGraph
   private playerInfo: PlayerInfo = { x: 0, y: 0, vx: 0, vy: 0, platform: -1, view: new Phaser.Geom.Rectangle() }
-  /** Temporary spawner until waves exist: seconds until the next spawn of each kind. */
-  private spawnTimers = { melee: 0.5, ranged: 3, tank: 6 }
+  /** Waves (#13, #18): enemies still to spawn this wave, and the gap timer. */
+  private waveQueue: EnemyKind[] = []
+  private waveSpawnTimer = 0
+  /** Enemies that belong to the current wave (test spawns don't count towards clearing it). */
+  private waveEnemies = new Set<Enemy>()
+  private gold!: Gold
+  /** The run has ended (#17): the game stops and the run-over screen shows. */
+  private over = false
+  private countdownShown = -1
   private spawnKeys!: { melee: Phaser.Input.Keyboard.Key; ranged: Phaser.Input.Keyboard.Key; tank: Phaser.Input.Keyboard.Key }
   /** Everything that can be hit or auto-aimed at. */
   private get targets(): Target[] {
@@ -152,6 +163,12 @@ export class GameScene extends Phaser.Scene {
     // Shooting. Bullets pass through platforms; only the floor stops them (#42).
     const floorY = PLATFORMS.find((p) => p.solid)?.y ?? ARENA.height
     this.shooter = new Shooter(this, floorY, () => this.targets)
+    this.gold = new Gold(this, floorY, (v) => this.collectGold(v))
+
+    // A fresh run (#17): wave 1 after a short countdown. Best score from Dexie.
+    runStore.reset()
+    runStore.set({ phase: 'intermission', wave: 1, countdown: 3 })
+    void loadScores().then((d) => runStore.set({ best: d.best }))
 
     // Enemies (#40): route-finding graph, a physics group so they bump each other,
     // and platform collisions that let them drop through one-way platforms.
@@ -255,6 +272,7 @@ export class GameScene extends Phaser.Scene {
 
   update(_time: number, deltaMs: number) {
     // Freeze-frame: physics paused, nothing moves, for a few hundredths of a second.
+    if (this.over) return
     if (this.hitStop > 0) {
       this.hitStop -= deltaMs / 1000
       if (this.hitStop <= 0) this.physics.world.resume()
@@ -442,31 +460,109 @@ export class GameScene extends Phaser.Scene {
     }
     this.hazards = this.hazards.filter((h) => !h.done)
 
-    // Temporary spawner (until waves): keep a few of each in the arena; E / R / T add one.
+    // Testing: E / R / T spawn an extra melee / ranged / tank (not part of the wave).
     for (const kind of ['melee', 'ranged', 'tank'] as const) {
       if (Phaser.Input.Keyboard.JustDown(this.spawnKeys[kind])) this.spawnEnemy(kind)
-      const count = this.enemies.filter((e) => kindOf(e) === kind).length
-      if (count < SPAWNER[kind]) {
-        this.spawnTimers[kind] -= dt
-        if (this.spawnTimers[kind] <= 0) {
-          this.spawnEnemy(kind)
-          this.spawnTimers[kind] = MELEE.respawnDelay
-        }
-      }
     }
+
+    this.updateWaves(dt)
+    this.gold.update(dt, this.player.x, this.player.y)
   }
 
   /** Walkers on a random platform, fliers in the air; preferably well away from the player. */
-  private spawnEnemy(kind: 'melee' | 'ranged' | 'tank') {
+  /**
+   * The wave director (#13, #18): during a wave, spawn from the queue while
+   * below the on-screen cap; when the queue's empty and the wave's enemies are
+   * all dead, the wave's cleared. Between waves, a countdown to the next.
+   */
+  private updateWaves(dt: number) {
+    const run = runStore.get()
+    if (run.phase === 'fighting') {
+      const alive = [...this.waveEnemies].filter((e) => !e.dead).length
+      this.waveSpawnTimer -= dt
+      if (this.waveQueue.length && alive < maxAlive(run.wave) && this.waveSpawnTimer <= 0) {
+        const e = this.spawnEnemy(this.waveQueue.shift()!)
+        this.waveEnemies.add(e)
+        this.waveSpawnTimer = WAVES.spawnGap
+      }
+      for (const e of this.waveEnemies) if (e.dead) this.waveEnemies.delete(e)
+      const left = this.waveQueue.length + this.waveEnemies.size
+      if (left !== run.left) runStore.set({ left })
+      if (left === 0) this.clearWave()
+    } else if (run.phase === 'intermission') {
+      const countdown = Math.max(0, run.countdown - dt)
+      // Only tell React when the whole second changes.
+      if (Math.ceil(countdown) !== this.countdownShown) {
+        this.countdownShown = Math.ceil(countdown)
+        runStore.set({ countdown })
+      } else {
+        runStore.get().countdown = countdown
+      }
+      if (countdown <= 0) this.startWave(run.wave)
+    }
+  }
+
+  private startWave(n: number) {
+    this.waveQueue = waveOrder(n)
+    this.waveSpawnTimer = 0
+    this.waveEnemies.clear()
+    const run = runStore.get()
+    runStore.set({ phase: 'fighting', wave: n, left: waveSize(n), waveGold: 0, waveStarts: run.waveStarts + 1 })
+    sfx.waveStart()
+  }
+
+  private clearWave() {
+    const run = runStore.get()
+    this.gold.collectAll()
+    sfx.waveClear()
+    this.countdownShown = -1
+    runStore.set({ phase: 'intermission', wave: run.wave + 1, countdown: WAVES.intermission, left: 0 })
+  }
+
+  private collectGold(v: number) {
+    const run = runStore.get()
+    // Score is everything earned this run; spending (later, in the shop) never lowers it (#53).
+    runStore.set({ gold: run.gold + v, score: run.score + v, waveGold: run.waveGold + v })
+  }
+
+  /** A kill: gold drops (#53) worth more in later waves, and you heal a stage (#48). */
+  private onEnemyKilled(kind: EnemyKind, x: number, y: number) {
+    const run = runStore.get()
+    this.gold.drop(x, y, goldFor(kind, Math.max(1, run.wave)))
+    runStore.set({ kills: run.kills + 1 })
+    this.onKill()
+  }
+
+  /** Health hit zero: the run is over (#17). Everything resets; the score is recorded. */
+  private endRun() {
+    this.over = true
+    this.physics.world.pause()
+    this.view.flicker = false
+    this.shake(400, 0.02)
+    sfx.runOver()
+    buzz(250)
+    burst(this, this.player.x, this.player.y, { count: 24, colour: 0xffffff, angle: 0, spread: Math.PI, speed: [150, 450], size: [5, 11], life: 700 })
+    const run = runStore.get()
+    const score = run.score
+    runStore.set({ phase: 'over', newBest: score > run.best })
+    void recordRun({ score, wave: run.wave, kills: run.kills, at: Date.now() }).then((best) => runStore.set({ best }))
+  }
+
+  /** Spawn one enemy: walkers on a random platform, fliers in the air; preferably well away from the player. */
+  private spawnEnemy(kind: EnemyKind): Enemy {
     const far = PLATFORMS.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
     const pool = far.length ? far : [...PLATFORMS]
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]
-    const kill = () => this.onKill()
+    let me: Enemy | null = null
+    const kill = () => {
+      if (me) this.onEnemyKilled(kind, me.x, me.y)
+    }
     if (kind === 'ranged') {
       const x = Phaser.Math.Between(100, ARENA.width - 100)
       const y = Phaser.Math.Between(250, ARENA.height - 400)
-      this.enemies.push(new RangedEnemy(this, x, y, this.turns, kill, (h) => this.hazards.push(h)))
-      return
+      me = new RangedEnemy(this, x, y, this.turns, kill, (h) => this.hazards.push(h))
+      this.enemies.push(me)
+      return me
     }
     if (kind === 'tank') {
       const x = Phaser.Math.Between(p.x + 60, p.x + p.w - 60)
@@ -477,7 +573,8 @@ export class GameScene extends Phaser.Scene {
       tb.pushable = false
       tb.enable = false
       this.enemies.push(e)
-      return
+      me = e
+      return e
     }
     const x = Phaser.Math.Between(p.x + 40, p.x + p.w - 40)
     const e = new MeleeEnemy(this, x, p.y - MELEE.radius - 2, this.nav, kill, this.turns)
@@ -485,6 +582,8 @@ export class GameScene extends Phaser.Scene {
     ;(e.o.body as Phaser.Physics.Arcade.Body).setCircle(MELEE.radius).setCollideWorldBounds(true)
     ;(e.o.body as Phaser.Physics.Arcade.Body).enable = false
     this.enemies.push(e)
+    me = e
+    return e
   }
 
   /**
@@ -585,7 +684,6 @@ export class GameScene extends Phaser.Scene {
   /** Knockback, lose a hit point, short invulnerability (#23, #27). */
   /** Getting hurt: only attacks hurt (#52): lunges, shots, slams, shockwaves (stages per #57, #58). */
   private takeHit(fromX: number, damage: number) {
-    const max = PLAYER.pips * PLAYER.stagesPerPip
     this.health -= damage
     this.hurtTime = PLAYER.hurtInvulnerability
     const away = Math.sign(this.player.x - fromX) || -this.facing
@@ -598,16 +696,9 @@ export class GameScene extends Phaser.Scene {
     sfx.hurt()
     buzz(80)
     this.freeze(PLAYER.hurtHitStop)
-    if (this.health <= 0) {
-      // Temporary until runs exist: refill and carry on.
-      this.health = max
-      this.hurtTime = PLAYER.hurtInvulnerability * 1.5
-      ring(this, this.player.x, this.player.y, PLAYER.size * 2, PLAYER.size * 2, 0xffffff, { grow: 4, life: 600, line: 5 })
-      this.time.delayedCall(120, () => sfx.revive())
-      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
-    } else {
-      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1 })
-    }
+    this.health = Math.max(0, this.health)
+    hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1 })
+    if (this.health <= 0) this.endRun()
   }
 
 
@@ -850,8 +941,4 @@ function makeTurns(gapSeconds: number): Turns & { tick(dt: number): void } {
       if (holder && (holder as Enemy).dead) holder = null
     },
   }
-}
-
-function kindOf(e: Enemy): 'melee' | 'ranged' | 'tank' {
-  return e instanceof RangedEnemy ? 'ranged' : e instanceof TankEnemy ? 'tank' : 'melee'
 }

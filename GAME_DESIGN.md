@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T14:38:46+00:00):**
+**Where the project stands (as of 2026-11-14T14:52:38+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Basic waves built** (#60): endless waves, gold drops and score, wave counter and between-wave tally, run over and restart, local high scores (2026-11-14T14:52:38+00:00). No shop yet.
 - **Stomp built** (#59) (2026-11-14T14:38:46+00:00).
 - **All three enemy types built** (ranged #56, tank #58) and health is 5 × 4 stages with 2-stage melee/ranged hits (#57) (2026-11-14T07:12:19+00:00).
 - **Contact damage removed entirely** (#52): only attacks hurt (2026-11-14T06:47:26+00:00).
@@ -234,6 +235,15 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Improving a weapon you own** (now bought in the shop, #53). *(2026-11-14T04:24:39+00:00 — History #22)*
 - **Improving a weapon raises its damage.** There's no damage upgrade among the four stat upgrades, so this is how damage goes up. *(2026-11-14T04:27:30+00:00 — History #26)*
 
+### Waves, first version *(2026-11-14T14:52:38+00:00 — History #60)*
+From Lyra (built while she was at work, so the details marked *Claude* are interpretations to check):
+- **Endless waves; you start on wave 1 with nothing.** Each wave is **10–15 enemies** (*Claude:* 10 in wave 1, +1 per wave, 15 from wave 6).
+- **Wave 1 is just melee; wave 2 is mostly melee with some shooters; it builds gradually.** *Claude:* ranged ≈15% of a wave from wave 2, +5% a wave, up to 40%; tanks from wave 4 (1), one more every 2 waves, up to 4.
+- **Kills drop gold:** **50 melee, 50 ranged, 150 tank** at wave 1, **scaling gradually: ~250 for a melee by wave 10** (*Claude:* linear, ×1 at wave 1 to ×5 at wave 10, and on from there). "Gold" is a placeholder name.
+- **Between waves: a count** of the gold earned (*Claude:* "Wave N cleared, +X gold" counting up, then "Wave N+1 in 6…").
+- *Claude:* only a few enemies in the arena at once (3 in wave 1, +1 every 3 waves, up to 7); the rest arrive as you kill them.
+- *Claude:* dying ends the run (#17): a run-over screen with score, wave, kills and best; **Play again** starts fresh. The final score is saved as a local high score (#53).
+
 ### Waves *(2026-11-14T04:17:36+00:00 — History #13)*
 - Enemies get progressively more difficult across waves.
 - Enemy numbers increase as waves progress.
@@ -255,6 +265,12 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ---
 
 ## C. Current Development Scope
+
+### Step 11: Basic waves — **BUILT** *(2026-11-14T14:52:38+00:00)*
+**In scope (done):** endless waves (#60) with a spawn queue and on-screen cap; gold drops that fly to you (#54 magnet) and gold/score (#53); wave readout, wave-start banner, between-wave gold count-up and countdown; run over and Play again; local high scores in Dexie. Testing spawn buttons moved into the settings panel.
+
+**Out of scope:** the shop (#53, #54), saving a run mid-way (#17), anything that toughens waves beyond ~13.
+
 
 ### Step 10: Stomp — **BUILT** *(2026-11-14T14:38:46+00:00)*
 Landing on an enemy from above stomps it (#59): 1 damage, knocked away and flattened ~1 s (can't be hit by anything), you bounce up with your double jump back; the tank flattens but knocks you away; an attacking enemy wins.
@@ -353,6 +369,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
 1d. **Ranged enemy (#56), open:** numbers (charge length, lock length, shot speed, how close before it darts, dart distance, time between shots, health if not one-hit), what "leading" predicts from (your current velocity), and whether a shot can be dashed through (dash invulnerability says yes).
@@ -424,8 +441,11 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Ranged enemy (#56) | Tested | `enemies/RangedEnemy.ts`. Green pointy triangle (radius 18; first made near-equilateral, which didn't read as pointing, so lengthened). Hovers to a vantage point ~520 px to one side of you and ~220 px above. Darts away (1100 px/s, 0.22 s) when you're within 260 px. When on screen, within 950 px and it gets the shared turn: charge 0.9 s (aim line tracks your predicted position from your velocity; glows; whine) → lock 0.35 s (line freezes, blinks, ping) → one shot at 1150 px/s that passes through platforms, 2 stages. Reload 2.2 s. 1 HP (a dash or a bullet kills it). Shatters into green triangles. Checked: shot hit a standing player 20→18; darted when approached; died to one hit; never charged while off screen. *(2026-11-14T07:12:19+00:00)* |
 | Tank (#58) | Tested | `enemies/TankEnemy.ts`. Red pentagon, 96 px (2×), 8 HP, one eye. Walks at 95 px/s, uses the same route-finding with heavy jumps; landings shake the screen. Within 520 px and on its own turn: wind-up 1 s (crouches, heats red→white, rumble, growing camera shake, landing marker tracking you) → leap (0.7 s arc to where you are) → slam: impact zone + two shockwaves running to the platform's ends (700 px/s, 46 px tall), all 4 stages → 2 s recovery (squashed, wobbly eye) → 1.5 s before it can slam again. Not pushable; your dash damages it and bounces you back (520 px/s). Breaks into falling red pentagon chunks. Checked: full cycle; slam on a standing player 20→16; shockwave hits a standing player (−4) and misses a jumping one; dash: −1 HP, tank didn't move, player bounced; dies at 8. *(2026-11-14T07:12:19+00:00)* |
 | Hazards | Tested | Enemy shots, shockwaves and the slam impact are scene-level hazards: each frame, if one touches the player (not invulnerable) it deals its damage and disappears. *(2026-11-14T07:12:19+00:00)* |
-| Testing spawn buttons | Temporary | *(2026-11-14T14:33:08+00:00)* Automatic spawning off (`SPAWNER` all 0) while testing. A "SPAWN" pill at the top centre (React) with three buttons, orange circle / green triangle / red pentagon, spawns a melee / ranged / tank via `state/debug.ts`; works on touch and desktop (checked on the cover screen in portrait). E / R / T still work on desktop. Removed when waves exist. |
+| Testing spawn buttons | Temporary (moved) | *(2026-11-14T14:33:08+00:00)* Automatic spawning off (`SPAWNER` all 0) while testing. Now in the settings panel under "Testing" (the top centre shows the wave). Was: a "SPAWN" pill at the top centre (React) with three buttons, orange circle / green triangle / red pentagon, spawns a melee / ranged / tank via `state/debug.ts`; works on touch and desktop (checked on the cover screen in portrait). E / R / T still work on desktop. Removed when waves exist. |
 | Stomp (#59) | Tested | A stomp is: player falling, touching a hittable, non-attacking enemy, with last frame's feet above its upper 45% (`STOMP.fromAbove`). Effect: 1 damage, enemy knocked away (420/220 px/s) and flattened 1 s (ignores stomps, dashes and bullets; melee/tank lie squashed, ranged squashes and drifts); a stomp during a wind-up cancels it. Player bounces up (900 px/s) with the double jump refreshed; off the tank: knocked away (520 sideways, 700 up). Ring, coloured burst, boing, 30 ms buzz, small shake, short freeze-frame. Checked: melee 3→2 + flattened + bounce; re-stomp while flat does nothing; landing on a (held) rolling melee hurts 2 stages; ranged stomp kills it; tank 8→7, flattened, didn't move, player knocked off; walking into a non-attacking enemy's side does nothing. *(2026-11-14T14:38:46+00:00)* |
+| Waves (#60) | Tested | `waves.ts` (pure rules) + a director in `GameScene`: run starts with a 3 s "Get ready", then each wave's shuffled queue (tanks kept out of the first third) spawns every 1.2 s while below the on-screen cap; the wave's cleared when its queue is empty and its enemies are dead (test spawns don't count); 6 s intermission. Checked: wave 1 held at 3 at once with 7 queued; 10 kills → 500 gold collected; wave 2 = 9 melee + 2 ranged. Table of the first waves in `waves.ts` comments / §G. *(2026-11-14T14:52:38+00:00)* |
+| Gold (#53, #54) | Tested | `Gold.ts`: a kill scatters 3–8 diamond pieces (value split between them) that fall to the floor, bounce, then fly to you within 170 px; at wave end everything left flies to you. Gold in hand and score shown under the health. *(2026-11-14T14:52:38+00:00)* |
+| Run over + restart (#17) | Tested | Health 0 → the game freezes, a burst, a low tone, a long buzz; the run-over card (score, "New best!", wave, kills, best, Play again). Play again remounts the whole game so everything starts fresh. Scores saved in Dexie (`saves` record `scores`: best + top 20 runs). Replaces the temporary health refill. *(2026-11-14T14:52:38+00:00)* |
 | Temporary spawner | Temporary | *(Updated 2026-11-14T07:12:19+00:00.)* Keeps 2 melee + 1 ranged in the arena; tanks only on demand. E / R / T spawn an extra melee / ranged / tank (desktop). |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
 | ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
@@ -450,6 +470,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
 - ~~Platforms block bullets from every side.~~ Changed by #42: bullets pass through.
+- **Gold sinks to the floor** (it isn't stopped by platforms), so drops from enemies on high platforms end up on the floor; the end-of-wave sweep brings anything left to you.
 - **Flattened enemies can't be hit by anything** (stomps, dashes, bullets), reading #59's "can't be hit" as total, so a stomp can't be chained straight into a dash.
 - **Tank slam impact zone:** the tank switched to recovering on the frame it landed, before the body-contact check, so a slam directly on you never counted. The slam now creates a brief damage zone over its footprint (Claude's fix).
 - **Ranged enemy has 1 HP**, so one bullet also kills it once weapons exist ("fragile").
@@ -530,6 +551,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 57 | 2026-11-14T06:58:51+00:00 | Combat | Health 20 = 5 pips × 4 stages; melee lunge and ranged shot each cost 2 stages; kills still heal 1 stage. Supersedes the numbers in #48. |
 | 58 | 2026-11-14T07:02:23+00:00 | Enemies | Tank: red pentagon, 2× the player; slow walk with heavy jumps; ground slam whose shockwave runs both ways along its platform (jump it); tell = crouch and glow, landing marker, rumble, slight camera shake; 4 stages per hit; long recovery after a slam; 8 hits; dash damages it without moving it (you bounce off); has its own attack turn alongside the others; breaks into red pentagon chunks. |
 | 59 | 2026-11-14T14:34:43+00:00 | Combat | Stomp: landing on an enemy from above does 1 damage, knocks it away and flattens it (~1 s, can't be hit) so it can't be repeated; stomping the tank knocks you away instead. You bounce up with your double jump refreshed. Landing on an attacking enemy hurts you as normal. |
+| 60 | 2026-11-14T14:52:38+00:00 | Waves | Basic waves: endless; 10–15 enemies; wave 1 melee only, wave 2 mostly melee + some ranged, building gradually (tanks later); gold per kill 50 / 50 / 150 at wave 1, scaling gradually to ~250 for a melee by wave 10; between waves a count of gold earned. Built with Claude's interpretations listed in §B. |
 
 ---
 

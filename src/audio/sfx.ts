@@ -159,6 +159,20 @@ export const sfx = {
     tone('square', vary(140), vary(520), 0.12, 0.16)
     noise('lowpass', 1200, 200, 0.08, 0.2)
   },
+  coin: () => tone('square', vary(1320), vary(1760), 0.05, 0.035),
+  waveStart: () => {
+    tone('triangle', vary(330), vary(330), 0.18, 0.12)
+    tone('triangle', vary(440), vary(440), 0.18, 0.12, 0.16)
+    tone('triangle', vary(660), vary(660), 0.3, 0.12, 0.32)
+  },
+  waveClear: () => {
+    tone('sine', vary(660), vary(990), 0.25, 0.12)
+    tone('sine', vary(880), vary(1320), 0.35, 0.1, 0.12)
+  },
+  runOver: () => {
+    tone('sawtooth', vary(330), 80, 0.9, 0.18)
+    noise('lowpass', 1200, 100, 0.8, 0.15)
+  },
   targetPop: () => {
     tone('sine', vary(600), 120, 0.2, 0.2)
     noise('bandpass', 2000, 400, 0.15, 0.12, 1)

@@ -1,9 +1,10 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { setMuted, unlockAudio } from '../audio/sfx.ts'
 import { loadSettings, saveSettings, type Settings } from '../persist/settings.ts'
 import { AIM_MODES, defaultAimMode, settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
 import { debugBus, type EnemyKind } from '../state/debug.ts'
+import { restartBus, runStore } from '../state/run.ts'
 
 // React UI layer over the Phaser canvas. pointer-events-none so the game still
 // gets input; give interactive children pointer-events-auto.
@@ -11,6 +12,7 @@ export function Hud() {
   const [settings, setSettings] = useState<Settings>({ muted: false, aimMode: defaultAimMode() })
   const [open, setOpen] = useState(false)
   const hud = useSyncExternalStore(hudStore.subscribe, hudStore.get)
+  const run = useSyncExternalStore(runStore.subscribe, runStore.get)
 
   useEffect(() => {
     void loadSettings().then((s) => {
@@ -62,28 +64,90 @@ export function Hud() {
           )
         })}
       </div>
+      {/* Gold in hand and run score (#53). */}
+      <div className="relative mt-1.5 flex items-center gap-3 text-xs tabular-nums">
+        <span className="flex items-center gap-1 font-bold text-amber-300">
+          <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+            <path d="M6 0l6 6-6 6-6-6z" fill="currentColor" />
+          </svg>
+          {run.gold}
+        </span>
+        <span className="text-neutral-400">score {run.score}</span>
+      </div>
       <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
         A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Land on enemies to stomp
       </p>
 
-      {/* Testing (temporary, until waves): spawn each enemy by hand. */}
-      <div className="absolute top-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/5 px-2 py-1 ring-1 ring-white/10">
-        <span className="pr-1 text-[10px] font-semibold tracking-wider text-neutral-500 uppercase">Spawn</span>
-        {SPAWN_BUTTONS.map((b) => (
-          <button
-            key={b.kind}
-            type="button"
-            onClick={() => debugBus.spawn(b.kind)}
-            aria-label={`Spawn ${b.label}`}
-            title={`Spawn ${b.label}`}
-            className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 active:bg-white/20"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d={b.path} fill={b.colour} />
-            </svg>
-          </button>
-        ))}
-      </div>
+      {/* Wave readout (#13, #18). */}
+      {run.phase === 'fighting' && (
+        <div className="absolute top-3 left-1/2 flex -translate-x-1/2 items-baseline gap-2 rounded-full bg-black/40 px-3 py-1 ring-1 ring-white/10">
+          <span className="text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">Wave</span>
+          <span className="text-sm font-bold text-neutral-100 tabular-nums">{run.wave}</span>
+          <span className="text-xs text-neutral-400 tabular-nums">· {run.left} left</span>
+        </div>
+      )}
+
+      {/* Wave start banner. */}
+      {run.phase === 'fighting' && run.waveStarts > 0 && (
+        <div key={`w${run.waveStarts}`} className="wave-banner absolute inset-x-0 top-[30%] text-center">
+          <p className="text-xs font-semibold tracking-[0.3em] text-neutral-400 uppercase">Wave</p>
+          <p className="text-6xl font-black text-neutral-100 tabular-nums">{run.wave}</p>
+        </div>
+      )}
+
+      {/* Between waves: what you earned, counting up, and the countdown. */}
+      {run.phase === 'intermission' && (
+        <div className="absolute inset-x-0 top-[22%] flex justify-center">
+          <div className="rounded-2xl bg-black/55 px-6 py-4 text-center ring-1 ring-white/10 backdrop-blur-sm">
+            {run.wave > 1 ? (
+              <>
+                <p className="text-xs font-semibold tracking-[0.25em] text-neutral-400 uppercase">Wave {run.wave - 1} cleared</p>
+                <p className="mt-1 text-3xl font-black text-amber-300 tabular-nums">
+                  +<CountUp value={run.waveGold} /> <span className="text-base font-bold">gold</span>
+                </p>
+              </>
+            ) : (
+              <p className="text-xs font-semibold tracking-[0.25em] text-neutral-400 uppercase">Get ready</p>
+            )}
+            <p className="mt-2 text-sm text-neutral-300">
+              Wave {run.wave} in <span className="font-bold text-neutral-100 tabular-nums">{Math.ceil(run.countdown)}</span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Run over (#17): everything resets; the score is recorded as a high score (#53). */}
+      {run.phase === 'over' && (
+        <div className="run-over pointer-events-auto absolute inset-0 grid place-items-center bg-black/60 backdrop-blur-sm">
+          <div className="w-72 rounded-2xl bg-neutral-900/95 p-6 text-center ring-1 ring-white/10">
+            <p className="text-xs font-semibold tracking-[0.3em] text-neutral-400 uppercase">Run over</p>
+            <p className="mt-2 text-5xl font-black text-neutral-100 tabular-nums">{run.score}</p>
+            <p className="text-xs text-neutral-400">score</p>
+            {run.newBest && <p className="mt-2 text-sm font-bold text-amber-300">New best!</p>}
+            <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+              <div>
+                <p className="font-bold text-neutral-100 tabular-nums">{run.wave}</p>
+                <p className="text-[11px] text-neutral-500">wave</p>
+              </div>
+              <div>
+                <p className="font-bold text-neutral-100 tabular-nums">{run.kills}</p>
+                <p className="text-[11px] text-neutral-500">kills</p>
+              </div>
+              <div>
+                <p className="font-bold text-neutral-100 tabular-nums">{Math.max(run.best, run.score)}</p>
+                <p className="text-[11px] text-neutral-500">best</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => restartBus.restart()}
+              className="mt-5 w-full rounded-xl bg-neutral-100 py-2.5 font-bold text-neutral-900 hover:bg-white active:scale-[0.98]"
+            >
+              Play again
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="absolute top-3 right-3 flex gap-2">
         <button
@@ -124,7 +188,25 @@ export function Hud() {
               </label>
             ))}
           </div>
-          <button type="button" onClick={() => setOpen(false)} className="mt-2 w-full rounded-lg bg-white/5 py-1.5 text-neutral-300 hover:bg-white/10">
+          <p className="mt-3 mb-1 text-xs font-semibold tracking-wide text-neutral-400 uppercase">Testing</p>
+          <div className="flex items-center gap-1">
+            <span className="mr-1 text-xs text-neutral-400">Spawn</span>
+            {SPAWN_BUTTONS.map((b) => (
+              <button
+                key={b.kind}
+                type="button"
+                onClick={() => debugBus.spawn(b.kind)}
+                aria-label={`Spawn ${b.label}`}
+                title={`Spawn ${b.label}`}
+                className="grid h-8 w-8 place-items-center rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path d={b.path} fill={b.colour} />
+                </svg>
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => setOpen(false)} className="mt-3 w-full rounded-lg bg-white/5 py-1.5 text-neutral-300 hover:bg-white/10">
             Close
           </button>
         </div>
@@ -138,3 +220,22 @@ const SPAWN_BUTTONS: { kind: EnemyKind; label: string; colour: string; path: str
   { kind: 'ranged', label: 'ranged enemy', colour: '#5ee36a', path: 'M21 12L5 5.5v13z' },
   { kind: 'tank', label: 'tank', colour: '#e0453a', path: 'M12 3l8.6 6.2-3.3 10.1H6.7L3.4 9.2z' },
 ]
+
+/** Counts up from 0 to `value` over about a second (the between-waves gold tally). */
+function CountUp({ value }: { value: number }) {
+  const [shown, setShown] = useState(0)
+  const start = useRef<number | null>(null)
+  useEffect(() => {
+    start.current = null
+    let raf = 0
+    const tick = (t: number) => {
+      if (start.current === null) start.current = t
+      const k = Math.min(1, (t - start.current) / 900)
+      setShown(Math.round(value * (1 - Math.pow(1 - k, 3))))
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return <>{shown}</>
+}

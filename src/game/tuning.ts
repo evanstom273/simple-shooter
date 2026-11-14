@@ -239,3 +239,24 @@ export const STOMP = {
   /** Your feet must have been above this fraction of the enemy's height (0 = top, 1 = bottom) last frame. */
   fromAbove: 0.45,
 } as const
+
+/** Waves (#13, #18) and gold drops (#53). Placeholders, to tune in play. */
+export const WAVES = {
+  /** Enemies per wave: starts at `first`, +1 per wave, capped at `max` (Lyra: 10–15). */
+  first: 10,
+  max: 15,
+  /** How many can be in the arena at once: starts at `aliveFirst`, +1 every `aliveEvery` waves, capped. */
+  aliveFirst: 3,
+  aliveEvery: 3,
+  aliveMax: 7,
+  /** Seconds between spawns while below the on-screen cap. */
+  spawnGap: 1.2,
+  /** Seconds between waves (the count-up and countdown). */
+  intermission: 6,
+  /** Gold per kill at wave 1 (Lyra: 50 / 50 / ~150). */
+  gold: { melee: 50, ranged: 50, tank: 150 },
+  /** Gold scales linearly: ×1 at wave 1, ×`goldAtWave10` at wave 10, and on from there. */
+  goldAtWave10: 5,
+  /** Gold pieces fly to you within this distance (#54 magnet). */
+  magnetRange: 170,
+} as const

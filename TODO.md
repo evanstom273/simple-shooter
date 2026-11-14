@@ -11,7 +11,8 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 ## Next
 
 - Tune the ranged enemy and tank in play.
-- Wave system, then the shop (#53, #54).
+- The shop between waves (#53, #54), including resuming a run in the shop after closing the browser (#17).
+- Decide what makes waves harder past ~wave 13.
 - Shop open questions (§E 1c): items per shop, reroll, prices, healing cost, drop amounts, shop UI.
 - Tune the melee enemy in play after the difficulty pass (#48–#51): wind-up, roll speed, dizzy, cooldown if still too hard.
 - Weapons step: automatic, shotgun, switching (number keys, wheel, mobile cycle button).
@@ -22,6 +23,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Step 11: basic endless waves, gold drops + magnet, score, wave HUD + intermission count-up, run over + Play again, local high scores (#60). *(2026-11-14T14:52:38+00:00)*
 - [x] Step 10: stomp (#59). *(2026-11-14T14:38:46+00:00)*
 - [x] Testing: automatic spawning off; on-screen spawn buttons for each enemy (touch and desktop). *(2026-11-14T14:33:08+00:00)*
 - [x] Step 9: ranged enemy (#56), tank (#58), health 5 × 4 with 2-stage hits (#57), hazards, spawner for all three. *(2026-11-14T07:12:19+00:00)*
