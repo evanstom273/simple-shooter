@@ -19,10 +19,11 @@ export default function App() {
   useEffect(() => {
     const swap = () => {
       setFade(true)
+      // Fade to black, swap, fade back in; the player beams in a second later (#75).
       window.setTimeout(() => {
         setMount((m) => m + 1)
-        window.setTimeout(() => setFade(false), 60)
-      }, 220)
+        window.setTimeout(() => setFade(false), 150)
+      }, 450)
     }
     const offNav = navStore.subscribe(swap)
     // "Play again" in endless: a fresh endless run.
@@ -36,7 +37,7 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden bg-[#0d0e18]">
       {ready && <PhaserView key={mount} />}
       {ready && <Hud />}
-      <div className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-200 ${fade || !ready ? 'opacity-100' : 'opacity-0'}`} />
+      <div className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-[450ms] ${fade || !ready ? 'opacity-100' : 'opacity-0'}`} />
     </div>
   )
 }

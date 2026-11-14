@@ -3,7 +3,7 @@ import { touchInput, type Controls } from './controls.ts'
 import { sfx } from '../audio/sfx.ts'
 import { burst, ring } from './fx.ts'
 import { buzz } from './haptics.ts'
-import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
+import { PLAYER_COLOURS, PlayerView, type BeamBeat } from './PlayerView.ts'
 import { MeleeEnemy } from './enemies/MeleeEnemy.ts'
 import { RangedEnemy } from './enemies/RangedEnemy.ts'
 import { TankEnemy } from './enemies/TankEnemy.ts'
@@ -92,6 +92,10 @@ export class GameScene extends Phaser.Scene {
   private section = 1
   private level: Level = ARENA_LEVEL
   private hub: Hub | null = null
+  /** Arriving (beam-in) or leaving (beam-out / portal pull) (#75): no control, can't be hurt, waves wait. */
+  private cine: 'arrive' | 'leave' | null = 'arrive'
+  private afterLeave: (() => void) | null = null
+  private beamG!: Phaser.GameObjects.Graphics
   /** Player stats, raised by shop upgrades in story mode (#63); endless starts from nothing (#72). */
   private runSpeed: number = PLAYER.runSpeed
   private jumpSpeed: number = PLAYER.jumpSpeed
@@ -212,6 +216,11 @@ export class GameScene extends Phaser.Scene {
       this.hub = new Hub(this, {
         enterWorld: (w) => navStore.go({ mode: 'section', world: w, section: Math.min(4, progressStore.get().cleared[w] + 1) }),
         enterEndless: () => navStore.go({ mode: 'endless' }),
+        pulled: (x, y) => {
+          this.cine = 'leave'
+          this.body_.setVelocity(0, 0).setAllowGravity(false)
+          this.view.pullInto(x, y, 0.55)
+        },
         buy: (i) => {
           const ok = i === 3 ? shopReroll() : shopBuy(i)
           if (ok) this.applyStats(false)
@@ -301,6 +310,7 @@ export class GameScene extends Phaser.Scene {
     this.fitCamera()
     cam.centerOn(this.player.x, this.player.y)
     this.scene.launch('markers')
+    this.arrive()
     this.scene.launch('touch')
     this.scale.on(Phaser.Scale.Events.RESIZE, this.fitCamera, this)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.fitCamera, this))
@@ -357,7 +367,7 @@ export class GameScene extends Phaser.Scene {
       if (this.hitStop <= 0) this.physics.world.resume()
       return
     }
-    const c = this.readControls()
+    const c: Controls = this.cine ? { moveX: 0, jump: false, down: false, dash: null } : this.readControls()
     const dt = deltaMs / 1000
     this.hurtTime = Math.max(0, this.hurtTime - dt)
     this.dashGrace = Math.max(0, this.dashGrace - dt)
@@ -479,6 +489,86 @@ export class GameScene extends Phaser.Scene {
     this.updateLookAhead(dt)
     this.updateDarkness()
     this.updateMotes(dt)
+    this.drawBeam()
+  }
+
+  /** Start the beam-in after the fade (#75). */
+  private arrive() {
+    this.beamG = this.add.graphics().setDepth(8).setBlendMode(Phaser.BlendModes.ADD)
+    this.view.beamIn(1.0, 1.25, (b, dir) => this.onBeat(b, dir))
+  }
+
+  /** Leave by beam: come apart and lift out, then `then` (#75). */
+  private beamOut(then: () => void) {
+    this.cine = 'leave'
+    this.afterLeave = then
+    this.body_.setVelocity(0, 0)
+    this.view.beamOut(1.25, (b, dir) => this.onBeat(b, dir))
+  }
+
+  private onBeat(b: BeamBeat, dir: 1 | -1) {
+    const x = this.player.x
+    const feet = this.body_.bottom
+    if (b === 'start') {
+      if (dir === 1) sfx.beamIn()
+      else sfx.beamOut()
+    } else if (b === 'feet') {
+      sfx.step()
+      burst(this, x, feet - 3, { count: 4, colour: 0x8fd3ff, angle: -Math.PI / 2, spread: 1.4, speed: [40, 120], size: [3, 6], life: 300 })
+    } else if (b === 'land') {
+      if (dir === 1) {
+        sfx.land(1)
+        this.shake(120, 0.006)
+        burst(this, x, feet - 3, { count: 10, colour: COLOURS.dust, angle: -Math.PI / 2, spread: 2.6, speed: [80, 220], size: [5, 9], gravity: 200 })
+      } else {
+        burst(this, x, feet - 3, { count: 6, colour: 0x8fd3ff, angle: -Math.PI / 2, spread: 0.6, speed: [200, 420], size: [3, 7], life: 400 })
+      }
+    } else if (b === 'hands' || b === 'eyes') {
+      sfx.assemble()
+    } else if (b === 'done') {
+      if (dir === 1) {
+        this.cine = null
+        ring(this, x, feet, 140, 26, 0x8fd3ff, { grow: 2.6, life: 420, line: 4 })
+        sfx.dashReady()
+      } else {
+        const then = this.afterLeave
+        this.afterLeave = null
+        then?.()
+      }
+    }
+  }
+
+  /**
+   * The beam (#75): a thin line drops from the top of the view onto the spot,
+   * widens into a column while you assemble in it, then collapses. Leaving plays
+   * the same thing backwards.
+   */
+  private drawBeam() {
+    const g = this.beamG
+    if (!g) return
+    g.clear()
+    const k = this.view.beamK
+    if (k === null) return
+    const x = this.player.x
+    const feet = this.body_.bottom
+    const top = this.cameras.main.worldView.top - 60
+    const head = top + (feet - top) * Math.min(1, k / 0.2)
+    let w = 4
+    if (k > 0.2) w = 4 + 66 * Math.min(1, (k - 0.2) / 0.15)
+    if (k > 0.85) w = 70 * (1 - (k - 0.85) / 0.15)
+    w *= 1 + Math.sin(this.time.now / 25) * 0.05
+    if (w <= 0.5) return
+    g.fillStyle(0x8fd3ff, 0.18)
+    g.fillRect(x - w, top, w * 2, head - top)
+    g.fillStyle(0xcfeaff, 0.35)
+    g.fillRect(x - w / 2, top, w, head - top)
+    g.fillStyle(0xffffff, 0.8)
+    g.fillRect(x - Math.max(1.5, w / 8), top, Math.max(3, w / 4), head - top)
+    // Where it meets the floor: a bright pool.
+    if (k > 0.15) {
+      g.fillStyle(0xcfeaff, 0.35)
+      g.fillEllipse(x, feet, w * 2.6, 14)
+    }
   }
 
   private updateShooting(dt: number) {
@@ -509,9 +599,9 @@ export class GameScene extends Phaser.Scene {
       x: this.player.x,
       y: this.player.y,
       facing: this.facing,
-      dashing: this.dashing,
+      dashing: this.dashing || this.cine !== null,
       mode,
-      fireHeld,
+      fireHeld: fireHeld && !this.cine,
       aimPoint,
       pxToWorld: 1 / cam.zoom,
       crosshair: desktopManual && aimPoint ? aimPoint : null,
@@ -570,7 +660,7 @@ export class GameScene extends Phaser.Scene {
 
     this.updateWaves(dt)
     if (this.hub) {
-      const use = Phaser.Input.Keyboard.JustDown(this.keys.use) || Phaser.Input.Keyboard.JustDown(this.keys.useAlt) || touchInput.useQueued
+      const use = !this.cine && (Phaser.Input.Keyboard.JustDown(this.keys.use) || Phaser.Input.Keyboard.JustDown(this.keys.useAlt) || touchInput.useQueued)
       touchInput.useQueued = false
       this.hub.update(dt, { ...this.playerInfo, bottom: this.body_.bottom }, use)
       touchInput.useAvailable = this.hub.near >= 0
@@ -585,7 +675,7 @@ export class GameScene extends Phaser.Scene {
    * all dead, the wave's cleared. Between waves, a countdown to the next.
    */
   private updateWaves(dt: number) {
-    if (this.mode === 'hub') return
+    if (this.mode === 'hub' || this.cine === 'arrive') return
     const run = runStore.get()
     if (run.phase === 'fighting') {
       const alive = [...this.waveEnemies].filter((e) => !e.dead).length
@@ -660,8 +750,8 @@ export class GameScene extends Phaser.Scene {
   /** Section cleared (no bosses yet, so after wave 5): keep gold and damage, mark progress, back to the hub (#62, #70). */
   private clearSection() {
     runStore.set({ phase: 'cleared', left: 0 })
-    // Let the last gold arrive, then bank it and go home.
-    this.time.delayedCall(2600, () => {
+    // Let the last gold arrive, then beam out (#75), bank it and go home.
+    this.time.delayedCall(1500, () => this.beamOut(() => {
       const run = runStore.get()
       const prog = progressStore.get()
       progressStore.set({
@@ -670,7 +760,7 @@ export class GameScene extends Phaser.Scene {
         cleared: { ...prog.cleared, [this.world]: Math.max(prog.cleared[this.world], this.section) },
       })
       navStore.go({ mode: 'hub' })
-    })
+    }))
   }
 
   /** Re-read upgrades and weapons after a purchase (#63) and apply them now. */
@@ -868,6 +958,7 @@ export class GameScene extends Phaser.Scene {
   /** Knockback, lose a hit point, short invulnerability (#23, #27). */
   /** Getting hurt: only attacks hurt (#52): lunges, shots, slams, shockwaves (stages per #57, #58). */
   private takeHit(fromX: number, damage: number) {
+    if (this.cine) return
     this.health -= damage
     this.hurtTime = PLAYER.hurtInvulnerability
     const away = Math.sign(this.player.x - fromX) || -this.facing

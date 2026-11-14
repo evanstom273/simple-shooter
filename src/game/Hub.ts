@@ -30,6 +30,8 @@ function shapePoints(shape: Shape, r: number): Phaser.Math.Vector2[] {
 export interface HubEvents {
   enterWorld(world: 1 | 2 | 3 | 4): void
   enterEndless(): void
+  /** Touched a portal: start the pull into it (#75); entering follows. */
+  pulled(x: number, y: number): void
   /** Pedestal i (0–2 offers, 3 = reroll) asked to buy; returns whether it happened. */
   buy(i: number): boolean
 }
@@ -135,8 +137,7 @@ export class Hub {
       }
       if (!this.entering && Math.abs(player.x - p.x) < 60 && player.bottom > HUB.floor - 260 && player.bottom <= HUB.floor + 2) {
         this.entering = true
-        this.flashInto(p.colour, p.x, HUB.floor - 150)
-        this.scene.time.delayedCall(350, () => this.events.enterWorld(p.world))
+        this.pullInto(p.colour, p.x, HUB.floor - 150, () => this.events.enterWorld(p.world))
       }
     })
 
@@ -145,8 +146,7 @@ export class Hub {
     this.endlessText.setText(this.endlessBest > 0 ? `Best ${this.endlessBest.toLocaleString('en-GB')} · wave ${this.endlessWave}\nstart from nothing` : 'start from nothing')
     if (!this.entering && Math.abs(player.x - HUB.endless.x) < 55 && player.bottom > HUB.lower - 230) {
       this.entering = true
-      this.flashInto(0xffffff, HUB.endless.x, HUB.lower - 150)
-      this.scene.time.delayedCall(350, () => this.events.enterEndless())
+      this.pullInto(0xffffff, HUB.endless.x, HUB.lower - 150, () => this.events.enterEndless())
     }
 
     // Pedestals: three offers + reroll.
@@ -171,10 +171,17 @@ export class Hub {
     this.dummy.update(dt)
   }
 
-  private flashInto(colour: number, x: number, y: number) {
-    sfx.waveStart()
-    ring(this.scene, x, y, 200, 200, colour, { grow: 3, life: 450, line: 6 })
-    this.scene.cameras.main.flash(380, (colour >> 16) & 255, (colour >> 8) & 255, colour & 255)
+  /** The portal pulls you in (#75), then flashes its colour as you go through. */
+  private pullInto(colour: number, x: number, y: number, then: () => void) {
+    sfx.portalPull()
+    ring(this.scene, x, y, 260, 260, colour, { grow: 0.2, life: 550, line: 5 })
+    this.events.pulled(x, y)
+    this.scene.time.delayedCall(560, () => {
+      sfx.waveStart()
+      ring(this.scene, x, y, 120, 120, colour, { grow: 3.5, life: 450, line: 6 })
+      this.scene.cameras.main.flash(300, (colour >> 16) & 255, (colour >> 8) & 255, colour & 255)
+      then()
+    })
   }
 
   private drawPortal(g: Phaser.GameObjects.Graphics, x: number, cy: number, shape: Shape, colour: number, r: number, t: number) {

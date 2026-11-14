@@ -172,6 +172,25 @@ export const sfx = {
     tone('square', vary(140), vary(520), 0.12, 0.16)
     noise('lowpass', 1200, 200, 0.08, 0.2)
   },
+  /** Beam-in (#75): a shimmer falling with the beam. */
+  beamIn: () => {
+    tone('sine', 1800, 260, 0.9, 0.06)
+    tone('triangle', 2400, 600, 0.7, 0.025, 0.08)
+    noise('highpass', 6000, 2500, 0.8, 0.04, 0.7)
+  },
+  /** Beam-out (#75): rising as you're lifted out. */
+  beamOut: () => {
+    tone('sine', 260, 1800, 1.1, 0.06)
+    tone('triangle', 600, 2400, 0.9, 0.025, 0.15)
+    noise('highpass', 2500, 7000, 1.0, 0.04, 0.7)
+  },
+  /** A piece of you popping into place. */
+  assemble: () => tone('square', vary(700), vary(1100), 0.05, 0.045),
+  /** Into a portal: a sucking swoop down. */
+  portalPull: () => {
+    tone('sine', 900, 90, 0.55, 0.08)
+    noise('bandpass', 3000, 300, 0.55, 0.12, 1.5)
+  },
   coin: () => tone('square', vary(1320), vary(1760), 0.05, 0.035),
   waveStart: () => {
     tone('triangle', vary(330), vary(330), 0.18, 0.12)

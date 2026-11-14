@@ -21,6 +21,22 @@ export const PLAYER_COLOURS = {
 
 type Mood = 'normal' | 'dash' | 'hurt' | 'happy'
 
+/**
+ * Beam-in / beam-out (#75): the player assembles piece by piece inside a beam
+ * of light. Beats fire as each piece arrives (or leaves, in reverse).
+ */
+export type BeamBeat = 'start' | 'feet' | 'land' | 'hands' | 'eyes' | 'done'
+const BEATS: [BeamBeat, number][] = [
+  ['feet', 0.25],
+  ['land', 0.55],
+  ['hands', 0.62],
+  ['eyes', 0.82],
+]
+/** How far above the feet the body drops in from. */
+const DROP = 380
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+const backOut = (t: number) => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2)
+
 export class PlayerView {
   /** The squashing body (scaled from the feet; rotated along the dash). */
   private outer: Phaser.GameObjects.Container
@@ -41,6 +57,10 @@ export class PlayerView {
   private gunHand: { x: number; y: number } | null = null
   /** Invulnerable after a hit: blink. */
   flicker = false
+  private beam: { t: number; dur: number; dir: 1 | -1; k: number; onBeat: (b: BeamBeat, dir: 1 | -1) => void } | null = null
+  private pull: { t: number; dur: number; x: number; y: number; from: { x: number; y: number } | null; hands: { x: number; y: number }[] } | null = null
+  /** Beamed or pulled out: nothing drawn. */
+  private gone = false
 
   constructor(scene: Phaser.Scene) {
     this.body = scene.add.rectangle(0, -HALF, PLAYER.size, PLAYER.size, PLAYER_COLOURS.normal).setStrokeStyle(3, INK)
@@ -85,6 +105,86 @@ export class PlayerView {
     this.moodTime = 0.5
   }
 
+  /** Hidden, then after `delay` seconds assemble in a beam over `dur` seconds (#75). */
+  beamIn(delay: number, dur: number, onBeat: (b: BeamBeat, dir: 1 | -1) => void) {
+    this.gone = false
+    this.beam = { t: -delay, dur, dir: 1, k: 0, onBeat }
+  }
+
+  /** The reverse: come apart and lift out up the beam (#75). */
+  beamOut(dur: number, onBeat: (b: BeamBeat, dir: 1 | -1) => void) {
+    this.beam = { t: 0, dur, dir: -1, k: 1, onBeat }
+  }
+
+  /** Pulled into a portal at (x, y): stretch towards it and shrink away (#75). */
+  pullInto(x: number, y: number, dur: number) {
+    this.pull = { t: 0, dur, x, y, from: null, hands: this.hands.map((h) => ({ x: h.x, y: h.y })) }
+  }
+
+  /** How assembled the player is during a beam (0 = nothing, 1 = whole), or null when no beam is running. */
+  get beamK(): number | null {
+    if (!this.beam || this.beam.t < 0) return null
+    return this.beam.k
+  }
+
+  private advanceBeam(dt: number) {
+    const b = this.beam
+    if (!b) return
+    const before = b.t
+    b.t += dt
+    if (b.t < 0) return
+    if (before < 0 || (before === 0 && b.dir === -1)) b.onBeat('start', b.dir)
+    const p = clamp01(b.t / b.dur)
+    const prev = b.k
+    b.k = b.dir === 1 ? p : 1 - p
+    // Fire each beat as k crosses it (upwards when arriving, downwards when leaving).
+    const order = b.dir === 1 ? BEATS : [...BEATS].reverse()
+    for (const [name, at] of order) {
+      if (b.dir === 1 ? prev < at && b.k >= at : prev >= at && b.k < at) {
+        if (name === 'land' && b.dir === 1) this.kick(1.45, 0.6)
+        b.onBeat(name, b.dir)
+      }
+    }
+    if (p >= 1) {
+      this.beam = null
+      if (b.dir === -1) this.gone = true
+      b.onBeat('done', b.dir)
+    }
+  }
+
+  private hideAll() {
+    this.outer.setVisible(false)
+    this.feet.clear()
+    for (const h of this.hands) h.setVisible(false)
+  }
+
+  /** Being pulled into a portal: stretched along the pull, shrinking to nothing at its centre. */
+  private drawPull(dt: number, s: { x: number; centreY: number }) {
+    const pl = this.pull!
+    pl.from ??= { x: s.x, y: s.centreY }
+    pl.t += dt
+    const k = clamp01(pl.t / pl.dur)
+    const e = k * k
+    const x = pl.from.x + (pl.x - pl.from.x) * e
+    const y = pl.from.y + (pl.y - pl.from.y) * e
+    const angle = Math.atan2(pl.y - pl.from.y, pl.x - pl.from.x)
+    this.outer.setVisible(k < 1).setPosition(x, y).setRotation(angle).setScale((1 + 1.6 * e) * (1 - e), (1 - e) * (1 - 0.4 * e)).setAlpha(1)
+    this.body.y = 0
+    this.face.y = 0
+    this.body.setFillStyle(PLAYER_COLOURS.normal).setStrokeStyle(3, INK)
+    this.drawFace('hurt', true)
+    this.feet.clear()
+    this.hands.forEach((h, i) => {
+      const from = pl.hands[i]
+      h.setVisible(k < 1).setAlpha(1).setScale(1 - e)
+      h.setPosition(from.x + (pl.x - from.x) * Math.min(1, e * 1.3), from.y + (pl.y - from.y) * Math.min(1, e * 1.3))
+    })
+    if (k >= 1) {
+      this.pull = null
+      this.gone = true
+    }
+  }
+
   /** Where the gun is held (the front hand goes there), or null when unarmed. */
   holdGun(at: { x: number; y: number } | null) {
     this.gunHand = at
@@ -104,6 +204,15 @@ export class PlayerView {
       dashAngle: number
     },
   ) {
+    this.advanceBeam(dt)
+    if (this.pull) {
+      this.drawPull(dt, s)
+      return
+    }
+    if (this.gone || (this.beam && this.beam.t < 0 && this.beam.dir === 1)) {
+      this.hideAll()
+      return
+    }
     this.vx += ((1 - this.sx) * SPRING - this.vx * DAMPING) * dt
     this.vy += ((1 - this.sy) * SPRING - this.vy * DAMPING) * dt
     this.sx += this.vx * dt
@@ -135,14 +244,36 @@ export class PlayerView {
     }
     this.body.setStrokeStyle(this.flash > 0 ? 4 : 3, this.flash > 0 ? PLAYER_COLOURS.dash : INK)
     o.setAlpha(alpha)
-    this.drawFace(mood, s.dashing)
-    this.drawFeet(s, running, alpha)
+    // Beam: pieces arrive one at a time (#75).
+    const k = this.beam ? this.beam.k : 1
+    const feetK = clamp01((k - 0.25) / 0.1)
+    const bodyK = clamp01((k - 0.4) / 0.15)
+    const handsK = clamp01((k - 0.62) / 0.12)
+    o.setVisible(bodyK > 0)
+    if (bodyK < 1) {
+      // Falling (or lifting) through the beam: stretched tall.
+      o.y -= DROP * (1 - bodyK * bodyK)
+      o.setScale(0.78, 1.3).setRotation(0)
+    }
+    this.drawFace(mood, s.dashing, k < 0.82)
+    this.drawFeet(s, running, alpha * feetK, -(1 - feetK) * 26)
     this.drawHands(s, mood, alpha)
+    const hs = handsK > 0 ? (this.beam ? backOut(handsK) : 1) : 0
+    for (const h of this.hands) h.setVisible(hs > 0).setScale(hs)
   }
 
-  private drawFace(mood: Mood, dashing: boolean) {
+  private drawFace(mood: Mood, dashing: boolean, closed = false) {
     const g = this.face
     g.clear()
+    if (closed) {
+      // Not awake yet: eyes shut, mouth flat.
+      const ox = this.facing * 3
+      g.lineStyle(3, INK)
+      g.lineBetween(-13 + ox, -5, -5 + ox, -5)
+      g.lineBetween(5 + ox, -5, 13 + ox, -5)
+      g.lineBetween(-4 + ox, 8, 4 + ox, 8)
+      return
+    }
     // When dashing the body is rotated, so the face points "forward" along it.
     const f = dashing ? 1 : this.facing
     const ox = f * 3
@@ -192,17 +323,17 @@ export class PlayerView {
     }
   }
 
-  private drawFeet(s: { x: number; bottom: number; dashing: boolean }, running: boolean, alpha: number) {
+  private drawFeet(s: { x: number; bottom: number; dashing: boolean }, running: boolean, alpha: number, dropY = 0) {
     const g = this.feet
     g.clear()
-    if (s.dashing) return
+    if (s.dashing || alpha <= 0) return
     g.setAlpha(alpha)
     g.fillStyle(0x2a2a3a)
     g.lineStyle(2, INK)
     for (const [fx, phase] of [[-12, 0], [10, Math.PI]] as const) {
       const lift = running ? Math.max(0, Math.sin(this.step + phase)) * 6 : 0
       const x = s.x + fx
-      const y = s.bottom + 2 - lift
+      const y = s.bottom + 2 - lift + dropY
       const f = this.facing
       // An L-shaped boot pointing the way you face.
       const pts = [
