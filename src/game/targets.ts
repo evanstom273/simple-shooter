@@ -4,7 +4,7 @@ export interface Target {
   readonly y: number
   readonly radius: number
   readonly alive: boolean
-  /** True while it's actively attacking (a lunge): touching it then is a real hit, not a scrape (#48). */
+  /** True while it's actively attacking (a lunge): only then does touching it hurt (#52). */
   readonly attacking: boolean
   /** Colour for its off-screen marker (matches the enemy). */
   readonly colour: number

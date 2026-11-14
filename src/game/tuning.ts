@@ -41,12 +41,10 @@ export const PLAYER = {
   /** Health (#48): pips × stages per pip. 5 × 5 = 25. */
   pips: 5,
   stagesPerPip: 5,
-  /** Damage in stages: brushing an enemy vs being caught by an attack (#48). */
-  contactDamage: 1,
+  /** Damage in stages from being caught by an attack (#48). Touching enemies does nothing (#52). */
   attackDamage: 5,
-  /** Seconds of invulnerability after a real hit (#27) and after a contact scrape (#48). */
+  /** Seconds of invulnerability after a hit (#27). */
   hurtInvulnerability: 1,
-  contactInvulnerability: 0.4,
   /** Knockback when hit: sideways away from the source, and up, px/s. */
   hurtKnockback: { x: 520, y: 480 },
   /** Freeze-frames, seconds: on taking a hit, and on landing a dash hit. */

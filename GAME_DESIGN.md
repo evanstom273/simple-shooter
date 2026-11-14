@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T06:44:50+00:00):**
+**Where the project stands (as of 2026-11-14T06:47:26+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Contact damage removed entirely** (#52): only attacks hurt (2026-11-14T06:47:26+00:00).
 - **After playtesting the melee enemy ("very fucking hard"):** health is now 5 pips × 5 stages; contact costs a stage, attacks a pip; kills heal a stage; enemies take turns attacking; enemies 1.1× the player; enemy health bars (2026-11-14T06:44:50+00:00, #48–#51).
 - **Melee enemy built** (#40); practice dummies removed; a temporary spawner keeps two in the arena (2026-11-14T06:35:05+00:00).
 - **Heal on kills built** (#47) (2026-11-14T06:23:49+00:00).
@@ -151,7 +152,8 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 
 ### Health, revised after playtesting *(2026-11-14T06:44:50+00:00 — History #48)*
 - **25 health: 5 pips × 5 stages.** Each pip shows how many of its stages are left.
-- **Brushing an enemy costs 1 stage**, then 0.4 s invulnerability, with a light version of the hurt feedback (small nudge, small shake, short buzz; no red pulse, no freeze). Keeps #23 (touching hurts) without the unfairness.
+- ~~**Brushing an enemy costs 1 stage**, then 0.4 s invulnerability, with a light version of the hurt feedback.~~ *(Removed by #52.)*
+- **Touching an enemy does nothing. Only attacks hurt.** Contact damage is gone entirely, for all enemies going forward. Supersedes #23. *(2026-11-14T06:47:26+00:00 — History #52)*
 - **Being caught by an attack (a roll or leap) costs a whole pip**, then the full 1 s invulnerability, knockback and hurt feedback.
 - **Each kill restores 1 stage** (5 kills = a pip); wasted at full health. Replaces the random 3–5 and the reset-on-hit of #47.
 
@@ -162,7 +164,7 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - ~~**Healing by kills:** every few kills gives one pip back.~~ *(Replaced by #48: one stage per kill.)* The number needed is **random between 3 and 5**, re-rolled for each pip. Kills while at full health are **wasted**; **getting hit resets** the partial progress; **every enemy counts as one kill**. *(2026-11-14T06:21:18+00:00 — History #47)*
 
 ### Taking damage *(2026-11-14T04:27:30+00:00 — History #23)*
-- **Touching an enemy damages you**, unless you're dashing (#24).
+- ~~**Touching an enemy damages you**, unless you're dashing (#24).~~ *(Superseded by #52: only attacks hurt.)*
 - **Getting hit knocks you back a bit and takes some of your health.**
 - **A short invulnerability after a hit**, so contact damage can't drain you in one go. Length tuned in play. *(2026-11-14T04:28:58+00:00 — History #27)*
 
@@ -199,6 +201,10 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ---
 
 ## C. Current Development Scope
+
+### Step 8d: No contact damage — **BUILT** *(2026-11-14T06:47:26+00:00)*
+Touching enemies never hurts; only a roll or leap does (#52).
+
 
 ### Step 8c: Difficulty pass after playtesting — **BUILT** *(2026-11-14T06:44:50+00:00)*
 Stage-based health (#48), contact scrape vs attack hit, one stage healed per kill, turn-taking (#49), bigger enemies (#50), enemy health bars (#51). Enemy health (3) and count (2) unchanged at Lyra's request.
@@ -342,7 +348,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Melee enemy (#40) | Tested | `enemies/MeleeEnemy.ts`. Radius 18 (¾ of the square), 3 HP. Invisible physics circle + a visible circle that squashes; eye tracks the player (spins with the body when rolling, wobbles when dizzy, with orbiting stars). States: spawning (1 s marker) → chase (hops 240×380 px/s, 0.06 s pause) → wind-up 0.5 s (heats orange→white, shivers, rising whine) → roll (880 px/s, ends after 2 wall bounces or 1.6 s) or leap (0.55 s ballistic arc to where you were) → dizzy 1 s → 0.8 s before it can lunge again. Lunges when within 300 px: roll if on your platform (or within 40 px vertically), else leap. Hit: white flash, squash, knockback; a hit in the wind-up, roll or leap makes it dizzy. Death: six curved orange arc shards, sparks, ring, shatter sound, counts as a kill (#47). Checked: spawn → drop to the floor → hop over → wind-up → roll hits you → wall bounce → dizzy; climbs to the top platform; leaps up from below. *(2026-11-14T06:35:05+00:00)* |
 | Enemy route-finding | Tested | `enemies/nav.ts`: graph of moves between platforms (jump straight up through a one-way platform above, drop through one below, hop across a gap up or down), shortest route by breadth-first search. Every platform reachable from the floor and back. Target = the platform you're on, or the one below you if you're in the air. *(2026-11-14T06:35:05+00:00)* |
 | Temporary spawner | Temporary | Keeps 2 enemies in the arena, a new one 2 s after a kill, on a random platform ≥600 px from you; E (desktop) spawns an extra. Until waves exist. *(2026-11-14T06:35:05+00:00)* |
-| Stage health (#48) | Tested | Health counted in stages (25). Contact with a non-attacking enemy: −1 stage, 0.4 s invulnerability (glued to one: −1 stage every ~0.42 s). Roll/leap hit: −5 stages (checked 25→20→15). Kill: +1 stage (checked 20→21); the pip that refills pops. HUD pips fill from the bottom by stages. Temporary refill at 0 kept. *(2026-11-14T06:44:50+00:00)* |
+| Stage health (#48) | Tested | Health counted in stages (25). *Contact damage removed by #52 (checked: glued to a non-attacking enemy for 2 s, no damage).* Roll/leap hit: −5 stages (checked 25→20→15). Kill: +1 stage (checked 20→21); the pip that refills pops. HUD pips fill from the bottom by stages. Temporary refill at 0 kept. *(2026-11-14T06:44:50+00:00)* |
 | Turn-taking (#49) | Tested | Scene-level token: an enemy must get the turn to wind up; released when its dizzy spell ends (or it dies), then 0.5 s gap. Others within 480 px hop away to ~400 px or shuffle. Checked over 9 s with two enemies: never more than one attacking at once; they alternated. *(2026-11-14T06:44:50+00:00)* |
 | Enemy size (#50) | Done | Radius 26 (1.1 × the 48 px square). *(2026-11-14T06:44:50+00:00)* |
 | Enemy health bar (#51) | Tested | Three 12×5 px segments above the enemy, orange for remaining HP; drawn once it's taken a hit. *(2026-11-14T06:44:50+00:00)* |
@@ -437,6 +443,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 49 | 2026-11-14T06:44:50+00:00 | Enemies | Enemies take turns: only one winds up or lunges at a time; the rest keep ~400 px away until its dizzy spell ends, then a 0.5 s gap. |
 | 50 | 2026-11-14T06:44:50+00:00 | Enemies | Melee enemy is 1.1× the player's size (was ¾). |
 | 51 | 2026-11-14T06:44:50+00:00 | UI | Enemy health bars: small segments above each enemy, shown once it's been hit. |
+| 52 | 2026-11-14T06:47:26+00:00 | Combat | After playtesting: contact damage removed entirely; touching enemies never hurts, only their attacks do (melee: a roll or leap, one pip). Applies to all enemies going forward. Supersedes #23 and the contact part of #48. |
 
 ---
 

@@ -95,7 +95,7 @@ export class MeleeEnemy implements Target {
     return this.o.y
   }
 
-  /** Mid-lunge: touching it now is a real hit (#48). */
+  /** Mid-lunge: the only time touching it hurts (#52). */
   get attacking() {
     return this.state === 'roll' || this.state === 'leap'
   }

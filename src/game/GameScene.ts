@@ -450,8 +450,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Player vs targets. Dashing through one hits it (once per dash, #24);
-   * otherwise touching one hurts you (#23) unless you're invulnerable.
+   * Player vs targets. Dashing through one hits it (once per dash, #24).
+   * Touching one does nothing (#52); only an enemy that's attacking hurts you.
    */
   private checkContacts() {
     const b = this.body_
@@ -469,8 +469,8 @@ export class GameScene extends Phaser.Scene {
         this.shake(80, 0.004)
         burst(this, t.x, t.y, { count: 8, colour: 0xffffff, angle: this.dashDir.angle(), spread: 0.8, speed: [150, 380], size: [4, 8], life: 220 })
         this.freeze(PLAYER.dashHitStop)
-      } else if (!this.invulnerable) {
-        this.takeHit(t.x, t.attacking)
+      } else if (t.attacking && !this.invulnerable) {
+        this.takeHit(t.x)
         return
       }
     }
@@ -510,34 +510,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Knockback, lose a hit point, short invulnerability (#23, #27). */
-  /**
-   * Getting hurt (#48). An attack (a lunge) costs a whole pip with full feedback
-   * and knockback; brushing an enemy costs one stage with a lighter version.
-   */
-  private takeHit(fromX: number, attack: boolean) {
+  /** Getting hurt: only attacks (a roll or leap) hurt (#52). Costs a pip (#48). */
+  private takeHit(fromX: number) {
     const max = PLAYER.pips * PLAYER.stagesPerPip
-    this.health -= attack ? PLAYER.attackDamage : PLAYER.contactDamage
-    this.hurtTime = attack ? PLAYER.hurtInvulnerability : PLAYER.contactInvulnerability
+    this.health -= PLAYER.attackDamage
+    this.hurtTime = PLAYER.hurtInvulnerability
     const away = Math.sign(this.player.x - fromX) || -this.facing
     const hud = hudStore.get()
-    if (attack) {
-      this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
-      this.view.kick(1.35, 0.7)
-      this.view.pulse(0.12)
-      burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
-      this.shake(170, 0.012)
-      sfx.hurt()
-      buzz(80)
-      this.freeze(PLAYER.hurtHitStop)
-    } else {
-      // A scrape: small nudge, small effects, no freeze, no red pulse.
-      this.body_.setVelocityX(this.body_.velocity.x + away * 220)
-      this.view.kick(1.12, 0.9)
-      burst(this, this.player.x, this.player.y, { count: 5, colour: 0xff8a8a, angle: 0, spread: Math.PI, speed: [100, 220], size: [3, 6], life: 220 })
-      this.shake(70, 0.004)
-      sfx.enemyHit()
-      buzz(25)
-    }
+    this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
+    this.view.kick(1.35, 0.7)
+    this.view.pulse(0.12)
+    burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
+    this.shake(170, 0.012)
+    sfx.hurt()
+    buzz(80)
+    this.freeze(PLAYER.hurtHitStop)
     if (this.health <= 0) {
       // Temporary until runs exist: refill and carry on.
       this.health = max
@@ -546,9 +533,10 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(120, () => sfx.revive())
       hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
     } else {
-      hudStore.set({ health: this.health, hurtCount: attack ? hud.hurtCount + 1 : hud.hurtCount })
+      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1 })
     }
   }
+
 
 
   /** For the marker overlay. */
