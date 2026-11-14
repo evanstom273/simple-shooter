@@ -12,7 +12,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). No design decisions beyond the concept. No game code.
 
-**Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Deployed on GitHub Pages (History #2).
+**Stack:** React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js; the same stack as Lyra's previous project (History #4). Phaser renders the game; React handles UI panels (History #5). Deployed on GitHub Pages (History #2, #6).
 
 **Guiding principles** *(carried over from Lyra's previous project's design document; flag if any don't apply here)*:
 - Discuss → Decide → Document → Implement → Test → Expand.
@@ -28,7 +28,10 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 ### Technical architecture / platform
 - **Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js**, the same as Lyra's previous project. *(2026-11-14T04:12:26+00:00 — History #4)*
+- **Phaser renders the game; React handles UI panels**, the same split as the previous project. *(2026-11-14T04:13:47+00:00 — History #5)*
 - **Deployed on GitHub Pages**, built and published by GitHub Actions on every push to `main`. *(2026-11-14T04:09:54+00:00 — History #2)*
+- **Stay on GitHub Pages** unless the game gets big enough to warrant Cloudflare. *(2026-11-14T04:13:47+00:00 — History #6)*
+- **Vite builds to `dist/`, and the Pages workflow deploys `dist/`.** *(2026-11-14T04:13:47+00:00 — History #6)*
 
 ### Documentation
 - **Living `GAME_DESIGN.md`** in the format of Lyra's previous project's design document, plus `TODO.md`, kept updated as decisions are made and work is done. *(2026-11-14T04:09:54+00:00 — History #3)*
@@ -48,7 +51,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 *Proposals only — not confirmed features.*
 
-- None yet.
+- **Moving to Cloudflare** if the game outgrows GitHub Pages (#6).
 
 ---
 
@@ -56,7 +59,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 
 1. **Title.**
 2. **Everything about the game itself** beyond "simple shooter".
-3. ~~**Stack.**~~ Resolved (#4). Open: how the work is split between Phaser and React (in the previous project Phaser rendered the game and React handled UI panels; not decided for this one).
+3. ~~**Stack.**~~ Resolved (#4); Phaser/React split resolved (#5).
 4. **Target devices** (desktop, phone, both).
 
 ---
@@ -72,7 +75,7 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 | Placeholder page | Done | `index.html` says there's nothing here yet, so the Pages site isn't a 404. To be replaced by the game. |
 
 ### Known issues and limitations
-- The workflow publishes the repository root as-is. With Vite (#4) it will need a build step uploading `dist/` instead, and Vite's `base` set to `/simple-shooter/` for the Pages URL. To do when the project is scaffolded.
+- The workflow still publishes the repository root as-is. Switching it to build with Vite and deploy `dist/` (#6), with Vite's `base` set to `/simple-shooter/`, goes in with the scaffold: until there's a Vite project to build, the build step would fail and take the site down.
 
 ### Implementation interpretations (technical, not design decisions — flag if wrong)
 - The guiding principles in §A and the workflow standing order in §H were carried over from Lyra's previous design document rather than restated for this project.
@@ -89,6 +92,8 @@ A **simple shooter** (History #1). Nothing else about the game has been decided 
 | 2 | 2026-11-14T04:09:54+00:00 | Deployment | GitHub Pages, deployed by GitHub Actions on push to `main`. |
 | 3 | 2026-11-14T04:09:54+00:00 | Documentation | Living `GAME_DESIGN.md` (format of Lyra's previous project) and `TODO.md`. |
 | 4 | 2026-11-14T04:12:26+00:00 | Technical | Stack: React, Vite, TypeScript, Tailwind CSS, Phaser, IndexedDB via Dexie.js (same as the previous project). |
+| 5 | 2026-11-14T04:13:47+00:00 | Technical | Phaser renders the game; React handles UI panels (same split as the previous project). |
+| 6 | 2026-11-14T04:13:47+00:00 | Deployment | Stay on GitHub Pages unless the game gets big enough to warrant Cloudflare. Vite builds to `dist/`, which the Pages workflow deploys. |
 
 ---
 
