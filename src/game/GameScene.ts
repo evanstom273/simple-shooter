@@ -42,19 +42,26 @@ export class GameScene extends Phaser.Scene {
       jump: kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
     }
 
+    const cam = this.cameras.main
+    cam.setBounds(0, 0, ARENA.width, ARENA.height)
+    cam.startFollow(this.player, false, 0.12, 0.12)
     this.fitCamera()
+    cam.centerOn(this.player.x, this.player.y)
     this.scene.launch('touch')
     this.scale.on(Phaser.Scale.Events.RESIZE, this.fitCamera, this)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.fitCamera, this))
   }
 
-  /** Scale the whole arena to fit the screen, centred, whatever its shape. */
+  /**
+   * Fill the whole screen, whatever its shape: zoom until the arena covers it,
+   * then follow the player within the arena. On screens close to 16:9 you see
+   * (nearly) all of it; on narrow or very wide screens you see a zoomed-in slice.
+   */
   private fitCamera() {
     const cam = this.cameras.main
     const { width, height } = this.scale
     cam.setSize(width, height)
-    cam.setZoom(Math.min(width / ARENA.width, height / ARENA.height))
-    cam.centerOn(ARENA.width / 2, ARENA.height / 2)
+    cam.setZoom(Math.max(width / ARENA.width, height / ARENA.height))
   }
 
   private readControls(): Controls {

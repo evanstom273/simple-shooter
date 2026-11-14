@@ -16,6 +16,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Fill the whole screen on every shape, with a camera that follows the player (History #29). *(2026-11-14T04:45:51+00:00)*
 - [x] Step 1, movement: square, placeholder arena, A/D + Space, touch joystick + jump button, screen fitting for desktop and the Fold (cover landscape/portrait, inner). *(2026-11-14T04:42:54+00:00)*
 - [x] Hit invulnerability and three-weapon scope documented (History #27–#28). *(2026-11-14T04:28:58+00:00)*
 - [x] Damage, dash, mobile switching and weapon-improvement decisions documented (History #23–#26). *(2026-11-14T04:27:30+00:00)*
