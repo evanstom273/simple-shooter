@@ -19,4 +19,6 @@ export const touchInput = {
   dashQueued: false,
   /** 0 … 1, how far through the dash cooldown (1 = ready). Written by GameScene, drawn by the touch controls. */
   dashReady: 1,
+  /** Whether the on-screen controls are showing (i.e. playing on touch). */
+  controlsShown: false,
 }

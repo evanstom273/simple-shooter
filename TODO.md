@@ -11,11 +11,12 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 ## Next
 
 - Title (Lyra, deferred).
-- Lyra to try movement, dash and double jump on the Fold and on desktop.
+- Lyra to try movement, dash, double jump and the new effects on the Fold and on desktop.
 - Plan the next step (#16).
 
 ## Done
 
+- [x] Step 3: squash and stretch, dust and dash effects, desktop dash cooldown bar, dash-ready flash. *(2026-11-14T04:55:00+00:00)*
 - [x] Step 2: dash (right-click / touch button, cooldown, invulnerable, trail) and double jump (History #30). *(2026-11-14T04:49:36+00:00)*
 - [x] Fill the whole screen on every shape, with a camera that follows the player (History #29). *(2026-11-14T04:45:51+00:00)*
 - [x] Step 1, movement: square, placeholder arena, A/D + Space, touch joystick + jump button, screen fitting for desktop and the Fold (cover landscape/portrait, inner). *(2026-11-14T04:42:54+00:00)*

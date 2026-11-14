@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T04:49:36+00:00):**
+**Where the project stands (as of 2026-11-14T04:55:00+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Squash, stretch and movement effects built; dash cooldown shown on desktop** (2026-11-14T04:55:00+00:00).
 - **Dash and double jump built** (2026-11-14T04:49:36+00:00).
 - **Movement built** (2026-11-14T04:42:54+00:00): the square runs and jumps around a placeholder arena, on desktop (A/D, Space) and touch (joystick, jump button).
 
@@ -129,6 +130,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
 
 ## C. Current Development Scope
 
+### Step 3: Feel — squash, stretch and effects — **BUILT** *(2026-11-14T04:55:00+00:00)*
+**In scope (done):** springy squash and stretch on jump, double jump, landing, air speed, running lean, dash streak and wall impacts; dust on take-off, landing and skids; a dash-start burst; a dash cooldown bar under the square on desktop; a flash and ring when the dash is ready again (desktop and touch).
+
+**Out of scope:** screen shake (saved for hits and enemy deaths, so it means something).
+
+
 ### Step 2: Dash and double jump — **BUILT** *(2026-11-14T04:49:36+00:00)*
 **In scope (done):** double jump (#30); dash (#21, #24) on right-click towards the mouse and on a touch button, with a cooldown, invulnerability while dashing, and a trail.
 
@@ -190,10 +197,12 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Screen fitting (#29) | Tested | The arena is a fixed 1600×900 world. The camera zooms until the arena covers the whole screen (no margins) and follows the player, clamped to the arena edges. Visible area: desktop 1440×900 of the arena; cover landscape 1600×731 (top trimmed, follows vertically); cover portrait 411×900 (about a quarter of the width); inner ~857×900. *(updated 2026-11-14T04:45:51+00:00)* Previously fit-whole-arena with margins. Rendered at device pixel ratio (capped at 3). Checked in headless Chromium at desktop 1440×900, Fold cover landscape 900×411 and portrait 411×900, and an approximate inner screen 790×830, at the Fold's pixel density. *(2026-11-14T04:42:54+00:00)* |
 | Double jump (#30) | Tested | One extra jump in mid-air (90% of a normal jump's speed), with a small ring puff. Resets on landing. Walking off a ledge still leaves you the air jump. Jump Height (#12) will scale both. *(2026-11-14T04:49:36+00:00)* |
 | Dash (#21, #24) | Tested | Right-click: dashes towards the mouse in any direction (360°). Touch: DASH button beside JUMP; dashes the way the joystick points, or the way you're facing if the stick is idle. 0.15 s at 1500 px/s (~225 px), gravity off, keeps 35% of its speed after; cooldown 0.8 s. Square turns blue with an afterimage trail. `invulnerable` is true for the whole dash, for enemies to check later. Touch button shows the cooldown as a ring filling back up. Works in the air. *(2026-11-14T04:49:36+00:00)* |
+| Squash and stretch | Tested | The visible square (`PlayerView`) is separate from the physics box, so it deforms without affecting collisions. Scale runs on a damped spring (wobbles back to square). Jump: stretch 0.72×1.32; double jump 0.8×1.22; landing: squash up to 1.4×0.6 depending on impact speed; slight stretch with vertical speed in the air; lean into the run; dash: a 1.45×0.7 streak rotated along the dash (afterimages match); dashing into a wall, floor or ceiling ends the dash and flattens against it; coming out of a dash, a small stretch along its direction. Feet stay planted while squashing. *(2026-11-14T04:55:00+00:00)* |
+| Movement effects | Tested | Small tumbling squares (`fx.ts`): dust on take-off, sideways dust on landing (more on hard landings), skid dust when turning round at speed, a blue burst behind you at dash start, sparks on dash impacts. *(2026-11-14T04:55:00+00:00)* |
+| Dash cooldown display | Tested | Desktop: thin bar under the square that fills while recharging, hidden when ready (hidden when touch controls are showing; they have the button ring). Both: the square flashes white with a blue outline and a ring pulses out when the dash is ready again. *(2026-11-14T04:55:00+00:00)* |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
-- **No dash cooldown indicator on desktop** (only on the touch button).
 - **Dash doesn't damage anything yet**: there's nothing to hit.
 - **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
 - **Zoomed-in views see less of the arena** (#29): in portrait about a quarter of its width. Fine for movement; once enemies exist, ones off-screen may need an edge indicator (not decided).
@@ -258,6 +267,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` fits its camera to the 1600×900 arena on every resize. In dev, the game is on `window.__game` for poking at from the console.

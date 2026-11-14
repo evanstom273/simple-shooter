@@ -94,6 +94,7 @@ export class TouchControlsScene extends Phaser.Scene {
   }
 
   private setShown(shown: boolean) {
+    touchInput.controlsShown = shown
     for (const o of [this.base, this.knob, this.jumpBtn, this.jumpLabel, this.dashBtn, this.dashLabel, this.dashRing]) o.setVisible(shown)
   }
 
