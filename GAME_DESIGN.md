@@ -56,6 +56,7 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
 - **Worlds**, each entered through its own **archstone** in the hub, split into numbered, named **sections** (e.g. 1-1 "Gates of …", 4-1 "Shrine of …").
 - **A section is 5 waves, then a boss.** Bosses are **Soulsborne-style fights**: a massive health bar, massive tells, **one or two phases**.
 - **Four worlds to begin with, built one at a time:** get the first really good, then the second, third and fourth; consider more after that. *(2026-11-14T21:18:04+00:00 — History #64)*
+- **Randomly generated platform layouts:** every time you enter a section, its platforms are generated afresh; replaying a section gives a different layout. You start wave 1 by walking into the room. *(2026-11-14T21:22:41+00:00 — History #67)*
 - **Four sections per world** (1-1 to 1-4), **each ending in its own unique boss**: 4 bosses per world, **16 in total** for the first four worlds. Bosses are designed the same way as the enemies: Claude asks rounds of questions with options, and Lyra answers and adds her own ideas. *(2026-11-14T21:20:38+00:00 — History #66)*
 - **Each world has a fully unique enemy roster**, so every world plays differently, not just looks different. Lyra's reasoning: the melee enemy needed little tuning of its own; most of the tweaking was the player's side (health, contact damage, dash cooldown, turns), which is now in good shape. *(2026-11-14T21:19:20+00:00 — History #65)*
 - **Names are placeholders:** "archstone", "Gates of Boletaria" and "Shrine of Storms" are Demon's Souls' and only illustrated the idea. The game needs its own term for the portals and its own world/section names. *(2026-11-14T21:18:04+00:00 — History #64)*
@@ -287,6 +288,10 @@ From Lyra (built while she was at work, so the details marked *Claude* are inter
 ---
 
 ## C. Current Development Scope
+
+### Next, in this order of priority (Lyra, 2026-11-14T21:22:41+00:00, History #67)
+Before worlds, art or anything else: **(1) player shooting** (the three weapons, switching), **(2) the hub with the shop**, **(3) randomly generated platform layouts**.
+
 
 ### Step 11: Basic waves — **BUILT** *(2026-11-14T14:52:38+00:00)*
 **In scope (done):** endless waves (#60) with a spawn queue and on-screen cap; gold drops that fly to you (#54 magnet) and gold/score (#53); wave readout, wave-start banner, between-wave gold count-up and countdown; run over and Play again; local high scores in Dexie. Testing spawn buttons moved into the settings panel.
@@ -581,6 +586,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 64 | 2026-11-14T21:18:04+00:00 | Structure | Four worlds to start, built one at a time (polish one before the next). "Archstone" and the Demon's Souls area names were only examples; the game needs its own names. |
 | 65 | 2026-11-14T21:19:20+00:00 | Enemies | Every world gets a fully unique enemy roster (not variants of the core three). |
 | 66 | 2026-11-14T21:20:38+00:00 | Structure | Four sections per world, each with its own unique boss (16 bosses across the first four worlds). Designed through question rounds like the enemies. |
+| 67 | 2026-11-14T21:22:41+00:00 | Structure / priorities | Section platforms are randomly generated each time you enter (replays differ); you start wave 1 by walking into the room. Priorities before worlds or art: player shooting, the hub + shop, random platform generation. |
 
 ---
 

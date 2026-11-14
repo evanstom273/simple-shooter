@@ -10,6 +10,8 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
+**Priority (Lyra, #67):** 1. player shooting (weapons + switching) · 2. hub + shop · 3. randomly generated platforms. Then worlds and art.
+
 - Tune the ranged enemy and tank in play.
 - Restructure (#62): hub (shop, levelling, saving), worlds and sections, checkpoints, boss fights; endless as a separate mode. Settle the open questions in §E 1h first.
 - Decide what makes waves harder past ~wave 13.
