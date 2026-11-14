@@ -304,7 +304,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Dash doesn't damage anything yet**: there's nothing to hit.
 - **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
 - **Zoomed-in views see less of the arena** (#29): in portrait about a fifth of its width. Off-screen enemies now get edge markers (#44).
-- **Portrait: the player sits under the touch controls** when on the floor (the camera can't scroll below the arena), so the square is partly hidden behind DASH.
+- **Portrait: the player sits under the touch controls** when on the floor (the camera can't scroll below the arena), so the square is partly hidden behind DASH. Accepted by Lyra (2026-11-14): still playable; not fixing for now.
 - **Touch controls sit over the game**, most noticeably in portrait, where the floor and the player run under the joystick and jump button.
 - Not yet tried on the physical Pixel 10 Pro Fold.
 - Phaser is a large chunk (~1.4 MB minified, ~360 KB gzipped). It loads lazily after the page, and the Vite size warning is raised to 1600 KB to stop it nagging.
