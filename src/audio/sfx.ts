@@ -98,4 +98,14 @@ export const sfx = {
   dashReady: () => tone('triangle', vary(880), vary(1320), 0.09, 0.06),
   skid: () => noise('highpass', 2500, 1200, 0.14, 0.08, 0.8),
   step: () => noise('bandpass', vary(1800), 900, 0.03, 0.03, 2),
+  shoot: () => {
+    tone('square', vary(880), vary(220), 0.07, 0.08)
+    noise('highpass', 4000, 1500, 0.05, 0.12, 0.7)
+  },
+  spark: () => noise('highpass', vary(5000), 3000, 0.04, 0.05, 1),
+  targetHit: () => tone('triangle', vary(520), vary(380), 0.05, 0.08),
+  targetPop: () => {
+    tone('sine', vary(600), 120, 0.2, 0.2)
+    noise('bandpass', 2000, 400, 0.15, 0.12, 1)
+  },
 }

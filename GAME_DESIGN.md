@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T05:12:44+00:00):**
+**Where the project stands (as of 2026-11-14T05:45:20+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Shooting and aiming built** (all three aim modes, settings panel, test pistol, practice dummies) (2026-11-14T05:45:20+00:00).
 - **Short hops removed; bigger arena experiment (2400×1350, 0.8× zoom, 10 platforms)** (2026-11-14T05:12:44+00:00).
 - **Sound, short hops, coyote time, jump buffering, one-way platforms, vibration, camera look-ahead, platform reactions and motes** (2026-11-14T05:08:55+00:00).
 - **Lighting, screen shake and smoother movement** (2026-11-14T05:00:48+00:00).
@@ -74,6 +75,10 @@ The core design (History #7–#15) was worked out in a separate conversation and
   - **Manual:** aim and shoot yourself (desktop: mouse aim, left-click; touch: tap/hold on the right side, as in #9).
   - **Auto aim, manual shooting:** the game picks the target; you choose when to fire.
   - **Full auto:** the game aims and fires.
+  - **Touch trigger:** hold anywhere on the right side of the screen (away from JUMP and DASH) to shoot, in every mode; in Manual shots go towards your thumb, otherwise at the auto-aim target. No separate SHOOT button. *(2026-11-14T05:45:20+00:00 — History #41)*
+  - **Full auto never fires at nothing:** only at a locked target it can see. *(2026-11-14T05:45:20+00:00 — History #41)*
+  - **Gun barrel:** a small barrel nub on the square points where you're aiming. *(2026-11-14T05:45:20+00:00 — History #41)*
+  - **Choosing a mode:** a settings panel (gear button, top right); the choice is saved. *(2026-11-14T05:45:20+00:00 — History #41)*
   **Defaults: Auto aim, manual shooting on mobile; Manual on desktop.** *(2026-11-14T05:22:58+00:00 / 2026-11-14T05:23:10+00:00 — History #39)*
   Motivation: manual aiming on a phone, especially the Fold's cover screen, is awkward with the right thumb already on jump and dash.
 - **Auto-aim targets the nearest enemy**, with a visible indicator on the current target. No facing-based targeting: the square has no front.
@@ -165,6 +170,12 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ---
 
 ## C. Current Development Scope
+
+### Step 7: Shooting, aiming and controls — **BUILT** *(2026-11-14T05:45:20+00:00)*
+**In scope (done):** the three aim modes (#36–#39, #41) with a settings panel; desktop mouse aim + left-click, touch right-side trigger; auto-aim lock (nearest, line of sight, 700 px, locked until it dies) with a target bracket; a temporary pistol from the start; bullets stopped by platforms; muzzle flash, glow, barrel kick, recoil, shot and impact sounds, sparks; crosshair on desktop Manual; temporary practice dummies.
+
+**Out of scope:** weapon switching, the automatic and shotgun (weapons step); enemies (next step: the melee enemy, #40).
+
 
 ### Step 6: Fixed jump, bigger arena — **BUILT** *(2026-11-14T05:12:44+00:00)*
 **In scope (done):** short hops removed (#34); arena 2400×1350 with a 0.8× zoom setting and 10 placeholder platforms in four tiers (#35); more motes for the bigger space.
@@ -264,9 +275,17 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Camera look-ahead | Tested | Leads up to 15% of the visible width in the running direction, easing in and out. Horizontal only. *(2026-11-14T05:08:55+00:00)* |
 | Platform reaction | Tested | Landing dips the platform's visible shape 2–6 px and flashes it; the collision box doesn't move. *(2026-11-14T05:08:55+00:00)* |
 | Motes | Tested | 45 faint drifting squares under the darkness layer, so they mostly show near the player's light. *(2026-11-14T05:08:55+00:00)* |
+| Aim modes (#36–#39, #41) | Tested | `settingsStore` (plain TS, shared by React and Phaser) holds the mode; settings panel (gear button) with Manual / Auto aim / Full auto; saved in Dexie with mute. Defaults from `pointer: coarse`: touch → Auto aim, desktop → Manual. *(2026-11-14T05:45:20+00:00)* |
+| Shooting (`Shooter.ts`) | Tested | Hold the trigger to fire at the weapon's rate (pistol 4/s, exact). Desktop: left mouse button; mouse aims in Manual (system cursor replaced by a crosshair). Touch: hold anywhere right of the joystick zone that isn't JUMP/DASH; in Manual shots go towards the thumb. No target in range: shots go straight ahead (direction last moved). Full auto fires only at a locked target in line of sight. Can't fire mid-dash. Bullets: 1900 px/s, sub-stepped so they can't skip thin platforms; stopped by any platform (all sides) with sparks. *(2026-11-14T05:45:20+00:00)* |
+| Auto-aim | Tested | Nearest living target within 700 px with line of sight (segment vs platform rectangles); locked until it dies, even if it moves out of sight or range (#38). Rotating corner bracket on the locked target. *(2026-11-14T05:45:20+00:00)* |
+| Shot feel | Tested | Muzzle star flash, additive glow, barrel kicks back, small recoil push (sideways; lift when firing down in the air), tiny squash, shot sound; impact sparks + tick. *(2026-11-14T05:45:20+00:00)* |
+| Test pistol | Temporary | You start with the pistol until upgrades exist; the design says you start unarmed (#21). |
+| Practice dummies | Temporary | Five grey circles floating above platforms; 3 hits to pop, respawn after 2.5 s. Removed when the melee enemy goes in. |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
+- **Starting with a pistol** contradicts #21 (start unarmed) until the upgrade offers exist.
+- **Teleport-style jumps keep the auto-aim lock** (#38 by design): a target locked far away stays locked until it dies.
 - **Dash doesn't damage anything yet**: there's nothing to hit.
 - **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
 - **Zoomed-in views see less of the arena** (#29): in portrait about a quarter of its width. Fine for movement; once enemies exist, ones off-screen may need an edge indicator (not decided).
@@ -281,6 +300,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **16:9 arena** as a middle ground between desktop, the Fold's very wide cover screen and its near-square inner screen. Camera follow is slightly smoothed.
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
+- **Platforms block bullets from every side**, including one-way platforms you can jump up through, so they're consistent cover and match line of sight.
+- **No firing during a dash** (the barrel hides while dashing).
 - **Air jump doesn't reset on dash**, and dashing doesn't use up a jump.
 - ~~**Jump is a fixed height.**~~ Replaced by short hops (#32).
 - Resuming at the upgrade screen (#17) means saving the run at the end of each wave, with health as it was then.
@@ -333,6 +354,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 38 | 2026-11-14T05:22:06+00:00 | Controls | Auto-aim: lock on the target until it dies; with no target in range, shoot straight ahead (direction last moved); line of sight required (platforms block); range a placeholder to tune in play. |
 | 39 | 2026-11-14T05:22:58+00:00 | Controls | Default aim mode: mobile Auto aim + manual shooting; desktop Manual (desktop part confirmed 2026-11-14T05:23:10+00:00). |
 | 40 | 2026-11-14T05:31:56+00:00 | Enemies | Melee enemy: smaller orange circle with one tracking eye; quick little hops; properly navigates platforms; lunge by situation (roll on same level, leap if above/below) with a glow + rising-sound tell; dizzy after a lunge, missed rolls bounce off walls; middling toughness; dash damages it and cancels a wind-up into dizzy; shatters into orange arcs; spawns at a warning marker; enemies bump and push each other. |
+| 41 | 2026-11-14T05:45:20+00:00 | Controls | Touch trigger is the whole right side (no SHOOT button), in every aim mode; full auto never fires at nothing; a gun barrel nub shows aim; aim mode chosen in a settings panel and saved. (Approved plan.) |
 
 ---
 
@@ -342,6 +364,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute); `src/audio/sfx.ts` synthesised sound.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `PracticeTargets.ts` temporary dummies; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` sets its camera zoom on every resize (baseline 1600×900 view × `VIEW.zoom`, #35). In dev, the game is on `window.__game` for poking at from the console.

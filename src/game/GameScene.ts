@@ -4,7 +4,11 @@ import { sfx } from '../audio/sfx.ts'
 import { burst, ring } from './fx.ts'
 import { buzz } from './haptics.ts'
 import { PLAYER_COLOURS, PlayerView } from './PlayerView.ts'
-import { ARENA, DASH, GRAVITY, PLATFORMS, PLAYER, SCREEN, VIEW } from './tuning.ts'
+import { createPracticeTargets } from './PracticeTargets.ts'
+import { Shooter } from './Shooter.ts'
+import type { Target } from './targets.ts'
+import { settingsStore } from '../settings/store.ts'
+import { ARENA, DASH, DUMMY, GRAVITY, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
   arena: 0x14141c,
@@ -53,6 +57,8 @@ export class GameScene extends Phaser.Scene {
   private lookAhead = 0
   private stepTimer = 0
   private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
+  private shooter!: Shooter
+  private targets: Target[] = []
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
   get invulnerable() {
@@ -99,6 +105,13 @@ export class GameScene extends Phaser.Scene {
     this.cooldownBack = this.add.rectangle(0, 0, PLAYER.size, 6, 0xffffff, 0.12).setOrigin(0, 0.5).setDepth(9)
     this.cooldownBar = this.add.rectangle(0, 0, PLAYER.size, 6, COLOURS.dash, 0.9).setOrigin(0, 0.5).setDepth(9)
     this.physics.add.existing(this.player)
+
+    // Shooting. Platforms (as they were placed) block bullets and line of sight.
+    const solids = PLATFORMS.map((p) => new Phaser.Geom.Rectangle(p.x, p.y, p.w, p.h))
+    // Temporary practice dummies until enemies exist: one floating above some platforms.
+    const spots = [1, 3, 5, 7, 9].map((i) => PLATFORMS[i]).filter(Boolean).map((p) => ({ x: p.x + p.w / 2, y: p.y - DUMMY.radius - 70 }))
+    this.targets = createPracticeTargets(this, spots)
+    this.shooter = new Shooter(this, solids, () => this.targets)
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
     this.body_.setCollideWorldBounds(true)
     this.physics.add.collider(
@@ -270,9 +283,48 @@ export class GameScene extends Phaser.Scene {
     this.wasGrounded = grounded
     this.lastVelY = b.velocity.y
 
+    this.updateShooting(dt)
     this.updateLookAhead(dt)
     this.updateDarkness()
     this.updateMotes(dt)
+  }
+
+  private updateShooting(dt: number) {
+    const cam = this.cameras.main
+    const touch = touchInput.controlsShown
+    const mouse = this.input.mousePointer
+    const mode = settingsStore.aimMode
+
+    let fireHeld = false
+    let aimPoint: { x: number; y: number } | null = null
+    if (touch) {
+      fireHeld = touchInput.fireHeld
+      if (fireHeld) aimPoint = cam.getWorldPoint(touchInput.fireX, touchInput.fireY)
+    } else if (mouse) {
+      fireHeld = mouse.leftButtonDown()
+      aimPoint = cam.getWorldPoint(mouse.x, mouse.y)
+    }
+    const desktopManual = !touch && mode === 'manual'
+    this.game.canvas.style.cursor = desktopManual ? 'none' : ''
+
+    const shot = this.shooter.update(dt, {
+      x: this.player.x,
+      y: this.player.y,
+      facing: this.facing,
+      dashing: this.dashing,
+      mode,
+      fireHeld,
+      aimPoint,
+      pxToWorld: 1 / cam.zoom,
+      crosshair: desktopManual && aimPoint ? aimPoint : null,
+    })
+    if (shot) {
+      // Small recoil: mostly sideways; a little lift if firing downwards in the air.
+      const b = this.body_
+      b.setVelocityX(b.velocity.x - shot.x * WEAPONS.pistol.recoil)
+      if (!b.blocked.down) b.setVelocityY(b.velocity.y - shot.y * WEAPONS.pistol.recoil * 0.5)
+      this.view.kick(1 - Math.abs(shot.x) * 0.06, 1 - Math.abs(shot.y) * 0.06)
+    }
   }
 
   /** The camera leads a little in the direction you're running. */

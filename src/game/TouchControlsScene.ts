@@ -4,6 +4,8 @@ import { touchInput } from './controls.ts'
 // On-screen controls for touch devices, drawn over the game at screen scale.
 // Left part of the screen: a floating joystick (appears where your thumb lands).
 // Bottom-right: jump button, with the dash button beside it.
+// Anywhere else on the right: the trigger. Hold to shoot; in manual aim mode
+// shots go towards your thumb, otherwise at the auto-aim target.
 const JOYSTICK_ZONE = 0.45 // fraction of screen width, from the left
 const DEADZONE = 0.2
 
@@ -19,6 +21,7 @@ export class TouchControlsScene extends Phaser.Scene {
   private dashPointer: number | null = null
   private stickPointer: number | null = null
   private jumpPointer: number | null = null
+  private firePointer: number | null = null
   private home = new Phaser.Math.Vector2()
   private origin = new Phaser.Math.Vector2()
 
@@ -115,14 +118,26 @@ export class TouchControlsScene extends Phaser.Scene {
       touchInput.dashQueued = true
       return
     }
-    if (p.x < this.scale.width * JOYSTICK_ZONE && this.stickPointer === null) {
-      this.stickPointer = p.id
-      this.placeStick(p.x, p.y)
-      this.base.setAlpha(1.6)
+    if (p.x < this.scale.width * JOYSTICK_ZONE) {
+      if (this.stickPointer === null) {
+        this.stickPointer = p.id
+        this.placeStick(p.x, p.y)
+        this.base.setAlpha(1.6)
+      }
+    } else if (this.firePointer === null) {
+      this.firePointer = p.id
+      touchInput.fireHeld = true
+      touchInput.fireX = p.x
+      touchInput.fireY = p.y
     }
   }
 
   private onMove(p: Phaser.Input.Pointer) {
+    if (p.id === this.firePointer) {
+      touchInput.fireX = p.x
+      touchInput.fireY = p.y
+      return
+    }
     if (p.id !== this.stickPointer) return
     const r = this.stickRadius
     const dx = Phaser.Math.Clamp(p.x - this.origin.x, -r, r)
@@ -146,6 +161,10 @@ export class TouchControlsScene extends Phaser.Scene {
       this.base.setAlpha(1)
     }
     if (p.id === this.dashPointer) this.dashPointer = null
+    if (p.id === this.firePointer) {
+      this.firePointer = null
+      touchInput.fireHeld = false
+    }
     if (p.id === this.jumpPointer) {
       this.jumpPointer = null
       this.jumpBtn.setFillStyle(0xffffff, 0.12)

@@ -18,6 +18,10 @@ export const touchInput = {
   stickX: 0,
   stickY: 0,
   jumpQueued: false,
+  /** Right-side touch held: the trigger (#36). Position in canvas pixels, for manual aim. */
+  fireHeld: false,
+  fireX: 0,
+  fireY: 0,
   dashQueued: false,
   /** 0 … 1, how far through the dash cooldown (1 = ready). Written by GameScene, drawn by the touch controls. */
   dashReady: 1,

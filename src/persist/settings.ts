@@ -1,18 +1,20 @@
+import { defaultAimMode, type AimMode } from '../settings/store.ts'
 import { db } from './db.ts'
 
 export interface Settings {
   muted: boolean
+  aimMode: AimMode
 }
 
-const DEFAULTS: Settings = { muted: false }
+const defaults = (): Settings => ({ muted: false, aimMode: defaultAimMode() })
 const ID = 'settings'
 
 export async function loadSettings(): Promise<Settings> {
   try {
     const rec = await db.saves.get(ID)
-    return { ...DEFAULTS, ...(rec?.data as Partial<Settings> | undefined) }
+    return { ...defaults(), ...(rec?.data as Partial<Settings> | undefined) }
   } catch {
-    return DEFAULTS
+    return defaults()
   }
 }
 

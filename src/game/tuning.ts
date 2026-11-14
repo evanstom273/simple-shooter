@@ -84,3 +84,23 @@ export const SCREEN = {
    */
   light: { radius: 0.62, clear: 0.22, edge: 0.92 },
 }
+
+/** Weapons. Only the pistol exists so far (a temporary starting weapon until upgrades exist). */
+export const WEAPONS = {
+  pistol: {
+    /** Shots per second while the trigger is held. */
+    fireRate: 4,
+    bulletSpeed: 1900,
+    damage: 1,
+    /** Push back on the player per shot, px/s. */
+    recoil: 60,
+  },
+} as const
+
+export const AIM = {
+  /** Auto-aim range in world px (#38). Placeholder. */
+  range: 700,
+} as const
+
+/** Practice dummies for testing aim, until enemies exist. */
+export const DUMMY = { radius: 22, health: 3, respawn: 2.5 } as const
