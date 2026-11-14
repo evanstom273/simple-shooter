@@ -219,5 +219,8 @@ export const TANK = {
   dashBounce: 520,
 } as const
 
-/** Temporary spawner until waves exist: how many of each to keep in the arena. Keys: E melee, R ranged, T tank. */
-export const SPAWNER = { melee: 2, ranged: 1, tank: 0 } as const
+/**
+ * Temporary spawner until waves exist: how many of each to keep in the arena.
+ * All 0 while testing: spawn by hand with the on-screen buttons or E / R / T.
+ */
+export const SPAWNER = { melee: 0, ranged: 0, tank: 0 } as const

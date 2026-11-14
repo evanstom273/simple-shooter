@@ -3,6 +3,7 @@ import { setMuted, unlockAudio } from '../audio/sfx.ts'
 import { loadSettings, saveSettings, type Settings } from '../persist/settings.ts'
 import { AIM_MODES, defaultAimMode, settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
+import { debugBus, type EnemyKind } from '../state/debug.ts'
 
 // React UI layer over the Phaser canvas. pointer-events-none so the game still
 // gets input; give interactive children pointer-events-auto.
@@ -65,6 +66,25 @@ export function Hud() {
         A / D move · Space jump (twice to double jump) · S drop through · Right-click dash
       </p>
 
+      {/* Testing (temporary, until waves): spawn each enemy by hand. */}
+      <div className="absolute top-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/5 px-2 py-1 ring-1 ring-white/10">
+        <span className="pr-1 text-[10px] font-semibold tracking-wider text-neutral-500 uppercase">Spawn</span>
+        {SPAWN_BUTTONS.map((b) => (
+          <button
+            key={b.kind}
+            type="button"
+            onClick={() => debugBus.spawn(b.kind)}
+            aria-label={`Spawn ${b.label}`}
+            title={`Spawn ${b.label}`}
+            className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 active:bg-white/20"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path d={b.path} fill={b.colour} />
+            </svg>
+          </button>
+        ))}
+      </div>
+
       <div className="absolute top-3 right-3 flex gap-2">
         <button
           type="button"
@@ -112,3 +132,9 @@ export function Hud() {
     </div>
   )
 }
+
+const SPAWN_BUTTONS: { kind: EnemyKind; label: string; colour: string; path: string }[] = [
+  { kind: 'melee', label: 'melee enemy', colour: '#ff8a2a', path: 'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16z' },
+  { kind: 'ranged', label: 'ranged enemy', colour: '#5ee36a', path: 'M21 12L5 5.5v13z' },
+  { kind: 'tank', label: 'tank', colour: '#e0453a', path: 'M12 3l8.6 6.2-3.3 10.1H6.7L3.4 9.2z' },
+]

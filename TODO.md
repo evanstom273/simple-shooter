@@ -22,6 +22,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Testing: automatic spawning off; on-screen spawn buttons for each enemy (touch and desktop). *(2026-11-14T14:33:08+00:00)*
 - [x] Step 9: ranged enemy (#56), tank (#58), health 5 × 4 with 2-stage hits (#57), hazards, spawner for all three. *(2026-11-14T07:12:19+00:00)*
 - [x] Dash cooldown 0.8 s → 1.6 s (#55). *(2026-11-14T06:53:18+00:00)*
 - [x] Contact damage removed; only attacks hurt (#52). *(2026-11-14T06:47:26+00:00)*

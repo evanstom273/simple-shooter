@@ -13,6 +13,7 @@ import { Shooter } from './Shooter.ts'
 import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
 import { hudStore } from '../state/hud.ts'
+import { debugBus } from '../state/debug.ts'
 import { ARENA, DASH, GRAVITY, MELEE, PLATFORMS, PLAYER, SCREEN, SPAWNER, TANK, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
@@ -178,6 +179,10 @@ export class GameScene extends Phaser.Scene {
       jump: kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
       down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
     }
+    // Testing: the on-screen spawn buttons (React) ask for enemies through debugBus.
+    const offSpawn = debugBus.onSpawn((kind) => this.spawnEnemy(kind))
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, offSpawn)
+    this.events.once(Phaser.Scenes.Events.DESTROY, offSpawn)
     // Temporary: E / R / T spawn an extra melee / ranged / tank (desktop), for testing.
     this.spawnKeys = {
       melee: kb.addKey(Phaser.Input.Keyboard.KeyCodes.E),
