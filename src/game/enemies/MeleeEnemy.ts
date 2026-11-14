@@ -337,6 +337,16 @@ export class MeleeEnemy implements Enemy {
     ring(this.scene, this.x, this.y, this.radius * 3, this.radius * 3, MELEE.colour, { grow: 0.3, life: 250 })
   }
 
+  push(vx: number, vy: number) {
+    if (this.alive) this.body.setVelocity(vx, vy)
+  }
+
+  fallOut() {
+    if (this.state === 'dead') return
+    this.lastHitSource = 'hazard'
+    this.die({ x: 0, y: 1 })
+  }
+
   private die(dir: { x: number; y: number }) {
     this.alive = false
     this.state = 'dead'

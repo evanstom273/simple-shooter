@@ -47,4 +47,8 @@ export interface Enemy extends Target {
   /** Stomped from above (#59): knocked away (except the tank), flattened ~1 s. `damage` includes the dash/stomp upgrade (#69). */
   stomp(fromX: number, damage: number): void
   update(dt: number, player: PlayerInfo): void
+  /** Shoved by the level (bounce pads, hazard knock), px/s (#81). */
+  push?(vx: number, vy: number): void
+  /** Fell into a pit (#81): dies at once. */
+  fallOut?(): void
 }

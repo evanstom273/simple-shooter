@@ -184,6 +184,10 @@ export const sfx = {
     tone('triangle', 600, 2400, 0.9, 0.025, 0.15)
     noise('highpass', 2500, 7000, 1.0, 0.04, 0.7)
   },
+  /** Jet firing (#81): a roaring hiss. */
+  jet: () => noise('bandpass', 900, 400, 0.9, 0.12, 0.6),
+  /** A crumbling platform starting to go. */
+  crumble: () => noise('lowpass', 700, 200, 0.45, 0.14, 1.2),
   /** A piece of you popping into place. */
   assemble: () => tone('square', vary(700), vary(1100), 0.05, 0.045),
   /** Into a portal: a sucking swoop down. */

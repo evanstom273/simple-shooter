@@ -1,5 +1,6 @@
 // Anything that can be shot or auto-aimed at.
-export type HitSource = 'dash' | 'stomp' | 'shot'
+/** 'hazard': spikes, saws, jets, pits (#81): no heal, like shots. */
+export type HitSource = 'dash' | 'stomp' | 'shot' | 'hazard'
 export interface Target {
   readonly x: number
   readonly y: number

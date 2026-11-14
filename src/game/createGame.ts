@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { navStore } from '../state/nav.ts'
 import { GameScene } from './GameScene.ts'
 import { MarkersScene } from './MarkersScene.ts'
 import { TouchControlsScene } from './TouchControlsScene.ts'
@@ -30,7 +31,7 @@ export function createGame(parent: HTMLElement): { game: Phaser.Game; destroy: (
   })
 
   // Handy for poking at the game from the console / automated checks in dev.
-  if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game
+  if (import.meta.env.DEV) Object.assign(window, { __game: game, __nav: navStore })
 
   const observer = new ResizeObserver(() => {
     const s = size()

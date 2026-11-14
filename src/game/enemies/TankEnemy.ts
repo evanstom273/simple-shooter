@@ -386,6 +386,17 @@ export class TankEnemy implements Enemy {
     }
   }
 
+  /** Too heavy to shove sideways (#58); a bounce pad still lifts it. */
+  push(_vx: number, vy: number) {
+    if (this.alive && vy < 0) this.body.setVelocityY(vy)
+  }
+
+  fallOut() {
+    if (this.state === 'dead') return
+    this.lastHitSource = 'hazard'
+    this.die()
+  }
+
   private die() {
     this.alive = false
     this.state = 'dead'

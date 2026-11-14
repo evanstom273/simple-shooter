@@ -20,6 +20,7 @@ import { arriveInHub, buy as shopBuy, progressStore, reroll as shopReroll, story
 import { Hub } from './Hub.ts'
 import { ARENA_LEVEL, HUB_LEVEL, type Level } from './levels.ts'
 import { generate } from './gen/generate.ts'
+import { ENV, Environment } from './Environment.ts'
 import { customChunks } from '../state/chunks.ts'
 import { loadScores, recordRun } from '../persist/scores.ts'
 import { Gold } from './Gold.ts'
@@ -70,6 +71,12 @@ export class GameScene extends Phaser.Scene {
   /** Seconds left falling through platforms after pressing down. */
   private dropTime = 0
   private standingOn: Phaser.GameObjects.Rectangle | null = null
+  /** Hazards and moving bits (#81). */
+  private env!: Environment
+  /** Seconds after being hit during which knockback can't carry you into a pit (#81). */
+  private knocked = 0
+  /** Sideways carry from conveyors, moving platforms and wind this frame, px/s. */
+  private carry = 0
   private lookAhead = 0
   private stepTimer = 0
   private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
@@ -191,12 +198,16 @@ export class GameScene extends Phaser.Scene {
 
     this.createMotes()
 
+    this.env = new Environment(this, this.level)
     const platforms = this.physics.add.staticGroup()
     for (const p of this.level.platforms) {
-      const colour = this.mode === 'hub' && p.solid ? 0x1b1c2a : p.edge ? 0x1f2030 : p.solid && !p.floor ? 0x2c2e44 : COLOURS.platform
+      const colour = this.mode === 'hub' && p.solid ? 0x1b1c2a : p.edge ? 0x1f2030 : p.solid && !p.floor ? 0x353852 : COLOURS.platform
       const r = this.add.rectangle(p.x, p.y, p.w, p.h, colour).setOrigin(0)
+      // A lit top edge so blocks and ledges read against the dark (#79).
+      if (this.mode !== 'hub' && !p.edge && !p.crumble && !p.conveyor) this.add.rectangle(p.x, p.y, p.w, 3, 0x6a6e96).setOrigin(0).setDepth(1)
       platforms.add(r)
       r.setData('baseY', p.y)
+      if (p.crumble || p.conveyor) this.env.addPlatform(r, p)
       if (!p.solid) {
         // One-way: only the top is solid, so you can jump up through from below.
         const pb = r.body as Phaser.Physics.Arcade.StaticBody
@@ -274,6 +285,18 @@ export class GameScene extends Phaser.Scene {
     })
     this.body_ = this.player.body as Phaser.Physics.Arcade.Body
     this.body_.setCollideWorldBounds(true)
+    // Pits (#81) are bottomless: no floor at the bottom of the world.
+    if (this.level.pits?.length) this.physics.world.setBoundsCollision(true, true, true, false)
+    // Moving platforms: ride them; drop through like other one-way platforms.
+    this.physics.add.collider(
+      this.player,
+      this.env.moverGroup,
+      (_pl, m) => {
+        if (this.body_.touching.down) this.standingOn = m as Phaser.GameObjects.Rectangle
+      },
+      () => !(this.dropTime > 0) && this.body_.velocity.y >= -1,
+    )
+    this.physics.add.collider(this.enemyGroup, this.env.moverGroup)
     this.physics.add.collider(
       this.player,
       platforms,
@@ -463,7 +486,7 @@ export class GameScene extends Phaser.Scene {
       this.updateDash(dt)
     } else {
       this.pushTime = Math.max(0, this.pushTime - dt)
-      const target = c.moveX * this.runSpeed
+      const target = c.moveX * this.runSpeed + this.carry
       // While being pushed, steer only gently so the push carries.
       const t = Math.min(1, dt * PLAYER.responsiveness * (this.pushTime > 0 ? 0.15 : 1) * (this.wallLock > 0 ? 0.1 : 1))
       b.setVelocityX(b.velocity.x + (target - b.velocity.x) * t)
@@ -502,6 +525,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     touchInput.dashReady = 1 - this.dashCooldown / DASH.cooldown
+    this.updateEnvironment(dt)
 
     this.view.update(dt, {
       x: this.player.x,
@@ -541,6 +565,101 @@ export class GameScene extends Phaser.Scene {
     this.updateDarkness()
     this.updateMotes(dt)
     this.drawBeam()
+  }
+
+  /**
+   * The level's hazards and moving pieces (#81), for the player and enemies:
+   * hazard hits, bounce pads, wind, riding conveyors and moving platforms,
+   * crumbling, pits, and the rule that hits can't knock you into a pit.
+   */
+  private updateEnvironment(dt: number) {
+    const env = this.env
+    env.update(dt)
+    const b = this.body_
+    const box = { left: b.left, top: b.top, right: b.right, bottom: b.bottom }
+    this.knocked = Math.max(0, this.knocked - dt)
+
+    // What you're standing on carries you.
+    const on = this.standingOn
+    let carry = 0
+    if (on && (b.blocked.down || b.touching.down)) {
+      env.stoodOn(on)
+      carry += (on.getData('conveyor') as number | undefined) ?? 0
+      const mover = on.getData('mover') as { body: Phaser.Physics.Arcade.Body } | undefined
+      if (mover) {
+        carry += mover.body.velocity.x
+        if (mover.body.velocity.y > 0) b.setVelocityY(Math.max(b.velocity.y, mover.body.velocity.y))
+      }
+    }
+    if (!this.cine) {
+      const w = env.windPush(box, b.velocity.y, dt)
+      if (!this.dashing) b.setVelocityY(w.vy)
+      carry += w.drift
+    }
+    this.carry = carry
+
+    if (this.cine) return
+    // Bounce pads: launch, and the double jump comes back.
+    if (!this.dashing && env.bounce(box, b.velocity.y)) {
+      b.setVelocityY(-ENV.pad)
+      this.airJumpsLeft = PLAYER.airJumps
+      this.sinceGrounded = PLAYER.coyoteTime
+      this.view.kick(0.7, 1.35)
+    }
+    // Spikes, saws, jets.
+    if (!this.invulnerable) {
+      const hit = env.hurts(box)
+      if (hit) this.takeHazardHit(hit)
+    }
+
+    const pits = this.level.pits ?? []
+    if (pits.length) {
+      // Hits can't push you in (#81): near the floor, knockback stops at the edge.
+      if (this.knocked > 0 && b.bottom > this.level.floorY - 200 && b.top < this.level.floorY) {
+        const cx = this.player.x
+        for (const p of pits) {
+          if (cx < p.x || cx > p.x + p.w) continue
+          const left = cx - p.x < p.x + p.w - cx
+          b.x = left ? p.x - b.width - 2 : p.x + p.w + 2
+          b.setVelocityX(0)
+          this.player.x = b.x + b.width / 2
+        }
+      }
+      // Fell in: bottomless (#81).
+      if (b.top > this.level.floorY + 80 && !this.over) this.fellInPit()
+    }
+
+    // Enemies: hazards hurt them too, pads launch them, pits kill them.
+    for (const e of this.enemies) {
+      if (!e.alive) continue
+      if (e.hittable) {
+        const hit = env.hurtsEnemy(e, e.x, e.y, e.radius * 0.9)
+        if (hit) {
+          e.hit(ENV.damage, hit, 'hazard')
+          e.push?.(hit.x * 420, hit.y < 0 ? -520 : hit.y * 300)
+        }
+      }
+      if (!(e instanceof RangedEnemy)) {
+        const eb = { left: e.x - e.radius, right: e.x + e.radius, top: e.y - e.radius, bottom: e.y + e.radius }
+        if (env.bounce(eb, 0)) e.push?.(0, -ENV.pad * 0.85)
+        if (e.y > this.level.floorY + 120) e.fallOut?.()
+      }
+    }
+  }
+
+  /** Falling into a pit (#81): the end of the section (or run). In a test room you just come back. */
+  private fellInPit() {
+    sfx.runOver()
+    this.shake(300, 0.015)
+    if (this.mode === 'sandbox') {
+      this.body_.reset(this.level.spawn.x, this.level.spawn.y)
+      this.cine = 'arrive'
+      this.view.beamIn(0.3, 1.25, (bt, dir) => this.onBeat(bt, dir))
+      return
+    }
+    this.health = 0
+    hudStore.set({ health: 0 })
+    this.endRun()
   }
 
   /** Is there a wall right beside the player? -1 left, 1 right, 0 none (solid blocks and the arena's sides). */
@@ -806,10 +925,16 @@ export class GameScene extends Phaser.Scene {
   /** A kill: gold drops (#53) worth more in later waves, and you heal a stage (#48). */
   private onEnemyKilled(kind: EnemyKind, x: number, y: number, source: HitSource) {
     const run = runStore.get()
+    // Fell into a pit (#81): its gold pops out at the pit's edge.
+    if (y > this.level.floorY + 10) {
+      const pit = this.level.pits?.find((p) => x >= p.x - 40 && x <= p.x + p.w + 40)
+      if (pit) x = x - pit.x < pit.x + pit.w - x ? pit.x - 30 : pit.x + pit.w + 30
+      y = this.level.floorY - 30
+    }
     this.gold.drop(x, y, goldFor(kind, Math.max(1, this.effectiveWave(run.wave))))
     runStore.set({ kills: run.kills + 1 })
-    // Only dash and stomp kills heal (#69): the risky play keeps you alive; guns don't.
-    if (source !== 'shot') this.onKill()
+    // Only dash and stomp kills heal (#69): the risky play keeps you alive; guns and hazards don't.
+    if (source === 'dash' || source === 'stomp') this.onKill()
   }
 
   /** Health hit zero: the run is over (#17). Everything resets; the score is recorded. */
@@ -1026,11 +1151,24 @@ export class GameScene extends Phaser.Scene {
   /** Getting hurt: only attacks hurt (#52): lunges, shots, slams, shockwaves (stages per #57, #58). */
   private takeHit(fromX: number, damage: number) {
     if (this.cine) return
+    const away = Math.sign(this.player.x - fromX) || -this.facing
+    this.hurt(damage, away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
+  }
+
+  /** Spikes, saws, jets (#81): 1 stage and a bounce away. */
+  private takeHazardHit(h: { x: number; y: number }) {
+    if (this.cine) return
+    const vx = h.x !== 0 ? h.x * ENV.bounce * 0.7 : -this.facing * 160
+    const vy = h.y < 0 ? -ENV.bounce : h.y > 0 ? ENV.bounce * 0.4 : -ENV.bounce * 0.5
+    this.hurt(ENV.damage, vx, vy)
+  }
+
+  private hurt(damage: number, vx: number, vy: number) {
     this.health -= damage
     this.hurtTime = PLAYER.hurtInvulnerability
-    const away = Math.sign(this.player.x - fromX) || -this.facing
+    this.knocked = 0.8
     const hud = hudStore.get()
-    this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
+    this.body_.setVelocity(vx, vy)
     this.pushTime = 0.3
     this.view.kick(1.35, 0.7)
     this.view.pulse(0.12)

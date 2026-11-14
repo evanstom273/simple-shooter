@@ -318,6 +318,11 @@ export class RangedEnemy implements Enemy {
     ring(this.scene, this.x, this.y, this.radius * 3, this.radius * 3, RANGED.colour, { grow: 0.3, life: 250 })
   }
 
+  push(vx: number, vy: number) {
+    this.vx = vx
+    this.vy = vy
+  }
+
   private die() {
     this.alive = false
     if (this.state === 'charge' || this.state === 'lock') this.turns.release(this)
