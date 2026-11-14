@@ -113,8 +113,23 @@ The core design (History #7–#15) was worked out in a separate conversation and
 | Enemy | Behaviour |
 |---|---|
 | **Melee** | Chases the player and attacks at close range. |
-| **Ranged** | Shoots projectiles towards the player, potentially keeping its distance. |
+| **Ranged** | Shoots projectiles towards the player, potentially keeping its distance. Designed in full: #56. |
 | **Tank** | Slow-moving, with significantly more health. |
+
+### Ranged enemy *(2026-11-14T06:58:51+00:00 — History #56)*
+Designed with Lyra through a round of questions. All numbers are placeholders, tuned in play.
+- **Look:** a **green triangle**, **smaller than the player**, that swivels to point at you.
+- **Movement:** **flies / hovers** freely, ignoring platforms.
+- **Distance:** when you get close it **darts a short way away**, then settles and starts aiming again.
+- **Attack: a single leading shot** aimed where you're going to be (punishes running in a straight line). **Fast projectile, heavy tell.**
+- **Tell:** it **points at you**, **glows / charges up** with a **charging sound**, and shows an **aim line**. The aim line **tracks your predicted path while charging, then locks** for a beat before it fires: dodge after the lock.
+- **Its shots pass through platforms**, like yours (#42). No cover; dodging is movement.
+- **Only fires when it's on your screen.**
+- **Damage:** a hit costs **2 stages**.
+- **Turns:** it **shares the one-attacker-at-a-time turn** with the melee (#49): only one enemy of any type attacks at once.
+- **Toughness:** **fragile: one dash hit kills it**, if you can catch it.
+- **Death:** **shatters into smaller green triangles**.
+- Spawn: assumed the same warning marker as the melee (not asked).
 
 ### Enemies attack in turns *(2026-11-14T06:44:50+00:00 — History #49)*
 - **Only one enemy winds up or lunges at a time.** The others hang back about 400 px away, hopping back and forth, until the attacker's dizzy spell ends; then a 0.5 s gap before the next can start.
@@ -160,11 +175,16 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Diminishing returns:** each repeat of the same upgrade adds a bit less than the last. Actual amounts are placeholders, tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #19)*
 - **Fire Rate applies to every weapon you carry** (a player stat, not per gun). *(2026-11-14T04:24:39+00:00 — History #22)*
 
+### Health, revised again *(2026-11-14T06:58:51+00:00 — History #57)*
+- **20 health: 5 pips × 4 stages** (was 5 × 5).
+- **Melee lunge hits cost 2 stages** (was a whole pip); **ranged shots cost 2 stages** (#56).
+- Kills still heal 1 stage each, so 4 kills refill a pip.
+
 ### Health, revised after playtesting *(2026-11-14T06:44:50+00:00 — History #48)*
-- **25 health: 5 pips × 5 stages.** Each pip shows how many of its stages are left.
+- ~~**25 health: 5 pips × 5 stages.**~~ *(Now 5 × 4, #57.)* Each pip shows how many of its stages are left.
 - ~~**Brushing an enemy costs 1 stage**, then 0.4 s invulnerability, with a light version of the hurt feedback.~~ *(Removed by #52.)*
 - **Touching an enemy does nothing. Only attacks hurt.** Contact damage is gone entirely, for all enemies going forward. Supersedes #23. *(2026-11-14T06:47:26+00:00 — History #52)*
-- **Being caught by an attack (a roll or leap) costs a whole pip**, then the full 1 s invulnerability, knockback and hurt feedback.
+- **Being caught by an attack (a roll or leap) costs** ~~a whole pip~~ **2 stages (#57)**, then the full 1 s invulnerability, knockback and hurt feedback.
 - **Each kill restores 1 stage** (5 kills = a pip); wasted at full health. Replaces the random 3–5 and the reset-on-hit of #47.
 
 ### Health *(2026-11-14T06:17:03+00:00 — History #45)*
@@ -300,6 +320,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1d. **Ranged enemy (#56), open:** numbers (charge length, lock length, shot speed, how close before it darts, dart distance, time between shots, health if not one-hit), what "leading" predicts from (your current velocity), and whether a shot can be dashed through (dash invulnerability says yes).
 1c. **Shop (#53, #54), open:** how many items per shop; whether you can reroll the selection; prices and how fast they escalate; what healing costs and whether it escalates; how much currency each enemy drops (per type?); whether weapons and improvements share the rotation with stat upgrades; shop UI.
 1b. **Melee enemy (#40), open:** numbers (hop speed and height, health, damage, wind-up length, dizzy length, lunge speed), and whether "properly navigates" means planning routes across several platforms or one platform at a time.
 1a. **Aim modes (#36–#38):** ~~line of sight~~ (yes), ~~range~~ (placeholder), ~~no target~~ (straight ahead), ~~stickiness~~ (locked until it dies). ~~Defaults~~ (mobile: auto aim + manual shooting; desktop: Manual, #39). Nothing left open here. To watch in testing: a locked target that goes behind a platform keeps the lock (#38), so shots would hit the platform until it comes back into view or dies.
@@ -459,6 +480,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 53 | 2026-11-14T06:52:12+00:00 | Upgrades / economy | Replace the three-card upgrade offer with a currency shop between waves: enemies drop currency; spend any amount on stat upgrades, new weapons and weapon improvements, or save it. Score = total earned in the run (spending never lowers it). Death resets currency, weapons and upgrades; the final score is the high score. Supersedes the offer mechanics of #12 and #22. |
 | 54 | 2026-11-14T06:52:12+00:00 | Upgrades / economy | Shop details: rotating selection each shop; drops fly to you when close (magnet); escalating prices on repeat purchases; the shop sells healing. |
 | 55 | 2026-11-14T06:53:18+00:00 | Dash | Dash cooldown doubled, 0.8 s → 1.6 s, to stop stun-locking enemies (it's now longer than their 1 s dizzy). |
+| 56 | 2026-11-14T06:58:51+00:00 | Enemies | Ranged enemy: smaller green triangle that points at you; flies; darts a short way off when you get close; single fast leading shot with a heavy tell (points, glows, charging sound, aim line that tracks then locks before firing); shots pass through platforms; only fires when on screen; 2 stages per hit; shares the one-attacker turn with the melee; one dash hit kills it; shatters into green triangles. |
+| 57 | 2026-11-14T06:58:51+00:00 | Combat | Health 20 = 5 pips × 4 stages; melee lunge and ranged shot each cost 2 stages; kills still heal 1 stage. Supersedes the numbers in #48. |
 
 ---
 
