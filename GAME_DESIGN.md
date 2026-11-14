@@ -56,6 +56,7 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
 - **Worlds**, each entered through its own **archstone** in the hub, split into numbered, named **sections** (e.g. 1-1 "Gates of …", 4-1 "Shrine of …").
 - **A section is 5 waves, then a boss.** Bosses are **Soulsborne-style fights**: a massive health bar, massive tells, **one or two phases**.
 - **Four worlds to begin with, built one at a time:** get the first really good, then the second, third and fourth; consider more after that. *(2026-11-14T21:18:04+00:00 — History #64)*
+- **Each world has a fully unique enemy roster**, so every world plays differently, not just looks different. Lyra's reasoning: the melee enemy needed little tuning of its own; most of the tweaking was the player's side (health, contact damage, dash cooldown, turns), which is now in good shape. *(2026-11-14T21:19:20+00:00 — History #65)*
 - **Names are placeholders:** "archstone", "Gates of Boletaria" and "Shrine of Storms" are Demon's Souls' and only illustrated the idea. The game needs its own term for the portals and its own world/section names. *(2026-11-14T21:18:04+00:00 — History #64)*
 - **Worlds can be tackled in any order**; sections within a world go in sequence.
 - **Checkpoints:** progress within a world is kept. Clear 1-1, die in 1-2, and the archstone takes you back into 1-2.
@@ -389,7 +390,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
-1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; **unique enemies per world** (Lyra: would be nice, so each world plays differently, not just looks different; how far to go is open); how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
+1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; ~~unique enemies per world~~ (fully unique, #65); whether the existing melee/ranged/tank become world 1's roster, endless mode's, or both; how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; whether endless mode uses your story upgrades or starts from nothing; the hub itself (a walkable space, or a menu?); boss designs.
 1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
@@ -577,6 +578,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 62 | 2026-11-14T21:13:05+00:00 | Structure | Restructure (Demon's Souls archstones): worlds of numbered, named sections, each 5 waves + a Soulsborne-style boss (1–2 phases); worlds in any order, sections in sequence with per-world checkpoints; a hub for shop, levelling and saving, returned to after each section and on death; death loses all carried currency with no recovery, keeping levels/upgrades/weapons; endless waves + high score kept as a separate mode. Supersedes the between-wave shop (#53) and, for story mode, death resetting everything (#17). |
 | 63 | 2026-11-14T21:14:19+00:00 | Structure | "Levelling up" in the hub is the existing shop: the four attributes, weapons and weapon improvements, from a random 3–4 items each visit. No Souls-style attribute/levelling system. |
 | 64 | 2026-11-14T21:18:04+00:00 | Structure | Four worlds to start, built one at a time (polish one before the next). "Archstone" and the Demon's Souls area names were only examples; the game needs its own names. |
+| 65 | 2026-11-14T21:19:20+00:00 | Enemies | Every world gets a fully unique enemy roster (not variants of the core three). |
 
 ---
 
