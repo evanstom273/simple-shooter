@@ -13,7 +13,8 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 **Priority (Lyra, #67):** ~~1. player shooting~~ (done) · ~~2. hub + shop~~ (done, #74) · 3. randomly generated platforms. Then worlds and art.
 
 - Tune the ranged enemy and tank in play.
-- Movement abilities to design (#77): wall jump, grapple. Never gating: the platform generator builds for the base kit only.
+- Wall jumping, innate (#78): build it (needs walls to matter; the generator can rely on it).
+- Grapple, bought in the shop (#77, #78): design it. Never gating: the platform generator builds for the base kit only (base jump, double jump, dash, wall jump).
 - Hub part 3: the short tutorial room on first launch (#70).
 - Lyra to play the hub and story loop: section length, gold per section, shop prices, the wave offset per section (#74).
 - Restructure (#62) still to come: boss fights, per-world enemy rosters, world names.
