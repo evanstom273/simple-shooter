@@ -99,6 +99,20 @@ The core design (History #7–#15) was worked out in a separate conversation and
 | **Ranged** | Shoots projectiles towards the player, potentially keeping its distance. |
 | **Tank** | Slow-moving, with significantly more health. |
 
+### Melee enemy *(2026-11-14T05:31:56+00:00 — History #40)*
+Designed with Lyra through a round of questions. All numbers are placeholders, tuned in play.
+- **Look:** an **orange circle**, **smaller than the player** (about ¾ of the square's size), with **one eye** that tracks you. Orange keeps red free for damage feedback.
+- **Movement:** **quick little hops**: constant, bouncy and fairly fast.
+- **Pathing:** **properly navigates** between platforms to reach you (works out a route), rather than just hopping straight at you.
+- **Attack: a lunge, chosen by situation.** If you're on its level it **rolls** fast along the ground at you; if you're above or below it **leaps** through the air at you. Contact still hurts at any time (#23).
+- **Tell:** during the wind-up it **glows brighter** (orange heating towards white-hot) with a **rising sound cue**.
+- **After a lunge:** a **dizzy moment** where it's stopped and vulnerable, your window to hit back. A roll that misses **keeps going and bounces off walls** before it recovers.
+- **Toughness:** **middling**: takes a few hits; one alone is a small fight.
+- **Your dash:** **damages it**, and dashing into it **during the wind-up cancels the lunge** and dizzies it.
+- **Death:** **shatters into curved orange shards** (pieces of the circle) that scatter and fade.
+- **Spawning:** a **marker appears briefly first** as a warning, then it **fades in** there.
+- **Crowds:** they **bump and push** each other, so a group spreads out rather than stacking.
+
 ### Upgrades *(2026-11-14T04:17:36+00:00 — History #12)*
 - **Four upgrades; three offered at random between waves; the player picks exactly one.**
 - **Upgrades can be picked repeatedly and stack.**
@@ -204,6 +218,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1b. **Melee enemy (#40), open:** numbers (hop speed and height, health, damage, wind-up length, dizzy length, lunge speed), and whether "properly navigates" means planning routes across several platforms or one platform at a time.
 1a. **Aim modes (#36–#38):** ~~line of sight~~ (yes), ~~range~~ (placeholder), ~~no target~~ (straight ahead), ~~stickiness~~ (locked until it dies). ~~Defaults~~ (mobile: auto aim + manual shooting; desktop: Manual, #39). Nothing left open here. To watch in testing: a locked target that goes behind a platform keeps the lock (#38), so shots would hit the platform until it comes back into view or dies.
 2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). The items left open in the original conversation:
    - ~~**Wave count.**~~ Endless (#18).
@@ -316,6 +331,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 37 | 2026-11-14T05:20:16+00:00 | Controls | Auto-aim picks the nearest enemy and shows an indicator on the target (the square has no facing). |
 | 38 | 2026-11-14T05:22:06+00:00 | Controls | Auto-aim: lock on the target until it dies; with no target in range, shoot straight ahead (direction last moved); line of sight required (platforms block); range a placeholder to tune in play. |
 | 39 | 2026-11-14T05:22:58+00:00 | Controls | Default aim mode: mobile Auto aim + manual shooting; desktop Manual (desktop part confirmed 2026-11-14T05:23:10+00:00). |
+| 40 | 2026-11-14T05:31:56+00:00 | Enemies | Melee enemy: smaller orange circle with one tracking eye; quick little hops; properly navigates platforms; lunge by situation (roll on same level, leap if above/below) with a glow + rising-sound tell; dizzy after a lunge, missed rolls bounce off walls; middling toughness; dash damages it and cancels a wind-up into dizzy; shatters into orange arcs; spawns at a warning marker; enemies bump and push each other. |
 
 ---
 
