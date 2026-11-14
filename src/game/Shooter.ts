@@ -28,6 +28,8 @@ export interface ShooterInput {
   facing: number
   dashing: boolean
   mode: AimMode
+  /** Has a gun. Unarmed (the start of a run, #21): no shooting or barrel, but auto-aim still picks a target for the dash. */
+  armed: boolean
   /** Trigger held (mouse button or right-side touch). */
   fireHeld: boolean
   /** Manual mode: the world point being aimed at, if any. */
@@ -99,10 +101,10 @@ export class Shooter {
     this.aimAngle = Phaser.Math.Angle.RotateTo(this.aimAngle, angle, dt * 30)
 
     // Should we fire?
-    let wantFire = s.fireHeld
+    let wantFire = s.armed && s.fireHeld
     if (s.mode === 'fullAuto') {
       // Full auto fires only when there's a target; never at nothing.
-      wantFire = !!this.locked
+      wantFire = s.armed && !!this.locked
     }
 
     this.cooldown -= dt
@@ -183,7 +185,7 @@ export class Shooter {
     this.barrelKick = Math.max(0, this.barrelKick - dt * 12)
     const out = PLAYER.size * 0.32 - this.barrelKick * 7
     this.barrel
-      .setVisible(!s.dashing)
+      .setVisible(s.armed && !s.dashing)
       .setPosition(s.x + Math.cos(this.aimAngle) * out, s.y + Math.sin(this.aimAngle) * out)
       .setRotation(this.aimAngle)
   }

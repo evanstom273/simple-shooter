@@ -10,7 +10,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Next
 
-- Step 8: the melee enemy (#40), with player health, damage, dash damage and the combat juice that applies (plan already agreed in outline).
+- Step 8b: the melee enemy (#40) with the combat juice that applies; remove the practice dummies.
 - Weapons step: automatic, shotgun, switching (number keys, wheel, mobile cycle button).
 - When combat exists, add its juice: hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash + recoil (shotgun shove), damage feedback (bigger shake, red edge pulse, light dims at low health), last-kill slow motion, wave banners, animated upgrade cards.
 - Title (Lyra, deferred).
@@ -19,6 +19,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Step 8a: player health + hurt feedback, unarmed start, dash damage, dash auto-aim, post-dash grace (History #45–#46). *(2026-11-14T06:17:03+00:00)*
 - [x] Step 7c: off-screen enemy markers, highlighted target arrow, zoom out (≤15%) for an off-screen target (History #44). *(2026-11-14T06:06:53+00:00)*
 - [x] Step 7b: bullets through platforms, no line of sight (#42); nearest-target auto-aim with 15% switch margin (#43). *(2026-11-14T05:50:22+00:00)*
 - [x] Step 7: shooting and aiming: three aim modes + settings panel, touch trigger, auto-aim lock + bracket, test pistol, shot juice, practice dummies (History #41). *(2026-11-14T05:45:20+00:00)*

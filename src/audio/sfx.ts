@@ -104,6 +104,18 @@ export const sfx = {
   },
   spark: () => noise('highpass', vary(5000), 3000, 0.04, 0.05, 1),
   targetHit: () => tone('triangle', vary(520), vary(380), 0.05, 0.08),
+  hurt: () => {
+    tone('sawtooth', vary(320), 90, 0.25, 0.22)
+    noise('lowpass', 2500, 300, 0.2, 0.25)
+  },
+  revive: () => {
+    tone('triangle', vary(330), vary(660), 0.25, 0.12)
+    tone('triangle', vary(495), vary(990), 0.25, 0.08, 0.08)
+  },
+  dashHit: () => {
+    tone('square', vary(200), 70, 0.1, 0.18)
+    noise('bandpass', 1800, 600, 0.08, 0.2, 1.2)
+  },
   targetPop: () => {
     tone('sine', vary(600), 120, 0.2, 0.2)
     noise('bandpass', 2000, 400, 0.15, 0.12, 1)

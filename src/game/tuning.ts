@@ -38,6 +38,15 @@ export const PLAYER = {
   jumpBuffer: 0.12,
   /** Seconds that platforms ignore you after pressing down to drop through. */
   dropThrough: 0.22,
+  /** Hit points (#23). Placeholder. */
+  maxHealth: 5,
+  /** Seconds of invulnerability after a hit (#27). */
+  hurtInvulnerability: 1,
+  /** Knockback when hit: sideways away from the source, and up, px/s. */
+  hurtKnockback: { x: 520, y: 480 },
+  /** Freeze-frames, seconds: on taking a hit, and on landing a dash hit. */
+  hurtHitStop: 0.08,
+  dashHitStop: 0.05,
 } as const
 
 export const DASH = {
@@ -49,6 +58,8 @@ export const DASH = {
   cooldown: 0.8,
   /** Fraction of dash speed kept when it ends, so it doesn't stop dead. */
   carry: 0.35,
+  /** Seconds of invulnerability after a dash ends, so ending inside an enemy doesn't hurt. */
+  grace: 0.12,
 } as const
 
 export const GRAVITY = 2400

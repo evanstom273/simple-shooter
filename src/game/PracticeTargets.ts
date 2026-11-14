@@ -4,8 +4,9 @@ import { burst, ring } from './fx.ts'
 import type { Target } from './targets.ts'
 import { DUMMY } from './tuning.ts'
 
-// Temporary: plain grey circles to shoot at while there are no enemies.
-// They don't move or fight back. Removed when the melee enemy goes in.
+// Temporary: plain grey circles to hit while there are no enemies. They don't
+// move, but touching one hurts (to test player health). Removed when the melee
+// enemy goes in.
 
 const GREY = 0x8a8a9c
 

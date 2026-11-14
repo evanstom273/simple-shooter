@@ -18,3 +18,24 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* Hurt: a red pulse at the screen edges. Revive: a white flash. */
+@keyframes hurt-pulse {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+@keyframes revive-flash {
+  0% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+.hurt-pulse {
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(220, 40, 40, 0.55) 100%);
+  animation: hurt-pulse 450ms ease-out forwards;
+}
+.revive-flash {
+  background: white;
+  animation: revive-flash 500ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hurt-pulse, .revive-flash { animation-duration: 1ms; }
+}

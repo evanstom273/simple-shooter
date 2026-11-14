@@ -22,6 +22,8 @@ export class PlayerView {
   private vy = 0
   private lean = 0
   private flash = 0
+  /** Invulnerable after a hit: blink. */
+  flicker = false
 
   constructor(scene: Phaser.Scene) {
     this.rect = scene.add.rectangle(0, 0, PLAYER.size, PLAYER.size, PLAYER_COLOURS.normal).setDepth(10)
@@ -82,6 +84,7 @@ export class PlayerView {
     r.setRotation(this.lean)
     r.setScale(this.sx * (1 - airStretch * 0.5), this.sy * (1 + airStretch))
 
+    r.setAlpha(this.flicker && Math.floor(performance.now() / 70) % 2 === 0 ? 0.25 : 1)
     this.flash = Math.max(0, this.flash - dt)
     r.setFillStyle(this.flash > 0 ? 0xffffff : PLAYER_COLOURS.normal)
     r.setStrokeStyle(this.flash > 0 ? 4 : 0, PLAYER_COLOURS.dash, this.flash > 0 ? 0.9 : 0)

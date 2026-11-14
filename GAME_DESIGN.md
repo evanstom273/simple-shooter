@@ -10,10 +10,11 @@ A **2D side-view, wave-based roguelite arena shooter** (History #1, #7). The pla
 
 The core design (History #7–#15) was worked out in a separate conversation and brought here by Lyra; its timestamps are documentation time.
 
-**Where the project stands (as of 2026-11-14T06:06:53+00:00):**
+**Where the project stands (as of 2026-11-14T06:17:03+00:00):**
 - Repository set up with GitHub Pages deployment from `main` (History #2) and these living documents (History #3).
 - Stack chosen (History #4). Core design documented (History #7–#15) and the follow-up questions answered (2026-11-14T04:24:39+00:00, History #16–#22). Upgrade and enemy numbers are placeholders to tune in play (#19, #20).
 - **Project scaffolded** (2026-11-14T04:15:39+00:00): builds and deploys; Phaser shows an empty placeholder scene under a React UI layer.
+- **Player health built; gun removed (start unarmed); dash damages dummies; dash auto-aims in the auto modes** (2026-11-14T06:17:03+00:00).
 - **Off-screen enemy markers and target zoom-out** (2026-11-14T06:06:53+00:00).
 - **After testing: bullets pass through platforms; auto-aim re-picks the nearest target continuously** (2026-11-14T05:50:22+00:00).
 - **Shooting and aiming built** (all three aim modes, settings panel, test pistol, practice dummies) (2026-11-14T05:45:20+00:00).
@@ -139,6 +140,11 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 - **Diminishing returns:** each repeat of the same upgrade adds a bit less than the last. Actual amounts are placeholders, tuned once it's playable. *(2026-11-14T04:24:39+00:00 — History #19)*
 - **Fire Rate applies to every weapon you carry** (a player stat, not per gun). *(2026-11-14T04:24:39+00:00 — History #22)*
 
+### Health *(2026-11-14T06:17:03+00:00 — History #45)*
+- **5 hit points**, shown as five square pips top-left (React HUD). Placeholder number.
+- **Hurt feedback:** knockback, a red pulse at the screen edges, bigger screen shake, a hurt sound, a vibration on the phone and a short freeze-frame; the square flickers while invulnerable.
+- **Dying (temporary):** health refills with a white flash until runs exist (#17 is the real rule).
+
 ### Taking damage *(2026-11-14T04:27:30+00:00 — History #23)*
 - **Touching an enemy damages you**, unless you're dashing (#24).
 - **Getting hit knocks you back a bit and takes some of your health.**
@@ -146,6 +152,7 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 
 ### Weapons and dash
 - **The player starts unarmed, with only a dash that does damage.** *(2026-11-14T04:24:39+00:00 — History #21)*
+- **Dash aims itself in the auto-aim modes** (Auto aim, Full auto): with no movement input it goes for the auto-aim target. Touch: joystick direction if pushed, else the target, else facing. Desktop: A/D direction if held, else the target, else facing (mouse ignored, as for shooting). Manual is unchanged (mouse / joystick). *(2026-11-14T06:17:03+00:00 — History #46)*
 - **The dash is kept for the whole run**, alongside any weapons. *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Dash: has a cooldown, damages enemies it hits, and makes you invulnerable while dashing**, so it's how you get through enemies without the contact damage (#23). Numbers tuned in play. *(2026-11-14T04:27:30+00:00 — History #24)*
 - **Several weapons: pistol, automatic, shotgun, maybe others.** *(2026-11-14T04:24:39+00:00 — History #22)*
@@ -176,6 +183,12 @@ Designed with Lyra through a round of questions. All numbers are placeholders, t
 ---
 
 ## C. Current Development Scope
+
+### Step 8a: Player health — **BUILT** *(2026-11-14T06:17:03+00:00)*
+**In scope (done):** health (#45) with HUD pips, hurt pulse and revive flash; contact damage, knockback and post-hit invulnerability (#23, #27); the gun removed so you start unarmed (#21); the dash damages targets once per dash with a freeze-frame (#24); dash auto-aim in the auto modes (#46); the practice dummies hurt on touch (temporary) so health can be tested.
+
+**Next:** Step 8b, the melee enemy (#40).
+
 
 ### Step 7c: Off-screen markers and target zoom — **BUILT** *(2026-11-14T06:06:53+00:00)*
 Edge arrows for off-screen enemies and a highlighted arrow for the auto-aim target; camera zooms out up to 15% while the target is off screen (#44).
@@ -294,13 +307,18 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | Auto-aim | Tested | *(Updated 2026-11-14T05:50:22+00:00, #42–#43.)* Nearest living target within 700 px, re-checked every frame; keeps the current target unless another is ≥15% closer (`AIM.switchMargin`); drops it when it dies or leaves range. Platforms ignored. Checked: a 6% difference kept the old target, 33% switched. *Previously:* line of sight + locked until death. Rotating corner bracket on the locked target. *(2026-11-14T05:45:20+00:00)* |
 | Shot feel | Tested | Muzzle star flash, additive glow, barrel kicks back, small recoil push (sideways; lift when firing down in the air), tiny squash, shot sound; impact sparks + tick. *(2026-11-14T05:45:20+00:00)* |
 | Off-screen markers (#44) | Tested | `MarkersScene` (screen space, drawn under the touch controls): for each living target outside the view, an arrowhead where the line from screen centre to the target meets the edge (inset 26 CSS px). Size 9–15 px and opacity by distance (fades out to 1600 px). Auto-aim target: yellow, 16–19 px pulsing, with a pulsing ring. Each target supplies its marker colour. *(2026-11-14T06:06:53+00:00)* |
+| Health (#45) | Tested | `hudStore` (plain TS) shared with React. Touching a target without invulnerability: −1 HP, knockback away and up (520/480 px/s), 1 s invulnerability with flicker, 0.08 s freeze-frame, shake, red edge pulse (CSS), sound, 80 ms vibration. At 0 HP: refill, 1.5 s invulnerability, white flash and chime (temporary). *(2026-11-14T06:17:03+00:00)* |
+| Dash damage | Tested | Dashing through a target hits it once per dash (1 damage), with white sparks, a thud, a small shake, 25 ms vibration and a 0.05 s freeze-frame. Three dashes pop a dummy. *(2026-11-14T06:17:03+00:00)* |
+| Dash grace | Tested | 0.12 s of invulnerability after a dash ends (`DASH.grace`), added after testing showed a dash ending just inside a dummy hurt the player. *(2026-11-14T06:17:03+00:00)* |
+| Dash auto-aim (#46) | Tested | Auto modes, no movement input: dash direction = towards the auto-aim target (checked: mouse ignored, dash went to the target); with A held it went straight left. *(2026-11-14T06:17:03+00:00)* |
+| Unarmed start (#21) | Tested | Gun switched off (`armed = false`): no shooting, no barrel; auto-aim still runs (bracket and markers show the dash target). Shooting code kept for the weapons step. *(2026-11-14T06:17:03+00:00)* |
 | Target zoom-out (#44) | Tested | If the auto-aim target is outside the view *at normal zoom* (so it can't see-saw), zoom out just enough to fit it plus a margin, capped at 15% (`VIEW.targetZoomOut`); eases out at 3/s, back at 1.2/s. Never zooms out past the arena. Portrait check: a target just off screen pulled in at ~5% zoom-out; one further away hit the cap and kept its yellow arrow. *(2026-11-14T06:06:53+00:00)* |
-| Test pistol | Temporary | You start with the pistol until upgrades exist; the design says you start unarmed (#21). |
-| Practice dummies | Temporary | Five grey circles floating above platforms; 3 hits to pop, respawn after 2.5 s. Removed when the melee enemy goes in. |
+| ~~Test pistol~~ | Removed | You now start unarmed (#21); the gun returns through upgrade offers. |
+| Practice dummies | Temporary | Five grey circles floating above platforms; 3 hits (dash or shot) to pop, respawn after 2.5 s; touching one hurts (to test health). Removed when the melee enemy goes in. |
 | Saves | Scaffolded | Dexie database `simple-shooter`, table `saves` (`id`, `data`, `updatedAt`). Nothing reads or writes it yet. |
 
 ### Known issues and limitations
-- **Starting with a pistol** contradicts #21 (start unarmed) until the upgrade offers exist.
+- **No way to get a gun yet**: you start unarmed (#21) and weapons come from upgrade offers, which don't exist yet.
 - **Dash doesn't damage anything yet**: there's nothing to hit.
 - **Arena layout is a placeholder** (floor + five platforms) so there's something to jump on; not a designed arena (#10).
 - **Zoomed-in views see less of the arena** (#29): in portrait about a fifth of its width. Off-screen enemies now get edge markers (#44).
@@ -317,6 +335,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Floating joystick:** the design says "a virtual joystick on the left" (#9); it appears wherever the thumb lands in the left part of the screen, so you don't have to hit a fixed spot. Only its horizontal axis is used.
 - **Dash direction on touch:** the design only says "an on-screen dash button" (#21); it uses the joystick's direction (including up/down), falling back to the way you're facing.
 - ~~Platforms block bullets from every side.~~ Changed by #42: bullets pass through.
+- **Post-dash grace (0.12 s)** is Claude's addition so a dash that ends inside something doesn't immediately hurt you.
+- **Health shown as pips** rather than a bar: five hit points read better as five squares.
 - **No firing during a dash** (the barrel hides while dashing).
 - **Air jump doesn't reset on dash**, and dashing doesn't use up a jump.
 - ~~**Jump is a fixed height.**~~ Replaced by short hops (#32).
@@ -374,6 +394,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 42 | 2026-11-14T05:50:22+00:00 | Combat | After testing: platforms are invisible to bullets (only the floor stops them) and no longer block auto-aim; the line-of-sight rule (#38) is dropped. |
 | 43 | 2026-11-14T05:50:22+00:00 | Controls | After testing: auto-aim is the nearest target in range, re-picked continuously, with a 15% tolerance before switching; no longer locked until death (#38). |
 | 44 | 2026-11-14T06:06:53+00:00 | UI / camera | Off-screen enemy markers (edge arrows in the enemy's colour, bigger/brighter when closer); the auto-aim target's arrow is highlighted; the camera zooms out up to 15% while the auto-aim target is off screen. |
+| 45 | 2026-11-14T06:17:03+00:00 | Combat | Player health: 5 HP (placeholder), HUD pips, hurt feedback (knockback, red pulse, shake, sound, vibration, freeze-frame, flicker); temporary refill on death. Start unarmed (gun removed). Dash damages targets. |
+| 46 | 2026-11-14T06:17:03+00:00 | Controls | In the auto-aim modes the dash aims at the auto-aim target unless you're moving (joystick pushed / A or D held). |
 
 ---
 
@@ -383,6 +405,6 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 - **Explain before adding (Lyra, 2026-11-14):** before building anything, Claude says what it's about to add and how, then waits for the go-ahead.
 - **Workflow (Lyra's standing order across all her projects, from the previous design document):** after committing to the working branch, always merge straight to `main` as well; no need to ask each time.
 - **Deployment:** `.github/workflows/pages.yml` uses `actions/setup-node` (22), `npm ci`, `npm run build`, then `actions/configure-pages`, `actions/upload-pages-artifact` (path `dist`) and `actions/deploy-pages`. Vite `base` is `/simple-shooter/`. Can also be run manually from the Actions tab (`workflow_dispatch`). Site URL: https://evanstom273.github.io/simple-shooter/
-- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `PracticeTargets.ts` temporary dummies; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/audio/sfx.ts` synthesised sound.
+- **Code layout:** `src/main.tsx` entry; `src/App.tsx` stacks the Phaser view and the React UI layer; `src/game/` Phaser (`PhaserView` React host that lazily imports `createGame`; `GameScene` arena + player; `TouchControlsScene` on-screen controls, drawn at screen scale over the game; `PlayerView` the visible square (squash/stretch, separate from the physics box); `fx.ts` one-shot effects; `haptics.ts` vibration; `Shooter.ts` aiming, bullets, barrel, bracket, crosshair; `targets.ts` shootable interface; `PracticeTargets.ts` temporary dummies; `MarkersScene.ts` off-screen markers; `controls.ts` merged input state; `tuning.ts` all gameplay numbers); `src/ui/` React UI (`Hud`, pointer-events off so input reaches the game); `src/persist/db.ts` Dexie; `src/persist/settings.ts` settings (mute, aim mode); `src/settings/store.ts` live settings shared by React and Phaser; `src/state/hud.ts` health for the HUD; `src/audio/sfx.ts` synthesised sound.
 - **Commands:** `npm run dev`, `npm run build`, `npm run lint` (oxlint), `npm run preview`.
 - **Rendering:** Phaser scale mode `NONE`; the canvas is CSS size × dpr (max 3) shown at zoom 1/dpr, resized by a `ResizeObserver` on the host element. `GameScene` sets its camera zoom on every resize (baseline 1600×900 view × `VIEW.zoom`, #35). In dev, the game is on `window.__game` for poking at from the console.

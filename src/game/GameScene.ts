@@ -8,6 +8,7 @@ import { createPracticeTargets } from './PracticeTargets.ts'
 import { Shooter } from './Shooter.ts'
 import type { Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
+import { hudStore } from '../state/hud.ts'
 import { ARENA, DASH, DUMMY, GRAVITY, PLATFORMS, PLAYER, SCREEN, VIEW, WEAPONS } from './tuning.ts'
 
 const COLOURS = {
@@ -58,6 +59,17 @@ export class GameScene extends Phaser.Scene {
   private stepTimer = 0
   private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
   private shooter!: Shooter
+  /** No gun at the start of a run (#21); weapons come from upgrade offers later. */
+  private armed = false
+  private health: number = PLAYER.maxHealth
+  /** Seconds of post-hit invulnerability left (#27). */
+  private hurtTime = 0
+  /** Seconds of freeze-frame left. */
+  private hitStop = 0
+  /** Targets already hit by the current dash (one hit each per dash). */
+  private dashHits = new Set<Target>()
+  /** Seconds of invulnerability left after a dash ended. */
+  private dashGrace = 0
   /** Zoom that fills the screen (#35); the target zoom-out (#44) scales it down. */
   private baseZoom = 1
   private minZoom = 0.1
@@ -66,7 +78,7 @@ export class GameScene extends Phaser.Scene {
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
   get invulnerable() {
-    return this.dashTime > 0
+    return this.dashTime > 0 || this.hurtTime > 0 || this.dashGrace > 0
   }
   get dashing() {
     return this.dashTime > 0
@@ -136,11 +148,12 @@ export class GameScene extends Phaser.Scene {
       down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
     }
 
-    // Right-click dashes towards the mouse (#21).
+    // Right-click dashes (#21): towards the mouse in Manual; auto modes decide in readControls.
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (p: Phaser.Input.Pointer) => {
       if (p.wasTouch || !p.rightButtonDown()) return
       this.mouseDash = { x: p.worldX - this.player.x, y: p.worldY - this.player.y }
     })
+    hudStore.set({ health: this.health, maxHealth: PLAYER.maxHealth })
 
     const cam = this.cameras.main
     cam.setBounds(0, 0, ARENA.width, ARENA.height)
@@ -175,11 +188,21 @@ export class GameScene extends Phaser.Scene {
     const jump = Phaser.Input.Keyboard.JustDown(this.keys.jump) || touchInput.jumpQueued
     touchInput.jumpQueued = false
 
-    let dash = this.mouseDash
-    this.mouseDash = null
+    // Dash direction. In the auto-aim modes the dash goes for the target, unless
+    // you're already moving somewhere. {0,0} means "the way you're facing".
+    const auto = settingsStore.aimMode !== 'manual'
+    const t = this.shooter?.target
+    const toTarget = auto && t ? { x: t.x - this.player.x, y: t.y - this.player.y } : null
+    let dash: Controls['dash'] = null
+    if (this.mouseDash) {
+      // Desktop: Manual → towards the mouse. Auto → A/D direction if held, else the target.
+      dash = !auto ? this.mouseDash : moveX !== 0 ? { x: moveX, y: 0 } : (toTarget ?? { x: 0, y: 0 })
+      this.mouseDash = null
+    }
     if (touchInput.dashQueued) {
-      // Touch: dash the way the joystick points; with the stick idle, the way you're facing.
-      dash = Math.hypot(touchInput.stickX, touchInput.stickY) > 0.3 ? { x: touchInput.stickX, y: touchInput.stickY } : { x: 0, y: 0 }
+      // Touch: the way the joystick points; with the stick idle, the target (auto modes) or facing.
+      const pushed = Math.hypot(touchInput.stickX, touchInput.stickY) > 0.3
+      dash = pushed ? { x: touchInput.stickX, y: touchInput.stickY } : (toTarget ?? { x: 0, y: 0 })
       touchInput.dashQueued = false
     }
     const down = this.keys.down.isDown || touchInput.stickY > 0.6
@@ -187,8 +210,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number) {
+    // Freeze-frame: physics paused, nothing moves, for a few hundredths of a second.
+    if (this.hitStop > 0) {
+      this.hitStop -= deltaMs / 1000
+      if (this.hitStop <= 0) this.physics.world.resume()
+      return
+    }
     const c = this.readControls()
     const dt = deltaMs / 1000
+    this.hurtTime = Math.max(0, this.hurtTime - dt)
+    this.dashGrace = Math.max(0, this.dashGrace - dt)
+    this.view.flicker = this.hurtTime > 0
     // Same camera smoothing whatever the screen's refresh rate.
     const lerp = 1 - Math.pow(1 - SCREEN.followLerp, dt * 60)
     this.cameras.main.setLerp(lerp, lerp)
@@ -290,6 +322,7 @@ export class GameScene extends Phaser.Scene {
     this.lastVelY = b.velocity.y
 
     this.updateShooting(dt)
+    this.checkContacts()
     this.updateTargetZoom(dt)
     this.updateLookAhead(dt)
     this.updateDarkness()
@@ -319,6 +352,7 @@ export class GameScene extends Phaser.Scene {
       y: this.player.y,
       facing: this.facing,
       dashing: this.dashing,
+      armed: this.armed,
       mode,
       fireHeld,
       aimPoint,
@@ -331,6 +365,64 @@ export class GameScene extends Phaser.Scene {
       b.setVelocityX(b.velocity.x - shot.x * WEAPONS.pistol.recoil)
       if (!b.blocked.down) b.setVelocityY(b.velocity.y - shot.y * WEAPONS.pistol.recoil * 0.5)
       this.view.kick(1 - Math.abs(shot.x) * 0.06, 1 - Math.abs(shot.y) * 0.06)
+    }
+  }
+
+  /**
+   * Player vs targets. Dashing through one hits it (once per dash, #24);
+   * otherwise touching one hurts you (#23) unless you're invulnerable.
+   */
+  private checkContacts() {
+    const b = this.body_
+    for (const t of this.targets) {
+      if (!t.alive) continue
+      const nx = Phaser.Math.Clamp(t.x, b.left, b.right)
+      const ny = Phaser.Math.Clamp(t.y, b.top, b.bottom)
+      if (Phaser.Math.Distance.Between(nx, ny, t.x, t.y) > t.radius) continue
+      if (this.dashing) {
+        if (this.dashHits.has(t)) continue
+        this.dashHits.add(t)
+        t.hit(1, { x: this.dashDir.x, y: this.dashDir.y })
+        sfx.dashHit()
+        buzz(25)
+        this.shake(80, 0.004)
+        burst(this, t.x, t.y, { count: 8, colour: 0xffffff, angle: this.dashDir.angle(), spread: 0.8, speed: [150, 380], size: [4, 8], life: 220 })
+        this.freeze(PLAYER.dashHitStop)
+      } else if (!this.invulnerable) {
+        this.takeHit(t.x)
+        return
+      }
+    }
+  }
+
+  private freeze(seconds: number) {
+    this.hitStop = Math.max(this.hitStop, seconds)
+    this.physics.world.pause()
+  }
+
+  /** Knockback, lose a hit point, short invulnerability (#23, #27). */
+  private takeHit(fromX: number) {
+    this.health -= 1
+    this.hurtTime = PLAYER.hurtInvulnerability
+    const away = Math.sign(this.player.x - fromX) || -this.facing
+    this.body_.setVelocity(away * PLAYER.hurtKnockback.x, -PLAYER.hurtKnockback.y)
+    this.view.kick(1.35, 0.7)
+    this.view.pulse(0.12)
+    burst(this, this.player.x, this.player.y, { count: 12, colour: 0xff5a5a, angle: 0, spread: Math.PI, speed: [150, 380], size: [4, 9], life: 320 })
+    this.shake(170, 0.012)
+    sfx.hurt()
+    buzz(80)
+    this.freeze(PLAYER.hurtHitStop)
+    const hud = hudStore.get()
+    if (this.health <= 0) {
+      // Temporary until runs exist: refill and carry on.
+      this.health = PLAYER.maxHealth
+      this.hurtTime = PLAYER.hurtInvulnerability * 1.5
+      ring(this, this.player.x, this.player.y, PLAYER.size * 2, PLAYER.size * 2, 0xffffff, { grow: 4, life: 600, line: 5 })
+      this.time.delayedCall(120, () => sfx.revive())
+      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1, deathCount: hud.deathCount + 1 })
+    } else {
+      hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1 })
     }
   }
 
@@ -493,6 +585,7 @@ export class GameScene extends Phaser.Scene {
     this.dashCooldown = DASH.cooldown
     this.body_.setAllowGravity(false)
     this.trailTimer = 0
+    this.dashHits.clear()
     sfx.dash()
     burst(this, this.player.x, this.player.y, {
       count: 10, colour: COLOURS.dash, angle: this.dashDir.angle() + Math.PI, spread: 0.6, speed: [180, 420], size: [5, 10], life: 280,
@@ -538,6 +631,7 @@ export class GameScene extends Phaser.Scene {
 
   private endDash(carry: number) {
     this.dashTime = 0
+    this.dashGrace = DASH.grace
     this.body_.setAllowGravity(true)
     this.body_.setVelocity(this.dashDir.x * DASH.speed * carry, this.dashDir.y * DASH.speed * carry)
     // Come out of the streak a little stretched along the way you were going.

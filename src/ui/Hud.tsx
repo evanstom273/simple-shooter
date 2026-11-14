@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { setMuted, unlockAudio } from '../audio/sfx.ts'
 import { loadSettings, saveSettings, type Settings } from '../persist/settings.ts'
 import { AIM_MODES, defaultAimMode, settingsStore } from '../settings/store.ts'
+import { hudStore } from '../state/hud.ts'
 
 // React UI layer over the Phaser canvas. pointer-events-none so the game still
 // gets input; give interactive children pointer-events-auto.
 export function Hud() {
   const [settings, setSettings] = useState<Settings>({ muted: false, aimMode: defaultAimMode() })
   const [open, setOpen] = useState(false)
+  const hud = useSyncExternalStore(hudStore.subscribe, hudStore.get)
 
   useEffect(() => {
     void loadSettings().then((s) => {
@@ -38,8 +40,20 @@ export function Hud() {
 
   return (
     <div className="pointer-events-none absolute inset-0 p-3">
-      <p className="hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
-        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash · Left-click shoot
+      {/* Keyed by the counters so the animation replays on every hit / revive. */}
+      {hud.hurtCount > 0 && <div key={`h${hud.hurtCount}`} className="hurt-pulse absolute inset-0" />}
+      {hud.deathCount > 0 && <div key={`d${hud.deathCount}`} className="revive-flash absolute inset-0" />}
+
+      <div className="relative flex items-center gap-1.5" aria-label={`Health ${hud.health} of ${hud.maxHealth}`} role="img">
+        {Array.from({ length: hud.maxHealth }, (_, i) => (
+          <span
+            key={i}
+            className={`h-3.5 w-3.5 rounded-[3px] transition-all duration-200 ${i < hud.health ? 'bg-neutral-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]' : 'scale-75 bg-white/10 ring-1 ring-white/20'}`}
+          />
+        ))}
+      </div>
+      <p className="relative mt-2 hidden pr-28 text-xs text-neutral-500 [@media(pointer:fine)]:block">
+        A / D move · Space jump (twice to double jump) · S drop through · Right-click dash
       </p>
 
       <div className="absolute top-3 right-3 flex gap-2">
