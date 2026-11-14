@@ -69,6 +69,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
 - ~~**Short hops:**~~ *(Removed by #34.)* let go of jump early for a lower jump; holding gives the full height, which the Jump Height upgrade (#12) raises. Applies to the double jump too. *(2026-11-14T05:08:55+00:00 — History #32)*
 - **One-way platforms:** jump up through platforms from below; press down (S on desktop, joystick down on touch; down + jump also works) to drop through. The floor is solid. *(2026-11-14T05:08:55+00:00 — History #33)*
 - **Double jump:** press jump again in mid-air for one extra jump. *(2026-11-14T04:49:36+00:00 — History #30)*
+- **Aiming is a setting with three modes** *(2026-11-14T05:20:16+00:00 — History #36)*:
+  - **Manual:** aim and shoot yourself (desktop: mouse aim, left-click; touch: tap/hold on the right side, as in #9).
+  - **Auto aim, manual shooting:** the game picks the target; you choose when to fire.
+  - **Full auto:** the game aims and fires.
+  Motivation: manual aiming on a phone, especially the Fold's cover screen, is awkward with the right thumb already on jump and dash.
+- **Auto-aim targets the nearest enemy**, with a visible indicator on the current target. No facing-based targeting: the square has no front. *(2026-11-14T05:20:16+00:00 — History #37)*
 - **Dash:** right-click on desktop (towards the mouse); an on-screen dash button on mobile. *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Weapon switching (desktop):** number keys (1, 2, 3…) and the mouse wheel. *(2026-11-14T04:24:39+00:00 — History #22)*
 - **The game fills the whole screen** in every shape: desktop, the Fold's cover screen in landscape and portrait, and its inner screen. Where the screen's shape doesn't match the arena, the view is zoomed in and follows the player (portrait gets a narrower, zoomed-in view). No margins. *(2026-11-14T04:45:51+00:00 — History #29)*
@@ -192,6 +198,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
+1a. **Aim modes (#36, #37), details open:** default mode per device; whether walls/platforms block auto-aim (line of sight); auto-aim range; what manual-shoot does with no target in range (fire straight ahead, or not at all); whether the target is "sticky" so it doesn't flick between two enemies at similar distances.
 2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). The items left open in the original conversation:
    - ~~**Wave count.**~~ Endless (#18).
    - ~~**Upgrade amounts.**~~ Diminishing returns; values tuned in play (#19).
@@ -299,6 +306,8 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 33 | 2026-11-14T05:08:55+00:00 | Arena / controls | One-way platforms: jump up through from below; down (S / joystick down; down + jump also) drops through. Floor stays solid. |
 | 34 | 2026-11-14T05:12:44+00:00 | Movement | Short hops removed after playtesting: fixed jump height (all jumps full height). Supersedes #32. |
 | 35 | 2026-11-14T05:12:44+00:00 | Arena | Experiment: arena 2400×1350, camera 0.8× the previous baseline zoom, 8–10 platforms; player speed and dash distance unchanged. |
+| 36 | 2026-11-14T05:20:16+00:00 | Controls | Aiming is a player setting: Manual / Auto aim + manual shooting / Full auto. Prompted by manual aiming being awkward on the phone's cover screen. |
+| 37 | 2026-11-14T05:20:16+00:00 | Controls | Auto-aim picks the nearest enemy and shows an indicator on the target (the square has no facing). |
 
 ---
 
