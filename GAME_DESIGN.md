@@ -74,7 +74,12 @@ The core design (History #7–#15) was worked out in a separate conversation and
   - **Auto aim, manual shooting:** the game picks the target; you choose when to fire.
   - **Full auto:** the game aims and fires.
   Motivation: manual aiming on a phone, especially the Fold's cover screen, is awkward with the right thumb already on jump and dash.
-- **Auto-aim targets the nearest enemy**, with a visible indicator on the current target. No facing-based targeting: the square has no front. *(2026-11-14T05:20:16+00:00 — History #37)*
+- **Auto-aim targets the nearest enemy**, with a visible indicator on the current target. No facing-based targeting: the square has no front.
+  - **The target stays locked until it dies**; then the next nearest is picked. *(2026-11-14T05:22:06+00:00 — History #38)*
+  - **No target in range: shots go straight ahead**, i.e. the way you last moved. *(2026-11-14T05:22:06+00:00 — History #38)*
+  - **Line of sight:** auto-aim only picks enemies it can see; platforms block. *(2026-11-14T05:22:06+00:00 — History #38)*
+  - **Range:** a placeholder (700 px, about two-fifths of the desktop view width), tuned in play. *(2026-11-14T05:22:06+00:00 — History #38)*
+  *(2026-11-14T05:20:16+00:00 — History #37)*
 - **Dash:** right-click on desktop (towards the mouse); an on-screen dash button on mobile. *(2026-11-14T04:24:39+00:00 — History #21)*
 - **Weapon switching (desktop):** number keys (1, 2, 3…) and the mouse wheel. *(2026-11-14T04:24:39+00:00 — History #22)*
 - **The game fills the whole screen** in every shape: desktop, the Fold's cover screen in landscape and portrait, and its inner screen. Where the screen's shape doesn't match the arena, the view is zoomed in and follows the player (portrait gets a narrower, zoomed-in view). No margins. *(2026-11-14T04:45:51+00:00 — History #29)*
@@ -198,7 +203,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ## E. Open Questions
 
 1. **Title.** Deferred: Lyra will think of something.
-1a. **Aim modes (#36, #37), details open:** default mode per device; whether walls/platforms block auto-aim (line of sight); auto-aim range; what manual-shoot does with no target in range (fire straight ahead, or not at all); whether the target is "sticky" so it doesn't flick between two enemies at similar distances.
+1a. **Aim modes (#36–#38):** ~~line of sight~~ (yes), ~~range~~ (placeholder), ~~no target~~ (straight ahead), ~~stickiness~~ (locked until it dies). Still open: **default mode per device**. To watch in testing: a locked target that goes behind a platform keeps the lock (#38), so shots would hit the platform until it comes back into view or dies.
 2. ~~**Everything about the game itself.**~~ Core design resolved (#7–#15). The items left open in the original conversation:
    - ~~**Wave count.**~~ Endless (#18).
    - ~~**Upgrade amounts.**~~ Diminishing returns; values tuned in play (#19).
@@ -308,6 +313,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 35 | 2026-11-14T05:12:44+00:00 | Arena | Experiment: arena 2400×1350, camera 0.8× the previous baseline zoom, 8–10 platforms; player speed and dash distance unchanged. |
 | 36 | 2026-11-14T05:20:16+00:00 | Controls | Aiming is a player setting: Manual / Auto aim + manual shooting / Full auto. Prompted by manual aiming being awkward on the phone's cover screen. |
 | 37 | 2026-11-14T05:20:16+00:00 | Controls | Auto-aim picks the nearest enemy and shows an indicator on the target (the square has no facing). |
+| 38 | 2026-11-14T05:22:06+00:00 | Controls | Auto-aim: lock on the target until it dies; with no target in range, shoot straight ahead (direction last moved); line of sight required (platforms block); range a placeholder to tune in play. |
 
 ---
 
