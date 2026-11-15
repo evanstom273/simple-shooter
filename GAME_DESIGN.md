@@ -121,6 +121,22 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
   - **Major boss arena: the Sanctum** (3000 × 1400). One long solid floor, climbable broken pillars at the ends, two low and two high floating platforms kept to the edges, 8 candles, no eyes. A boss space of roughly 1000 × 700 in the middle.
   - **Respite perches** (#106): each room keeps a few climb-only spots walking enemies can't reach (the Nave's lofts, arches and pillar tops; the Breach's right ledge; the Sanctum's pillar tops). Fliers and swarms can still get there, so they're breathers, not safe rooms.
   - **Mini bosses fight in their own section's arena** (#103), and their mechanics must interact with that room (wind in the Bell Tower, graves in the Crypt, and so on).
+- **Mini bosses** *(2026-11-15T02:33:11+00:00, #107; looks still to draw)*.
+  - Structure, the same for all three:
+    - A mix of greater enemies and new creatures.
+    - **Strictly one phase.**
+    - No regular waves during the fight: **the boss calls its own enemies, Motes** for all three, each in its own way.
+    - Hints at the major boss in theme only.
+    - Fought in its section's room, using it (#103).
+  1. **The Rose** (the Nave; new creature). The great window's stained-glass rose comes alive: a dodecagon of glass segments floating over the nave, firing shards.
+     - **Break its segments:** dash or stomp individual segments to shatter them. Each broken one weakens it and opens a gap; shots only crack them.
+     - Motes pour in through the broken panes.
+  2. **The Ossuary** (the Crypt; greater Void Mass). A heap of bone-pale shapes stacked into a slow, heavy mass that eats the crypt's few candles. Its slams shake the room and collapse the rotten lids.
+     - **Knock its layers off:** stomp it to knock its stacked layers off one by one. It gets smaller and faster as it loses them.
+     - Calls Motes from the dark it leaves.
+  3. **The Gale** (the Bell Tower; new creature). A kite of stacked triangles riding the belfry wind. It turns the wind to blow you off landings and dives through the shaft.
+     - **Catch it when it perches:** between gusts it lands on the bell or a landing to change the wind. That's when you stomp it.
+     - Its Motes ride the gusts.
 - *Implementation notes:*
   - Enemies need a "lost you / searching" behaviour, because they currently always know where the player is.
   - Light needs per-room light sources, not just the pool around the player.
@@ -826,6 +842,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 104 | 2026-11-15T01:34:23+00:00 | Arena fix | Lyra's playtest: in the Nave, the floor between each side wall and its pillar was sealed off (the loft-to-pillar gap was 40 px, narrower than the player), so enemies spawning there were unreachable. Fix: pillars stand on arches 120 px off the floor (walk under), and the lofts are 130 px short of the pillars. Rule for every room: no gap between solid pieces narrower than 70 px, and no floor area that enemies can't walk out of. |
 | 105 | 2026-11-15T01:57:38+00:00 | Arena + physics fixes | Lyra: moving platforms vanished when stood on. Cause: the landing bounce tweened a platform to its resting height, which movers didn't have. Movers no longer bounce. Also fixed while testing: one-way movers dropped you as soon as they rose (now they collide if your feet were above their top last frame), and fast falls on slow frames could pass through (thicker collision, plus an explicit landing check). Room checks: the Breach's rising stone ran through a ledge (ledge moved right); the Crypt's ceiling eye was out of reach (moved over the right rotten lid); the belfry beam is now frame, not floor; the belfry wind covers the top two landings. Enemies plan jumps up to 340 px (was 250), hop off the ends of solid blocks, link same-height neighbours, and only spawn where they can walk out from and that isn't covered. Every room is now fully walkable by enemies except a few deliberate perches. |
 | 106 | 2026-11-15T02:25:34+00:00 | Arenas | **Respite perches** (Lyra): not every spot should be reachable by walking enemies. Each room keeps a few climb-only perches (wall-jumping, moving platforms) where the player can take a breather. Flying and swarming enemies can still reach them, so they're breathers, not safe rooms. Enemies never spawn on them. |
+| 107 | 2026-11-15T02:33:11+00:00 | Mini bosses: Celestial Gothic Horror | Structure: a mix of greater enemies and new creatures; strictly one phase; no regular waves (the boss calls its own enemies: Motes, for all three); hints at the major boss in theme only. Nave: **The Rose** (new), a living stained-glass rose window whose segments you break. Crypt: **The Ossuary** (greater Void Mass), a bone-pale stack whose layers you stomp off. Bell Tower: **The Gale** (new), a kite of triangles riding the wind, caught when it perches. Looks to be drawn. |
 
 ---
 
