@@ -16,7 +16,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 - Next (Lyra): enemy and boss designs. Bosses: 3 mini + 1 major per world (#91). Worlds (working set, #88–#89, see §B Worlds): Celestial Gothic Horror, Frozen Sci-fi, Volcanic Industrial, Overgrown Solarpunk (a breath of fresh air). Open: order, portal mapping, names, hazards per world, rosters, bosses.
 - Lyra to play the Celestial Gothic Horror rooms (Testing → Celestial Gothic Horror rooms) and say what to change (#103).
 - Watch in play: whether respite perches get camped (#106).
-- Celestial Gothic Horror bosses designed: minis the Rose, the Ossuary, the Gale (#107–#110); major boss the Firmament (#111–#112). Next: their attacks in detail, then building them.
+- Celestial Gothic Horror bosses designed: minis the Rose, the Ossuary, the Gale (#107–#110); major boss the Firmament (#111–#112). Attacks designed (#113–#116). Next: building them.
 - Hand-designed arenas (#100). Endless will recycle story rooms in random order (#101); open: matching enemies, world rules. Decide whether to remove the generator.
 - Generation, remaining steps (#79):
   6. World palettes and the per-section ramp, once worlds have identities.
