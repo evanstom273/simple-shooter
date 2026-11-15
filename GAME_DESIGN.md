@@ -83,6 +83,20 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
 - **Overgrown Solarpunk.** Technology grown together with nature: glass, gardens, sunlight. **Tone: a breath of fresh air** (Lyra), the one world that feels almost kind.
   - *Notes:* bounce pads as fungus, wind as spores; warm, lush, alive.
 
+**Celestial Gothic Horror: decided so far** *(2026-11-15T00:44:50+00:00, #93)*
+- **Roster:** five all-new enemy types. None of melee, ranged or tank is carried over.
+  - **Roles:** close-range attacker, ranged, heavy, support / summoner, swarm.
+  - **Signatures, blended across all five:** darkness, being watched, wrong geometry, ritual / choir.
+- **Darkness: light can be taken.** Your pool of light is smaller here and candles light patches of the room.
+  - An enemy snuffs candles.
+  - You relight a candle by touching it.
+  - Kills give light back.
+- **Eyes in the room** watch you and can be **destroyed for good**. While an eye can see you, enemies **know where you are** and are **tougher**. Out of sight, they lose track of you.
+- **Hazards:** crumbling floors, pits, wind.
+- *Implementation notes:*
+  - Enemies need a "lost you / searching" behaviour, because they currently always know where the player is.
+  - Light needs per-room light sources, not just the pool around the player.
+
 **The worlds pair as opposites:**
 - **Volcanic Industrial and Overgrown Solarpunk:** technology that tears the world open for fuel, against technology that grows with the world.
 - **Frozen Sci-fi and Celestial Gothic Horror:** the measured, understood universe, against the cosmos that can't be understood.
@@ -768,6 +782,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 90 | 2026-11-15T00:32:16+00:00 | Art | Environments don't have to be strictly geometric: they can be looser and more organic. Characters stay Stylised Geometry (#61). World style mockups made as a design canvas (four scenes, one per world). |
 | 91 | 2026-11-15T00:39:51+00:00 | Bosses | Each world: 3 mini bosses (ending sections 1–3) and 1 major boss (ending section 4). 16 bosses in total: 12 mini, 4 major. Mini bosses are handcrafted together (Q&A as with the enemies) and less flashy than the major boss. |
 | 92 | 2026-11-15T00:41:11+00:00 | Art | Leaning into compound shapes, especially for bosses: stacking and combining triangles, circles, squares and many-sided polygons (dodecagons and so on). Any straight-edged polygon counts as geometric (like Godot's Polygon2D; Phaser draws arbitrary polygons too). |
+| 93 | 2026-11-15T00:44:50+00:00 | World: Celestial Gothic Horror | Five all-new enemy types (none of melee/ranged/tank carried over). Roles: close-range attacker, ranged, heavy, support/summoner, swarm. Signatures blended across all five: darkness, being watched, wrong geometry, ritual/choir. Darkness: light can be taken; an enemy snuffs candles, relight them by touching, kills give light. Eyes in the room: destroyable for good; while an eye sees you, enemies know where you are and are tougher. Hazards: crumbling floors, pits, wind. |
 
 ---
 
