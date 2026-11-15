@@ -355,6 +355,8 @@ After playtesting the guns (Lyra: they made it too easy; the dash and stomp are 
 - **Improving a weapon you own** (now bought in the shop, #53). *(2026-11-14T04:24:39+00:00 — History #22)*
 - **Improving a weapon raises its damage.** There's no damage upgrade among the four stat upgrades, so this is how damage goes up. *(2026-11-14T04:27:30+00:00 — History #26)*
 
+> **Superseded for story arenas by #100** *(2026-11-15T01:14:48+00:00)*: arenas are hand-designed, a few stylised platforms per world, with hazards mixed in occasionally. The hazards, wall jumping and chunk editor below still stand.
+
 ### Random generation, hazards and wall jumping *(2026-11-14T23:33:06+00:00 — History #79–#82)*
 - **When:** one generated layout per story section, kept for all its waves; a new section (or a retry) gets a new one.
 - **Endless:** a new layout **every wave**. During the intermission the old pieces sink or fade and the new ones rise or slide into place around you.
@@ -809,6 +811,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 97 | 2026-11-15T01:00:18+00:00 | Enemy visual | The Void Mass's look: **A, The Hole, with the eye from C, The Stack** (Lyra). |
 | 98 | 2026-11-15T01:03:55+00:00 | Enemy visual | The Summoning Circle's look: **D, The Gate** (Lyra, from four drawn options). |
 | 99 | 2026-11-15T01:07:56+00:00 | Enemy visual | The Motes' look: **B, Eyelets** (Lyra, from four drawn options). All five Celestial Gothic Horror enemies now have a look. |
+| 100 | 2026-11-15T01:14:48+00:00 | Levels | **No procedural generation for story arenas** (Lyra, replacing #79's per-section generation). Arenas go back to how they were at the start: a few stylised platforms per world that you climb between (wall jumping, double jump, dash). Hazards and moving platforms are mixed in occasionally. Each section's arena is designed by hand. Open: what endless does (currently generated every wave, #85). The generator code stays for now. |
 
 ---
 
