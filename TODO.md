@@ -13,7 +13,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 **Priority (Lyra, #67):** ~~1. player shooting~~ (done) · ~~2. hub + shop~~ (done, #74) · 3. randomly generated platforms (designed: #79–#82). Then worlds and art.
 
 - Tune the ranged enemy and tank in play.
-- Next (Lyra): enemy and boss designs. World looks (working set, #87): sci-fi, frozen, volcanic, celestial gothic horror; order and portal mapping open.
+- Next (Lyra): enemy and boss designs. World looks (working set, #88): Celestial Gothic Horror, Frozen Sci-fi, Volcanic Industrial, Overgrown Solarpunk; solarpunk's tone, order and portal mapping open.
 - Possibility (#86): handcrafted layouts instead of / alongside generation (the editor could grow into a room editor).
 - Generation, remaining steps (#79):
   6. World palettes and the per-section ramp, once worlds have identities.
