@@ -16,7 +16,8 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 - Next (Lyra): enemy and boss designs. Bosses: 3 mini + 1 major per world (#91). Worlds (working set, #88–#89, see §B Worlds): Celestial Gothic Horror, Frozen Sci-fi, Volcanic Industrial, Overgrown Solarpunk (a breath of fresh air). Open: order, portal mapping, names, hazards per world, rosters, bosses.
 - Lyra to play the Celestial Gothic Horror rooms (Testing → Celestial Gothic Horror rooms) and say what to change (#103).
 - Watch in play: whether respite perches get camped (#106).
-- Celestial Gothic Horror bosses designed: minis the Rose, the Ossuary, the Gale (#107–#110); major boss the Firmament (#111–#112). Attacks designed (#113–#116). Next: building them.
+- Lyra to play world 1's bosses (Testing → Boss fights, or the story sections) and tune: HP, damage, timings, Mote numbers, the Gale's wind strength, the swallow trigger (#119).
+- World 1's own enemy roster (#94–#99) for its waves, replacing melee/ranged/tank there; candles relit by touch and eyes that watch (#93).
 - Hand-designed arenas (#100). Endless will recycle story rooms in random order (#101); open: matching enemies, world rules. Decide whether to remove the generator.
 - Generation, remaining steps (#79):
   6. World palettes and the per-section ramp, once worlds have identities.
@@ -24,7 +25,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 - Grapple, bought in the shop (#77, #78): design it. Never gating: the platform generator builds for the base kit only (base jump, double jump, dash, wall jump).
 - Hub part 3: the short tutorial room on first launch (#70).
 - Lyra to play the hub and story loop: section length, gold per section, shop prices, the wave offset per section (#74).
-- Restructure (#62) still to come: boss fights, per-world enemy rosters, world names.
+- Restructure (#62) still to come: other worlds' bosses, per-world enemy rosters, world names.
 - Decide what makes waves harder past ~wave 13.
 - Tune the melee enemy in play after the difficulty pass (#48–#51): wind-up, roll speed, dizzy, cooldown if still too hard.
 - When combat exists, add its juice: hit-stop, enemy hit flash/squash/knockback, death shards, muzzle flash + recoil (shotgun shove), damage feedback (bigger shake, red edge pulse, light dims at low health), last-kill slow motion, wave banners, animated upgrade cards.
@@ -34,6 +35,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] World 1's four bosses built and in the story: the Rose, the Ossuary, the Gale, the Firmament, plus Motes; boss bar and banner; Testing → Boss fights; squash-spring fix (#119). *(2026-11-15T07:40:00+00:00)*
 - [x] Moving platforms fixed (vanishing, dropping riders when rising, fall-through on slow frames); room checks and fixes; enemy route planning and spawn rules for hand-built rooms (#105). *(2026-11-15T01:57:38+00:00)*
 - [x] Celestial Gothic Horror rooms in the game as test rooms: the Nave, the Crypt, the Bell Tower, the Breach, the Sanctum; world colours, decorative candles and eyes (#103). *(2026-11-15T01:30:06+00:00)*
 - [x] Endless rebuilds every wave: sink-and-rise sweep, fixed room size, no pits, hazards ramp by wave (#85). *(2026-11-15T00:07:50+00:00)*

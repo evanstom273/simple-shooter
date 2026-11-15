@@ -88,6 +88,11 @@ export class PlayerView {
     this.vy = 0
   }
 
+  /** Hidden or shown (swallowed by the Ossuary, #115). */
+  setHidden(hidden: boolean) {
+    this.gone = hidden
+  }
+
   /** Brief white-hot flash, fading out over `seconds`. */
   pulse(seconds = 0.18) {
     this.flash = seconds
@@ -215,10 +220,17 @@ export class PlayerView {
       this.hideAll()
       return
     }
-    this.vx += ((1 - this.sx) * SPRING - this.vx * DAMPING) * dt
-    this.vy += ((1 - this.sy) * SPRING - this.vy * DAMPING) * dt
-    this.sx += this.vx * dt
-    this.sy += this.vy * dt
+    // The squash spring, in small steps: one long frame (a slow device, a busy
+    // boss fight) used to make it explode and the body vanish.
+    let left = Math.min(dt, 0.25)
+    while (left > 0) {
+      const h = Math.min(left, 1 / 120)
+      left -= h
+      this.vx += ((1 - this.sx) * SPRING - this.vx * DAMPING) * h
+      this.vy += ((1 - this.sy) * SPRING - this.vy * DAMPING) * h
+      this.sx += this.vx * h
+      this.sy += this.vy * h
+    }
     if (Math.abs(s.velX) > 30) this.facing = Math.sign(s.velX)
     if (s.wall) this.facing = -s.wall
     this.moodTime = Math.max(0, this.moodTime - dt)

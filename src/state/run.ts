@@ -1,7 +1,7 @@
 // The current run (#17, #18, #53), shared between Phaser (writes) and React (shows).
 // Plain TS, no Phaser import.
 
-export type Phase = 'fighting' | 'intermission' | 'over' | 'hub' | 'cleared' | 'dead'
+export type Phase = 'fighting' | 'intermission' | 'over' | 'hub' | 'cleared' | 'dead' | 'boss'
 export type RunMode = 'hub' | 'section' | 'endless' | 'sandbox'
 
 export interface RunState {
@@ -29,6 +29,10 @@ export interface RunState {
   section: number
   /** Gold lost on a story death (for the banner). */
   lostGold: number
+  /** The boss fight (#107, #111): its name, health bars and what's left of the current one (0…1). */
+  boss: { name: string; bars: number; bar: number; hp: number } | null
+  /** Increments when a boss appears, for the banner. */
+  bossStarts: number
 }
 
 const initial = (best = 0): RunState => ({
@@ -47,6 +51,8 @@ const initial = (best = 0): RunState => ({
   world: 1,
   section: 1,
   lostGold: 0,
+  boss: null,
+  bossStarts: 0,
 })
 
 let state = initial()

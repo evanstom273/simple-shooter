@@ -288,11 +288,14 @@ class Wind extends Piece {
   readonly e: LevelEnv
   constructor(scene: Phaser.Scene, e: LevelEnv) {
     super()
-    this.e = e
+    // A copy: bosses turn the wind, and the level data must stay as built.
+    this.e = { ...e }
     this.g = scene.add.graphics().setDepth(3)
     const n = Math.max(6, Math.round((e.w * e.h) / 9000))
     for (let i = 0; i < n; i++) this.streaks.push({ u: Math.random(), v: Math.random() })
   }
+  /** Wind strength (1 = normal); bosses can change it and the direction (#116). */
+  strength = 1
   get dir() {
     const d = this.e.dir ?? 'up'
     return d === 'up' ? { x: 0, y: -1 } : d === 'down' ? { x: 0, y: 1 } : d === 'left' ? { x: -1, y: 0 } : { x: 1, y: 0 }
@@ -302,13 +305,14 @@ class Wind extends Piece {
     const d = this.dir
     const g = this.g
     g.clear()
+    if (this.strength <= 0) return
     g.fillStyle(0x9fd8ff, 0.04)
     g.fillRect(e.x, e.y, e.w, e.h)
     g.lineStyle(2, 0xcfeaff, 0.35)
     for (const s of this.streaks) {
       // Streaks drift with the wind and wrap round.
-      s.u = (s.u + (d.x * dt * 500) / e.w + 1) % 1
-      s.v = (s.v + (d.y * dt * 500) / e.h + 1) % 1
+      s.u = (s.u + (d.x * dt * 500 * this.strength) / e.w + 1) % 1
+      s.v = (s.v + (d.y * dt * 500 * this.strength) / e.h + 1) % 1
       const x = e.x + s.u * e.w
       const y = e.y + s.v * e.h
       g.lineBetween(x, y, x - d.x * 28, y - d.y * 28)
@@ -388,6 +392,15 @@ class Crumble {
     }
     rect.setData('cracks', g)
   }
+  /** Brought down for good (a boss's doing, #114). */
+  collapse() {
+    if (this.state === 'gone' && this.timer === Infinity) return
+    this.state = 'shaking'
+    this.timer = 0.15
+    this.permanent = true
+    sfx.crumble()
+  }
+  private permanent = false
   step() {
     if (this.state === 'solid') {
       this.state = 'shaking'
@@ -406,7 +419,7 @@ class Crumble {
       g.x = off
       if (this.timer <= 0) {
         this.state = 'gone'
-        this.timer = ENV.crumble.back
+        this.timer = this.permanent ? Infinity : ENV.crumble.back
         r.x = baseX
         g.x = 0
         ;(r.body as Phaser.Physics.Arcade.StaticBody).enable = false
@@ -489,6 +502,30 @@ export class Environment {
     }
   }
 
+  /** Bring down a crumbling platform at this point for good (the Rose's shards, #114). True if one fell. */
+  collapseAt(x: number, y: number) {
+    for (const c of this.crumbles.values()) {
+      const r = c.rect
+      if (x >= r.x && x <= r.x + r.width && y >= r.y - 6 && y <= r.y + r.height + 6 && (r.body as Phaser.Physics.Arcade.StaticBody).enable) {
+        c.collapse()
+        return true
+      }
+    }
+    return false
+  }
+
+  /** Every crumbling platform starts to go (the Ossuary's slam, #115). */
+  shakeCrumbles() {
+    for (const c of this.crumbles.values()) c.step()
+  }
+
+  /** Add a wind zone mid-fight (the Gale's, #116). */
+  addWind(scene: Phaser.Scene, e: LevelEnv) {
+    const w = new Wind(scene, e)
+    this.winds.push(w)
+    return w
+  }
+
   /** The player is standing on this platform: crumbles start crumbling. */
   stoodOn(rect: Phaser.GameObjects.Rectangle | null) {
     if (rect) this.crumbles.get(rect)?.step()
@@ -559,9 +596,11 @@ export class Environment {
       if (!w.contains(b)) continue
       const d = w.dir
       const max = ENV.wind.max
-      if (d.y < 0) vy = Math.max(-max, vy - ENV.wind.accel * dt)
-      else if (d.y > 0) vy = Math.min(max * 2, vy + ENV.wind.accel * 0.5 * dt)
-      drift += d.x * 260
+      const k = w.strength
+      if (k <= 0) continue
+      if (d.y < 0) vy = Math.max(-max * k, vy - ENV.wind.accel * k * dt)
+      else if (d.y > 0) vy = Math.min(max * 2, vy + ENV.wind.accel * 0.5 * k * dt)
+      drift += d.x * 260 * k
     }
     return { vy, drift }
   }

@@ -20,6 +20,10 @@ import { arriveInHub, buy as shopBuy, progressStore, reroll as shopReroll, story
 import { Hub } from './Hub.ts'
 import { HUB_LEVEL, type Level } from './levels.ts'
 import { generate } from './gen/generate.ts'
+import { CELESTIAL_ROOMS } from './rooms/celestial.ts'
+import { makeBoss, WORLD1_BOSSES } from './bosses/index.ts'
+import { BOSS_GOLD, type Boss, type BossCtx, type BossId, type Candle } from './bosses/types.ts'
+import { Mote } from './bosses/Mote.ts'
 
 /**
  * Endless rooms (#79): one fixed size, no pits, chunks from every world.
@@ -169,14 +173,31 @@ export class GameScene extends Phaser.Scene {
   private over = false
   private countdownShown = -1
   private spawnKeys!: { melee: Phaser.Input.Keyboard.Key; ranged: Phaser.Input.Keyboard.Key; tank: Phaser.Input.Keyboard.Key }
+  /** Boss fights (#107, #111): the boss, and what it can do to the room and to you. */
+  private boss: Boss | null = null
+  private bossId: BossId | null = null
+  /** A boss waiting for the beam-in to finish. */
+  private pendingBoss: BossId | null = null
+  private bossCtx!: BossCtx
+  private bossHudTimer = 0
+  /** Candles (#93, #102): bosses snuff and eat them. */
+  private candles: (Candle & { glow: Phaser.GameObjects.Graphics; flame: Phaser.GameObjects.Graphics })[] = []
+  /** The light swallowed (#113): 0 normal, 1 dark. */
+  private darkK = 0
+  private darkTarget = 0
+  /** Swallowed by the Ossuary (#115): held here, hidden, until spat out. */
+  private swallowed: { x: number; y: number } | null = null
+  /** The Firmament's window breaking (#113): camera pulled back, no control. */
+  private pullBackTime = 0
   /** Everything that can be hit or auto-aimed at. */
   private get targets(): Target[] {
-    return this.hub ? [...this.enemies, this.hub.dummy] : this.enemies
+    const base: Target[] = this.hub ? [...this.enemies, this.hub.dummy] : this.enemies
+    return this.boss ? [...base, ...this.boss.parts] : base
   }
 
   /** True while the player can't be hurt. Enemies will check this (#24, #27). */
   get invulnerable() {
-    return this.dashTime > 0 || this.hurtTime > 0 || this.dashGrace > 0
+    return this.dashTime > 0 || this.hurtTime > 0 || this.dashGrace > 0 || this.swallowed !== null || this.pullBackTime > 0
   }
   get dashing() {
     return this.dashTime > 0
@@ -195,15 +216,21 @@ export class GameScene extends Phaser.Scene {
       this.world = dest.world
       this.section = dest.section
     }
-    // Story sections get a generated room (#79); a retry gets a new one.
+    // World 1 is Celestial Gothic Horror's hand-built rooms (#100); its section 4
+    // boss is fought in the Sanctum. Other worlds get a generated room (#79).
+    const room = (id: string) => CELESTIAL_ROOMS.find((r) => r.id === id)!.level
     this.level =
       dest.mode === 'hub'
         ? HUB_LEVEL
         : dest.mode === 'sandbox'
           ? dest.level
-          : dest.mode === 'section'
-            ? generate({ world: dest.world, section: dest.section, extra: customChunks() })
-            : endlessLevel(1)
+          : dest.mode === 'section' && dest.world === 1
+            ? dest.boss && dest.section >= 4
+              ? room('sanctum')
+              : CELESTIAL_ROOMS[Math.min(3, dest.section - 1)].level
+            : dest.mode === 'section'
+              ? generate({ world: dest.world, section: dest.section, extra: customChunks() })
+              : endlessLevel(1)
     this.solids = this.level.platforms.filter((p) => p.solid)
     ARENA.width = this.level.width
     ARENA.height = this.level.height
@@ -262,9 +289,14 @@ export class GameScene extends Phaser.Scene {
         },
       })
     } else if (this.mode === 'section') {
-      runStore.set({ phase: 'intermission', mode: 'section', wave: 1, countdown: 3, gold: prog.gold, world: this.world, section: this.section })
+      if (dest.mode === 'section' && dest.boss) {
+        // Straight into the boss stage (the Sanctum, #111).
+        runStore.set({ phase: 'boss', mode: 'section', wave: 5, gold: prog.gold, world: this.world, section: this.section })
+        this.pendingBoss = WORLD1_BOSSES[Math.min(3, this.section - 1)]
+      } else runStore.set({ phase: 'intermission', mode: 'section', wave: 1, countdown: 3, gold: prog.gold, world: this.world, section: this.section })
     } else if (this.mode === 'sandbox') {
-      runStore.set({ phase: 'hub', mode: 'sandbox' })
+      runStore.set({ phase: dest.mode === 'sandbox' && dest.boss ? 'boss' : 'hub', mode: 'sandbox' })
+      if (dest.mode === 'sandbox' && dest.boss) this.pendingBoss = dest.boss
     } else {
       runStore.set({ phase: 'intermission', mode: 'endless', wave: 1, countdown: 3 })
     }
@@ -293,6 +325,7 @@ export class GameScene extends Phaser.Scene {
     // Pits (#81) are bottomless: no floor at the bottom of the world.
     if (this.level.pits?.length) this.physics.world.setBoundsCollision(true, true, true, false)
     this.hookMovers()
+    this.bossCtx = this.makeBossCtx()
     this.physics.add.collider(
       this.player,
       platforms,
@@ -406,8 +439,16 @@ export class GameScene extends Phaser.Scene {
       if (this.hitStop <= 0) this.physics.world.resume()
       return
     }
-    const c: Controls = this.cine ? { moveX: 0, jump: false, down: false, dash: null } : this.readControls()
+    const held = this.cine !== null || this.swallowed !== null || this.pullBackTime > 0
+    const c: Controls = held ? { moveX: 0, jump: false, down: false, dash: null } : this.readControls()
     const dt = deltaMs / 1000
+    this.pullBackTime = Math.max(0, this.pullBackTime - dt)
+    this.darkK += (this.darkTarget - this.darkK) * Math.min(1, dt * 2)
+    if (this.swallowed) {
+      // Inside the Ossuary (#115): held still and hidden.
+      this.body_.reset(this.swallowed.x, this.swallowed.y)
+      this.body_.setVelocity(0, 0)
+    }
     this.hurtTime = Math.max(0, this.hurtTime - dt)
     this.dashGrace = Math.max(0, this.dashGrace - dt)
     this.view.flicker = this.hurtTime > 0
@@ -659,6 +700,7 @@ export class GameScene extends Phaser.Scene {
       }
       if (!(e instanceof RangedEnemy)) {
         const eb = { left: e.x - e.radius, right: e.x + e.radius, top: e.y - e.radius, bottom: e.y + e.radius }
+        if (e instanceof Mote) continue
         if (env.bounce(eb, 0)) e.push?.(0, -ENV.pad * 0.85)
         if (e.y > this.level.floorY + 120) e.fallOut?.()
       }
@@ -712,6 +754,7 @@ export class GameScene extends Phaser.Scene {
   /** Hazards, moving bits and every platform that isn't the shell. Returns the display objects made. */
   private buildInterior(level: Level): Phaser.GameObjects.GameObject[] {
     const before = new Set(this.children.list)
+    this.candles = []
     this.env = new Environment(this, level)
     for (const p of level.platforms) if (!p.floor && !p.edge) this.addPlatform(p)
     if (level.decor?.length) this.drawDecor(level.decor)
@@ -720,20 +763,23 @@ export class GameScene extends Phaser.Scene {
 
   /** Candles and eyes (#102): decoration until light and watching are built (#93). */
   private drawDecor(decor: NonNullable<Level['decor']>) {
-    const glow = this.add.graphics().setDepth(1).setBlendMode(Phaser.BlendModes.ADD)
     const g = this.add.graphics().setDepth(2)
     for (const d of decor) {
       if (d.t === 'candle') {
+        // Each candle's glow and flame are their own, so bosses can snuff them (#113, #115).
+        const cg = this.add.graphics().setDepth(1).setBlendMode(Phaser.BlendModes.ADD)
         for (let i = 4; i > 0; i--) {
-          glow.fillStyle(0xffcf7a, 0.035)
-          glow.fillCircle(d.x, d.y - 30, 22 * i)
+          cg.fillStyle(0xffcf7a, 0.035)
+          cg.fillCircle(d.x, d.y - 30, 22 * i)
         }
         g.fillStyle(0xe8dcc8, 1)
         g.fillRect(d.x - 5, d.y - 24, 10, 24)
-        g.fillStyle(0xffcf7a, 1)
-        g.fillEllipse(d.x, d.y - 32, 8, 14)
-        g.fillStyle(0xfff8e0, 1)
-        g.fillEllipse(d.x, d.y - 30, 4, 7)
+        const flame = this.add.graphics().setDepth(2)
+        flame.fillStyle(0xffcf7a, 1)
+        flame.fillEllipse(d.x, d.y - 32, 8, 14)
+        flame.fillStyle(0xfff8e0, 1)
+        flame.fillEllipse(d.x, d.y - 30, 4, 7)
+        this.candles.push({ x: d.x, y: d.y, lit: true, glow: cg, flame })
       } else {
         g.fillStyle(0x1f1830, 1)
         g.lineStyle(3, 0x1a1a26, 1)
@@ -876,6 +922,9 @@ export class GameScene extends Phaser.Scene {
         this.cine = null
         ring(this, x, feet, 140, 26, 0x8fd3ff, { grow: 2.6, life: 420, line: 4 })
         sfx.dashReady()
+        const pending = this.pendingBoss
+        this.pendingBoss = null
+        if (pending) this.time.delayedCall(700, () => this.startBoss(pending))
       } else {
         const then = this.afterLeave
         this.afterLeave = null
@@ -993,7 +1042,7 @@ export class GameScene extends Phaser.Scene {
       h.update(dt)
       if (!h.done && !this.invulnerable && h.hits(b.left, b.top, b.right, b.bottom)) {
         this.takeHit(h.x, h.damage)
-        h.done = true
+        if (!h.persistent) h.done = true
       }
       if (h.done) h.destroy()
     }
@@ -1004,6 +1053,7 @@ export class GameScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.spawnKeys[kind])) this.spawnEnemy(kind)
     }
 
+    this.updateBoss(dt)
     this.updateWaves(dt)
     if (this.hub) {
       const use = !this.cine && (Phaser.Input.Keyboard.JustDown(this.keys.use) || Phaser.Input.Keyboard.JustDown(this.keys.useAlt) || touchInput.useQueued)
@@ -1071,7 +1121,9 @@ export class GameScene extends Phaser.Scene {
     this.gold.collectAll()
     sfx.waveClear()
     if (this.mode === 'section' && run.wave >= 5) {
-      this.clearSection()
+      // World 1 ends each section with its boss (#107, #111); other worlds have none yet.
+      if (this.world === 1) this.toBossStage()
+      else this.clearSection()
       return
     }
     this.countdownShown = -1
@@ -1144,6 +1196,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   private endRun() {
+    if (this.mode === 'sandbox') {
+      // Testing: try again in the same room (and against the same boss).
+      this.over = true
+      this.physics.world.pause()
+      this.view.flicker = false
+      this.shake(400, 0.02)
+      sfx.runOver()
+      burst(this, this.player.x, this.player.y, { count: 24, colour: 0xffffff, angle: 0, spread: Math.PI, speed: [150, 450], size: [5, 11], life: 700 })
+      runStore.set({ phase: 'dead', lostGold: 0, boss: null })
+      const d = navStore.get()
+      window.setTimeout(() => navStore.go({ ...d }), 2600)
+      return
+    }
     if (this.mode === 'section') {
       // Story death (#62): lose all carried gold, no way back; back to the hub fully healed (#70).
       this.over = true
@@ -1369,7 +1434,8 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main
     const t = this.shooter.target
     let want = 1
-    if (t) {
+    if (this.pullBackTime > 0) want = 0.5
+    else if (t) {
       const cx = cam.midPoint.x
       const cy = cam.midPoint.y
       const margin = t.radius + 40
@@ -1384,7 +1450,7 @@ export class GameScene extends Phaser.Scene {
     }
     const speed = want < this.zoomFactor ? VIEW.zoomOutSpeed : VIEW.zoomInSpeed
     this.zoomFactor += (want - this.zoomFactor) * Math.min(1, dt * speed)
-    cam.setZoom(Math.max(this.baseZoom * this.zoomFactor, this.minZoom))
+    cam.setZoom(Math.max(this.baseZoom * this.zoomFactor, this.pullBackTime > 0 ? this.minZoom * 0.999 : this.minZoom))
   }
 
   /** The camera leads a little in the direction you're running. */
@@ -1474,8 +1540,9 @@ export class GameScene extends Phaser.Scene {
   private updateDarkness() {
     const cam = this.cameras.main
     // Radius in world units, relative to what's on screen, so it looks the same at any zoom.
+    // The Firmament swallowing the light (#113) shrinks it.
     const diag = Math.hypot(cam.width, cam.height) / cam.zoom
-    const r = diag * SCREEN.light.radius
+    const r = diag * SCREEN.light.radius * (1 - 0.6 * this.darkK)
     // The texture's gradient ends at half its size, so draw it 4r across.
     this.darkness.setPosition(this.player.x, this.player.y).setDisplaySize(r * 4, r * 4)
   }
@@ -1559,6 +1626,172 @@ export class GameScene extends Phaser.Scene {
 
     this.dashTime -= dt
     if (this.dashTime <= 0) this.endDash(DASH.carry)
+  }
+
+  /** What a boss can see and do (#107): the player, the room, hazards, Motes, candles, the light. */
+  private makeBossCtx(): BossCtx {
+    const level = () => this.level
+    const env = () => this.env
+    const candles = () => this.candles
+    return {
+      scene: this,
+      get level() {
+        return level()
+      },
+      get env() {
+        return env()
+      },
+      player: { x: 0, y: 0, vx: 0, vy: 0, left: 0, right: 0, top: 0, bottom: 0, grounded: false },
+      addHazard: (h) => this.hazards.push(h),
+      spawnMote: (x, y, vx = 0, vy = 0) => this.spawnMote(x, y, vx, vy),
+      motesAlive: () => this.enemies.filter((e) => e instanceof Mote && !e.dead).length,
+      shake: (ms, k) => this.shake(ms, k),
+      nudgePlayer: (vx, vy) => {
+        if (this.swallowed || this.dashing) return
+        this.body_.setVelocity(this.body_.velocity.x + vx, this.body_.velocity.y + vy)
+        this.pushTime = Math.max(this.pushTime, 0.1)
+      },
+      swallowPlayer: (x, y) => {
+        this.swallowed = { x, y }
+        this.endDash(0)
+        this.body_.setAllowGravity(false)
+        this.view.setHidden(true)
+        this.shake(300, 0.015)
+        buzz(120)
+      },
+      releasePlayer: (vx, vy) => {
+        if (!this.swallowed) return
+        this.swallowed = null
+        this.body_.setAllowGravity(true)
+        this.view.setHidden(false)
+        // Never a kill (#115): down to nearly dead.
+        const before = this.health
+        this.health = Math.min(this.health, 1)
+        if (this.health < before) {
+          const hud = hudStore.get()
+          hudStore.set({ health: this.health, hurtCount: hud.hurtCount + 1 })
+        }
+        this.body_.setVelocity(vx, vy)
+        this.pushTime = 0.4
+        this.hurtTime = 1.2
+        this.view.kick(1.4, 0.6)
+        this.view.ouch()
+        burst(this, this.player.x, this.player.y, { count: 14, colour: 0x5b3a8a, angle: -Math.PI / 2, spread: 1.4, speed: [150, 380], size: [4, 9], life: 500 })
+        sfx.hurt()
+      },
+      get candles() {
+        return candles()
+      },
+      setCandle: (i, lit) => this.setCandle(i, lit),
+      setDark: (k) => {
+        this.darkTarget = k
+      },
+      pullBack: (seconds) => {
+        this.pullBackTime = seconds
+        this.endDash(0)
+      },
+    }
+  }
+
+  private setCandle(i: number, lit: boolean) {
+    const c = this.candles[i]
+    if (!c || c.lit === lit) return
+    c.lit = lit
+    c.glow.setVisible(lit)
+    c.flame.setVisible(lit)
+    if (!lit) burst(this, c.x, c.y - 32, { count: 5, colour: 0x8a8aa0, angle: -Math.PI / 2, spread: 0.5, speed: [30, 90], size: [3, 6], life: 600, gravity: -80 })
+    else ring(this, c.x, c.y - 30, 40, 40, 0xffcf7a, { grow: 2, life: 300 })
+  }
+
+  /** A Mote (#99), called in by a boss (#107). Kills drop a little gold; dash and stomp kills heal, like any other. */
+  private spawnMote(x: number, y: number, vx: number, vy: number) {
+    let me: Mote | null = null
+    me = new Mote(this, x, y, vx, vy, () => {
+      if (!me) return
+      this.gold.drop(me.x, Math.min(me.y, this.level.floorY - 30), 10)
+      runStore.set({ kills: runStore.get().kills + 1 })
+      if (me.lastHitSource === 'dash' || me.lastHitSource === 'stomp') this.onKill()
+    })
+    this.enemies.push(me)
+  }
+
+  /** The last wave's done: on to the boss (#107). Section 4's is in the Sanctum (#111). */
+  private toBossStage() {
+    runStore.set({ phase: 'boss', left: 0, boss: null })
+    const id = WORLD1_BOSSES[Math.min(3, this.section - 1)]
+    if (this.section >= 4) {
+      this.time.delayedCall(1500, () =>
+        this.beamOut(() => {
+          // Carry gold and damage across; dying in there still loses it all (#62).
+          progressStore.set({ gold: runStore.get().gold, health: this.health })
+          navStore.go({ mode: 'section', world: 1, section: this.section, boss: true })
+        }),
+      )
+      return
+    }
+    this.time.delayedCall(1800, () => this.startBoss(id))
+  }
+
+  private startBoss(id: BossId) {
+    if (this.over || this.boss) return
+    this.bossId = id
+    this.boss = makeBoss(id, this.bossCtx)
+    const b = this.boss
+    runStore.set({ phase: 'boss', boss: { name: b.name, bars: b.bars, bar: b.bar, hp: b.hp }, bossStarts: runStore.get().bossStarts + 1 })
+    sfx.waveStart()
+    this.shake(300, 0.01)
+  }
+
+  private updateBoss(dt: number) {
+    const b = this.boss
+    if (!b) return
+    const pb = this.body_
+    const pl = this.bossCtx.player
+    pl.x = this.player.x
+    pl.y = this.player.y
+    pl.vx = pb.velocity.x
+    pl.vy = pb.velocity.y
+    pl.left = pb.left
+    pl.right = pb.right
+    pl.top = pb.top
+    pl.bottom = pb.bottom
+    pl.grounded = pb.blocked.down || pb.touching.down
+    b.update(dt)
+    this.bossHudTimer -= dt
+    const shown = runStore.get().boss
+    if (b.dead) {
+      this.bossDefeated()
+      return
+    }
+    if (shown && (this.bossHudTimer <= 0 || shown.bar !== b.bar) && (Math.abs(shown.hp - b.hp) > 0.001 || shown.bar !== b.bar)) {
+      this.bossHudTimer = 0.1
+      runStore.set({ boss: { ...shown, bar: b.bar, hp: b.hp } })
+    }
+  }
+
+  /** Beaten (#107): gold, the swarm scatters, the light comes back, then the section's cleared. */
+  private bossDefeated() {
+    const b = this.boss!
+    const id = this.bossId!
+    this.boss = null
+    this.gold.drop(b.x, Math.min(b.y, this.level.floorY - 60), BOSS_GOLD[id])
+    b.destroy()
+    for (const e of this.enemies) if (e instanceof Mote && !e.dead) e.hit(99, { x: 0, y: -1 }, 'hazard')
+    this.darkTarget = 0
+    for (let i = 0; i < this.candles.length; i++) this.setCandle(i, true)
+    if (this.swallowed) this.bossCtx.releasePlayer(0, -600)
+    const shown = runStore.get().boss
+    runStore.set({ boss: shown ? { ...shown, hp: 0 } : null })
+    this.time.delayedCall(1400, () => this.gold.collectAll())
+    if (this.mode === 'section') {
+      this.time.delayedCall(2000, () => {
+        runStore.set({ boss: null })
+        this.clearSection()
+      })
+    } else {
+      this.time.delayedCall(1200, () => runStore.set({ phase: 'cleared', boss: null }))
+      this.time.delayedCall(5000, () => runStore.set({ phase: 'hub' }))
+    }
   }
 
   private endDash(carry: number) {

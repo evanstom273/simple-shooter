@@ -8,6 +8,15 @@ import { navStore } from '../state/nav.ts'
 import { restartBus, runStore } from '../state/run.ts'
 import { TEST_ROOM } from '../game/levels.ts'
 import { CELESTIAL_ROOMS } from '../game/rooms/celestial.ts'
+import { BOSS_NAMES, type BossId } from '../game/bosses/types.ts'
+
+/** Testing (#107, #111): each world 1 boss in its own room. */
+const BOSS_FIGHTS: { id: BossId; room: string }[] = [
+  { id: 'rose', room: 'nave' },
+  { id: 'ossuary', room: 'crypt' },
+  { id: 'gale', room: 'tower' },
+  { id: 'firmament', room: 'sanctum' },
+]
 import { generate } from '../game/gen/generate.ts'
 import { customChunks } from '../state/chunks.ts'
 
@@ -161,17 +170,48 @@ export function Hud() {
         </div>
       )}
 
+      {/* Boss fight (#107, #111): name and health; the Firmament has two bars. */}
+      {run.phase === 'boss' && run.boss && (
+        <div className="absolute bottom-6 left-1/2 w-[min(36rem,60vw)] -translate-x-1/2 text-center">
+          <p className="text-xs font-black tracking-[0.3em] text-neutral-200 uppercase">{run.boss.name}</p>
+          <div className="mt-1 flex gap-1">
+            {Array.from({ length: run.boss.bars }, (_, i) => {
+              const fill = i < run.boss!.bar ? 0 : i === run.boss!.bar ? run.boss!.hp : 1
+              return (
+                <div key={i} className="h-2.5 flex-1 overflow-hidden rounded-full bg-black/60 ring-1 ring-white/15">
+                  <div className="h-full rounded-full bg-rose-300 transition-[width] duration-150" style={{ width: `${Math.max(0, fill) * 100}%` }} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {run.phase === 'boss' && run.boss && run.bossStarts > 0 && (
+        <div key={`b${run.bossStarts}`} className="wave-banner absolute inset-x-0 top-[28%] text-center">
+          <p className="text-xs font-semibold tracking-[0.3em] text-neutral-400 uppercase">
+            {run.mode === 'section' ? `World ${run.world} · Section ${run.section}` : 'Boss'}
+          </p>
+          <p className="text-5xl font-black text-neutral-100">{run.boss.name}</p>
+        </div>
+      )}
+
       {/* Sandbox (testing): what this is and a way back. */}
       {run.mode === 'sandbox' && <SandboxBar />}
 
       {/* Story section cleared (#62): gold and damage carry back to the hub. */}
-      {run.phase === 'cleared' && (
+      {run.phase === 'cleared' && run.mode === 'section' && (
         <div className="wave-banner absolute inset-x-0 top-[26%] text-center">
           <p className="text-xs font-semibold tracking-[0.3em] text-neutral-400 uppercase">
             World {run.world} · Section {run.section}
           </p>
           <p className="text-5xl font-black text-neutral-100">Cleared</p>
           <p className="mt-2 text-sm text-amber-300 tabular-nums">{run.gold} gold to spend</p>
+        </div>
+      )}
+      {run.phase === 'cleared' && run.mode === 'sandbox' && (
+        <div className="wave-banner absolute inset-x-0 top-[26%] text-center">
+          <p className="text-xs font-semibold tracking-[0.3em] text-neutral-400 uppercase">Boss</p>
+          <p className="text-5xl font-black text-neutral-100">Defeated</p>
         </div>
       )}
 
@@ -181,7 +221,7 @@ export function Hud() {
           <div className="text-center">
             <p className="text-5xl font-black text-red-300">You died</p>
             <p className="mt-2 text-sm text-neutral-400 tabular-nums">
-              {run.lostGold > 0 ? `${run.lostGold} gold lost` : 'Nothing lost but pride'}
+              {run.mode === 'sandbox' ? 'Trying again…' : run.lostGold > 0 ? `${run.lostGold} gold lost` : 'Nothing lost but pride'}
             </p>
           </div>
         </div>
@@ -286,6 +326,19 @@ export function Hud() {
                   {r.name}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="mb-1.5">
+            <span className="mb-1 block text-xs text-neutral-400">Boss fights (world 1)</span>
+            <div className="flex flex-wrap gap-1">
+              {BOSS_FIGHTS.map((b) => {
+                const room = CELESTIAL_ROOMS.find((r) => r.id === b.room)!
+                return (
+                  <button key={b.id} type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'sandbox', level: room.level, title: `${BOSS_NAMES[b.id]} · ${room.name}`, boss: b.id }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
+                    {BOSS_NAMES[b.id]}
+                  </button>
+                )
+              })}
             </div>
           </div>
           <div className="mb-1.5 flex items-center gap-1">

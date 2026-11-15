@@ -26,6 +26,8 @@ export interface Hazard {
   /** Stages of damage (#57). */
   readonly damage: number
   done: boolean
+  /** Stays after hitting you (beams, a rolling boss): your invulnerability after a hit stops repeats. */
+  readonly persistent?: boolean
   update(dt: number): void
   /** Does it touch this rectangle (the player's body)? */
   hits(left: number, top: number, right: number, bottom: number): boolean
