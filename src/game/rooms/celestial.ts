@@ -30,14 +30,15 @@ const NAVE: Level = {
     { x: 0, y: 0, w: 60, h: 1270, solid: true, edge: true },
     { x: 2340, y: 0, w: 60, h: 1270, solid: true, edge: true },
     { x: 60, y: 0, w: 2280, h: 40, solid: true, edge: true },
-    // Pillars and their capitals.
-    { x: 470, y: 360, w: 80, h: 910, solid: true },
+    // Pillars and their capitals. They stand on arches (bases 120 px off the floor)
+    // so nothing gets sealed in between a pillar and the wall (Lyra's playtest).
+    { x: 470, y: 360, w: 80, h: 790, solid: true },
     { x: 440, y: 330, w: 140, h: 30, solid: true },
-    { x: 1850, y: 360, w: 80, h: 910, solid: true },
+    { x: 1850, y: 360, w: 80, h: 790, solid: true },
     { x: 1820, y: 330, w: 140, h: 30, solid: true },
-    // Choir lofts.
-    { x: 60, y: 760, w: 370, h: 36, solid: true },
-    { x: 1970, y: 680, w: 370, h: 36, solid: true },
+    // Choir lofts: 130 px short of the pillars, so you can jump up between.
+    { x: 60, y: 760, w: 280, h: 36, solid: true },
+    { x: 2060, y: 680, w: 280, h: 36, solid: true },
     // Altar dais.
     { x: 980, y: 1214, w: 440, h: 56, solid: true },
     { x: 1060, y: 1164, w: 280, h: 50, solid: true },
