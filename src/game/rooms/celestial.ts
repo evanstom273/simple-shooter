@@ -91,7 +91,7 @@ const CRYPT: Level = {
     { x: 1700, y: 680, w: 180, h: 22, crumble: true },
   ],
   env: [{ t: 'mover', x: 1196, y: 560, w: 128, h: 20, dy: 300, colour: STONE }],
-  decor: [...candles([390, 1040], [1185, 1040], [1215, 1040], [2040, 1040], [165, 860], [2235, 560], [1470, 880]), ...eyes([165, 440], [2235, 400], [960, 260])],
+  decor: [...candles([390, 1040], [1185, 1040], [1215, 1040], [2040, 1040], [165, 860], [2235, 560], [1470, 880]), ...eyes([165, 440], [2235, 400], [1790, 300])],
 }
 
 /** 3 · The Bell Tower: tall; wind arrives. Zigzag landings, a counterweight, a swinging bell. */
@@ -109,8 +109,8 @@ const TOWER: Level = {
     { x: 0, y: 0, w: 60, h: 290, solid: true, edge: true },
     { x: 1540, y: 0, w: 60, h: 290, solid: true, edge: true },
     { x: 60, y: 0, w: 1480, h: 60, solid: true, edge: true },
-    // Belfry beam.
-    { x: 60, y: 250, w: 1480, h: 30, solid: true },
+    // Belfry beam: part of the room's frame, not somewhere to stand or spawn (#105).
+    { x: 60, y: 250, w: 1480, h: 30, solid: true, edge: true },
     // Landings (one-way, timber); half of the third one is rotten.
     { x: 60, y: 2060, w: 640, h: 26 },
     { x: 900, y: 1800, w: 640, h: 26 },
@@ -126,7 +126,7 @@ const TOWER: Level = {
   env: [
     { t: 'mover', x: 736, y: 1320, w: 128, h: 22, dy: 580, colour: STONE },
     { t: 'mover', x: 650, y: 360, w: 120, h: 20, dx: 180, colour: GOLD },
-    { t: 'wind', x: 60, y: 300, w: 1480, h: 400, dir: 'left' },
+    { t: 'wind', x: 60, y: 300, w: 1480, h: 480, dir: 'left' },
   ],
   decor: [...candles([380, 2060], [1220, 1800], [250, 1540], [1220, 1280], [380, 1020], [785, 2320], [813, 2320]), ...eyes([100, 1680], [1500, 1160], [100, 880])],
   platformColour: TIMBER,
@@ -153,7 +153,7 @@ const BREACH: Level = {
     { x: 2740, y: 0, w: 60, h: 1300, solid: true, edge: true },
     // Ruined ledges and the central slab.
     { x: 260, y: 860, w: 300, h: 40, solid: true },
-    { x: 2200, y: 860, w: 300, h: 40, solid: true },
+    { x: 2440, y: 860, w: 300, h: 40, solid: true },
     { x: 1200, y: 800, w: 400, h: 24 },
     // Crumbling stone.
     { x: 1400, y: 1100, w: 200, h: 24, crumble: true },
@@ -165,7 +165,7 @@ const BREACH: Level = {
     { t: 'mover', x: 2160, y: 840, w: 200, h: 24, dy: 260, colour: STONE },
     { t: 'wind', x: 1320, y: 420, w: 360, h: 880, dir: 'up' },
   ],
-  decor: [...candles([410, 860], [1345, 800], [1455, 800], [2350, 860], [1100, 1300]), ...eyes([640, 340], [2050, 300], [160, 560])],
+  decor: [...candles([410, 860], [1345, 800], [1455, 800], [2590, 860], [1100, 1300]), ...eyes([640, 340], [2050, 300], [160, 560])],
 }
 
 /** The major boss arena: mostly empty. Long floor, climbable pillars, four platforms at the edges. */

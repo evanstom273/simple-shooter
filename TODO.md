@@ -15,6 +15,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 - Tune the ranged enemy and tank in play.
 - Next (Lyra): enemy and boss designs. Bosses: 3 mini + 1 major per world (#91). Worlds (working set, #88–#89, see §B Worlds): Celestial Gothic Horror, Frozen Sci-fi, Volcanic Industrial, Overgrown Solarpunk (a breath of fresh air). Open: order, portal mapping, names, hazards per world, rosters, bosses.
 - Lyra to play the Celestial Gothic Horror rooms (Testing → Celestial Gothic Horror rooms) and say what to change (#103).
+- Lyra to decide: should walking enemies be able to reach every perch (Nave lofts, arches, pillar tops; the Breach's right ledge), or are a few climb-only refuges OK?
 - Next design: Celestial Gothic Horror mini bosses (3) and major boss; they use their section's room (#103).
 - Hand-designed arenas (#100). Endless will recycle story rooms in random order (#101); open: matching enemies, world rules. Decide whether to remove the generator.
 - Generation, remaining steps (#79):
@@ -33,6 +34,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Moving platforms fixed (vanishing, dropping riders when rising, fall-through on slow frames); room checks and fixes; enemy route planning and spawn rules for hand-built rooms (#105). *(2026-11-15T01:57:38+00:00)*
 - [x] Celestial Gothic Horror rooms in the game as test rooms: the Nave, the Crypt, the Bell Tower, the Breach, the Sanctum; world colours, decorative candles and eyes (#103). *(2026-11-15T01:30:06+00:00)*
 - [x] Endless rebuilds every wave: sink-and-rise sweep, fixed room size, no pits, hazards ramp by wave (#85). *(2026-11-15T00:07:50+00:00)*
 - [x] Generation decluttered: sparser zigzag air layers, merged platforms, bigger air chunks (#84). *(2026-11-15T00:04:29+00:00)*

@@ -341,6 +341,15 @@ class Mover {
     b.checkCollision.left = false
     b.checkCollision.right = false
     this.rect.setData('oneWay', true).setData('mover', this)
+    this.thicken()
+  }
+  /**
+   * The collision box is at least 40 px deep (the top stays where it's drawn), so a
+   * fast fall on a slow frame can't pass right through a moving platform.
+   */
+  thicken() {
+    const h = Math.max(this.rect.height, 40)
+    this.body.setSize(this.rect.width, h, false).setOffset(0, 0)
   }
   get body() {
     return this.rect.body as Phaser.Physics.Arcade.Body
@@ -454,6 +463,7 @@ export class Environment {
         m.body.checkCollision.down = false
         m.body.checkCollision.left = false
         m.body.checkCollision.right = false
+        m.thicken()
         this.movers.push(m)
       }
     }

@@ -8,7 +8,7 @@ import { MeleeEnemy } from './enemies/MeleeEnemy.ts'
 import { RangedEnemy } from './enemies/RangedEnemy.ts'
 import { TankEnemy } from './enemies/TankEnemy.ts'
 import type { Enemy, Hazard, PlayerInfo, Turns } from './enemies/types.ts'
-import { buildNav, platformAt, platformBelow, type NavGraph } from './enemies/nav.ts'
+import { buildNav, platformAt, platformBelow, type NavGraph, spawnable } from './enemies/nav.ts'
 import { Shooter } from './Shooter.ts'
 import type { HitSource, Target } from './targets.ts'
 import { settingsStore } from '../settings/store.ts'
@@ -579,6 +579,24 @@ export class GameScene extends Phaser.Scene {
     const box = { left: b.left, top: b.top, right: b.right, bottom: b.bottom }
     this.knocked = Math.max(0, this.knocked - dt)
 
+    // Landing on moving platforms, whatever the frame rate: if your feet were above
+    // one's top last frame and are below it now, you land on it (a fast fall on a
+    // slow frame could otherwise pass straight through).
+    if (this.dropTime <= 0) {
+      for (const m of env.movers) {
+        const mb = m.body
+        if (b.right <= mb.left + 4 || b.left >= mb.right - 4) continue
+        if (b.velocity.y < mb.velocity.y - 1) continue
+        if (this.prevBottom <= mb.top + 12 && b.bottom > mb.top && b.bottom < mb.top + 160) {
+          const vy = mb.velocity.y
+          b.reset(this.player.x, mb.top - b.height / 2)
+          b.setVelocityY(vy)
+          this.standingOn = m.rect
+          break
+        }
+      }
+    }
+
     // What you're standing on carries you.
     const on = this.standingOn
     let carry = 0
@@ -741,7 +759,10 @@ export class GameScene extends Phaser.Scene {
         (_pl, m) => {
           if (this.body_.touching.down) this.standingOn = m as Phaser.GameObjects.Rectangle
         },
-        () => !(this.dropTime > 0) && this.body_.velocity.y >= -1,
+        // One-way: collide only if your feet were on or above its top a moment ago, so
+        // you can jump up through it, but a platform rising with you on it keeps you
+        // (checking "not moving up" dropped riders as soon as the platform rose).
+        (_pl, m) => !(this.dropTime > 0) && this.prevBottom <= (m as Phaser.GameObjects.Rectangle).getBounds().top + 12,
       ),
       this.physics.add.collider(this.enemyGroup, this.env.moverGroup),
     ]
@@ -1152,8 +1173,10 @@ export class GameScene extends Phaser.Scene {
 
   /** Spawn one enemy: walkers on a random platform, fliers in the air; preferably well away from the player. */
   private spawnEnemy(kind: EnemyKind): Enemy {
-    // Somewhere to stand: not the room's walls or ceiling, and wide enough (#79).
-    const plats = this.level.platforms.filter((p) => !p.edge && p.w >= (kind === 'tank' ? 160 : 80))
+    // Somewhere to stand: not the room's walls or ceiling, wide enough (#79), and
+    // somewhere walking enemies can get out of and on to you from (#105).
+    const ok = spawnable(this.nav)
+    const plats = this.nav.plats.filter((p, i) => ok.has(i) && p.w >= (kind === 'tank' ? 160 : 80))
     const far = plats.filter((p) => Math.abs(p.x + p.w / 2 - this.player.x) + Math.abs(p.y - this.player.y) > 600)
     const pool = far.length ? far : [...plats]
     const p = pool[Phaser.Math.Between(0, pool.length - 1)]
@@ -1401,7 +1424,9 @@ export class GameScene extends Phaser.Scene {
   /** Landing on a platform: it dips and brightens for a moment (visual only). */
   private platformReact(k: number) {
     const plat = this.standingOn
-    if (!plat || plat.getData('busy')) return
+    // Moving platforms don't bounce: they have no resting height, and tweening one
+    // to an undefined height made it vanish (Lyra's playtest).
+    if (!plat || plat.getData('busy') || plat.getData('mover')) return
     const baseY = plat.getData('baseY') as number
     plat.setData('busy', true)
     const flash = this.add.rectangle(plat.x, baseY, plat.width, plat.height, 0xffffff, 0.12 + 0.18 * k).setOrigin(0).setDepth(1)
