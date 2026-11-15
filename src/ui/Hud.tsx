@@ -7,6 +7,7 @@ import { debugBus, type EnemyKind } from '../state/debug.ts'
 import { navStore } from '../state/nav.ts'
 import { restartBus, runStore } from '../state/run.ts'
 import { TEST_ROOM } from '../game/levels.ts'
+import { CELESTIAL_ROOMS } from '../game/rooms/celestial.ts'
 import { generate } from '../game/gen/generate.ts'
 import { customChunks } from '../state/chunks.ts'
 
@@ -276,6 +277,16 @@ export function Hud() {
             <button type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'editor' }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
               Chunk editor
             </button>
+          </div>
+          <div className="mb-1.5">
+            <span className="mb-1 block text-xs text-neutral-400">Celestial Gothic Horror rooms</span>
+            <div className="flex flex-wrap gap-1">
+              {CELESTIAL_ROOMS.map((r) => (
+                <button key={r.id} type="button" onClick={() => { setOpen(false); navStore.go({ mode: 'sandbox', level: r.level, title: r.name }) }} className="rounded-lg bg-white/5 px-2 py-1 text-xs hover:bg-white/10">
+                  {r.name}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="mb-1.5 flex items-center gap-1">
             <span className="mr-1 w-10 text-xs text-neutral-400">Give</span>

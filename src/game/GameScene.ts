@@ -212,7 +212,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.gravity.y = GRAVITY
     this.physics.world.setBounds(0, 0, ARENA.width, ARENA.height)
 
-    if (this.mode !== 'hub') this.add.rectangle(0, 0, ARENA.width, ARENA.height, COLOURS.arena).setOrigin(0)
+    if (this.mode !== 'hub') this.add.rectangle(0, 0, ARENA.width, ARENA.height, this.level.style?.bg ?? COLOURS.arena).setOrigin(0)
     else this.add.rectangle(0, -400, ARENA.width, ARENA.height + 400, 0x0d0e18).setOrigin(0).setDepth(-3)
 
     this.createMotes()
@@ -664,10 +664,20 @@ export class GameScene extends Phaser.Scene {
 
   /** One platform of the level: a static rectangle (one-way unless solid), with its lit top edge. */
   private addPlatform(p: Level['platforms'][number]) {
-    const colour = this.mode === 'hub' && p.solid ? 0x1b1c2a : p.edge ? 0x1f2030 : p.solid && !p.floor ? 0x353852 : COLOURS.platform
+    const st = this.level.style
+    const colour =
+      this.mode === 'hub' && p.solid
+        ? 0x1b1c2a
+        : p.edge
+          ? (st?.edge ?? 0x1f2030)
+          : p.solid && !p.floor
+            ? (st?.block ?? 0x353852)
+            : p.solid
+              ? (st?.plat ?? COLOURS.platform)
+              : (this.level.platformColour ?? st?.plat ?? COLOURS.platform)
     const r = this.add.rectangle(p.x, p.y, p.w, p.h, colour).setOrigin(0)
     // A lit top edge so blocks and ledges read against the dark (#79).
-    if (this.mode !== 'hub' && !p.edge && !p.crumble && !p.conveyor) this.add.rectangle(p.x, p.y, p.w, 3, 0x6a6e96).setOrigin(0).setDepth(1)
+    if (this.mode !== 'hub' && !p.edge && !p.crumble && !p.conveyor) this.add.rectangle(p.x, p.y, p.w, 3, st?.top ?? 0x6a6e96).setOrigin(0).setDepth(1)
     this.platformGroup.add(r)
     r.setData('baseY', p.y)
     if (p.crumble || p.conveyor) this.env.addPlatform(r, p)
@@ -686,7 +696,39 @@ export class GameScene extends Phaser.Scene {
     const before = new Set(this.children.list)
     this.env = new Environment(this, level)
     for (const p of level.platforms) if (!p.floor && !p.edge) this.addPlatform(p)
+    if (level.decor?.length) this.drawDecor(level.decor)
     return this.children.list.filter((o) => !before.has(o))
+  }
+
+  /** Candles and eyes (#102): decoration until light and watching are built (#93). */
+  private drawDecor(decor: NonNullable<Level['decor']>) {
+    const glow = this.add.graphics().setDepth(1).setBlendMode(Phaser.BlendModes.ADD)
+    const g = this.add.graphics().setDepth(2)
+    for (const d of decor) {
+      if (d.t === 'candle') {
+        for (let i = 4; i > 0; i--) {
+          glow.fillStyle(0xffcf7a, 0.035)
+          glow.fillCircle(d.x, d.y - 30, 22 * i)
+        }
+        g.fillStyle(0xe8dcc8, 1)
+        g.fillRect(d.x - 5, d.y - 24, 10, 24)
+        g.fillStyle(0xffcf7a, 1)
+        g.fillEllipse(d.x, d.y - 32, 8, 14)
+        g.fillStyle(0xfff8e0, 1)
+        g.fillEllipse(d.x, d.y - 30, 4, 7)
+      } else {
+        g.fillStyle(0x1f1830, 1)
+        g.lineStyle(3, 0x1a1a26, 1)
+        g.fillEllipse(d.x, d.y, 80, 56)
+        g.strokeEllipse(d.x, d.y, 80, 56)
+        g.fillStyle(0xf6efe3, 1)
+        g.fillEllipse(d.x, d.y, 58, 32)
+        g.fillStyle(0xb3263a, 1)
+        g.fillCircle(d.x, d.y, 10)
+        g.fillStyle(0x07060f, 1)
+        g.fillEllipse(d.x, d.y, 6, 16)
+      }
+    }
   }
 
   /** Moving platforms: ride them; drop through like other one-way platforms. */

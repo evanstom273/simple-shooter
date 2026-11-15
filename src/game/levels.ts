@@ -30,6 +30,15 @@ export interface LevelEnv {
   /** Travel for movers and saws, px. */
   dx?: number
   dy?: number
+  /** Mover colour (hand-built rooms: a gold chandelier, a stone counterweight). */
+  colour?: number
+}
+
+/** Decoration with no mechanics yet (#102): candles (x = centre, y = the surface it stands on) and eyes (centre). */
+export interface LevelDecor {
+  t: 'candle' | 'eye'
+  x: number
+  y: number
 }
 
 export interface Level {
@@ -42,6 +51,11 @@ export interface Level {
   env?: LevelEnv[]
   /** Gaps in the floor: bottomless (#81). */
   pits?: { x: number; w: number }[]
+  /** World look for hand-built rooms (#102): background, one-way platforms, solid blocks, the room's walls, lit top edges. */
+  style?: { bg: number; plat: number; block: number; edge: number; top: number }
+  /** One-way platform colour override (timber in the Bell Tower). */
+  platformColour?: number
+  decor?: LevelDecor[]
 }
 
 export const ARENA_LEVEL: Level = {

@@ -333,7 +333,7 @@ class Mover {
     this.sx = e.x
     this.sy = e.y
     this.period = Math.max(1, (Math.hypot(e.dx ?? 0, e.dy ?? 0) * 2) / ENV.moverSpeed)
-    this.rect = scene.add.rectangle(e.x, e.y, e.w, Math.max(e.h, 20), 0x6fb7ff).setOrigin(0).setStrokeStyle(2, INK)
+    this.rect = scene.add.rectangle(e.x, e.y, e.w, Math.max(e.h, 20), e.colour ?? 0x6fb7ff).setOrigin(0).setStrokeStyle(2, INK)
     scene.physics.add.existing(this.rect)
     const b = this.body
     b.setAllowGravity(false).setImmovable(true)

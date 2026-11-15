@@ -113,13 +113,13 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
     - **Look: Eyelets** *(2026-11-15T01:07:56+00:00, #99)*. Each Mote is a little black triangle with a single pale eye and faint violet wings. In the dark, the swarm reads as a cloud of tiny glints watching you.
       - *Open:* whether their eyes count as eyes for the watching rule (Claude flagged this: they look like watchers, but the rule is about eyes in the room).
       - *(Options were A Moths, B Eyelets, C Ash, D Star Moths.)*
-- **Arenas** *(#100, #102; Claude's proposals pending Lyra's review, drawn on the world mockup canvas)*. The order goes down into the crypt, up the tower, then out onto the roof. One new hazard each section.
+- **Arenas** *(#100, #102; approved by Lyra #103; drawn on the world mockup canvas; built as test rooms)*. The order goes down into the crypt, up the tower, then out onto the roof. One new hazard each section.
   1. **The Nave** (2400 × 1350). Choir lofts, climbable pillars, an altar dais, floating pulpits, a swinging chandelier (moving platform), a crumbling arch ledge. Light: 2 eyes, 17 candles.
   2. **The Crypt** (2400 × 1200). Introduces **pits** (open graves). Burial niches, sarcophagi, coffin-lid platforms (two rotten, crumbling), a gibbet cage moving up and down. Light: 3 eyes, 7 candles.
   3. **The Bell Tower** (1600 × 2400, tall). Introduces **wind** through the belfry. Zigzag timber landings (one half rotten), a counterweight moving up and down the shaft, a swinging great bell. Light: 3 eyes, 7 candles. No pits.
   4. **The Breach** (2800 × 1400). Everything together: four islands over the void, drifting stones (moving), a crumbling fragment, an updraught over the middle gap, ruined ledges, crumbling high ruins. Light: 3 eyes in floating masonry, 5 candles.
   - **Major boss arena: the Sanctum** (3000 × 1400). One long solid floor, climbable broken pillars at the ends, two low and two high floating platforms kept to the edges, 8 candles, no eyes. A boss space of roughly 1000 × 700 in the middle.
-  - Mini bosses fight in their own section's arena (assumed; "less flashy", #91).
+  - **Mini bosses fight in their own section's arena** (#103), and their mechanics must interact with that room (wind in the Bell Tower, graves in the Crypt, and so on).
 - *Implementation notes:*
   - Enemies need a "lost you / searching" behaviour, because they currently always know where the player is.
   - Light needs per-room light sources, not just the pool around the player.
@@ -821,6 +821,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 100 | 2026-11-15T01:14:48+00:00 | Levels | **No procedural generation for story arenas** (Lyra, replacing #79's per-section generation). Arenas go back to how they were at the start: a few stylised platforms per world that you climb between (wall jumping, double jump, dash). Hazards and moving platforms are mixed in occasionally. Each section's arena is designed by hand. Open: what endless does (currently generated every wave, #85). The generator code stays for now. |
 | 101 | 2026-11-15T01:18:01+00:00 | Endless | Endless recycles the hand-built story rooms from every world in a random order, instead of generating rooms. The existing sink-and-rise transition (#85) swaps between them. Open: whether enemies match each room's world or mix; whether world rules (darkness, eyes, candles) come along with the room. |
 | 102 | 2026-11-15T01:24:58+00:00 | World: Celestial Gothic Horror | Claude's proposed arenas, mocked up on the world canvas, pending Lyra's review. 1 the Nave (gentle, crumbling ledge, swinging chandelier, 2 eyes, 17 candles). 2 the Crypt (pits as open graves, rotten coffin lids, gibbet cage, 3 eyes, 7 candles). 3 the Bell Tower (tall, zigzag landings, counterweight, swinging bell, belfry wind, 3 eyes, 7 candles). 4 the Breach (islands over the void, drifting and crumbling stone, updraught, 3 eyes in floating masonry, 5 candles). Major boss arena: the Sanctum (long solid floor, climbable pillars, 2 low and 2 high platforms, 8 candles, no eyes, boss space ~1000 × 700). |
+| 103 | 2026-11-15T01:30:06+00:00 | World: Celestial Gothic Horror | Lyra approved the four arenas and the Sanctum. Mini bosses fight in their own section's room, and their mechanics must interact with that room properly (the wind, the graves, the landings…). The rooms are built in the game as test rooms (Testing → Celestial Gothic Horror rooms, no enemies). Candles and eyes are decoration until light and watching are built. |
 
 ---
 
