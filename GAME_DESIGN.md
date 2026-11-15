@@ -93,6 +93,12 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
   - Kills give light back.
 - **Eyes in the room** watch you and can be **destroyed for good**. While an eye can see you, enemies **know where you are** and are **tougher**. Out of sight, they lose track of you.
 - **Hazards:** crumbling floors, pits, wind.
+- **Roster** *(2026-11-15T00:49:27+00:00, #94; picked from Claude's options, details still to design)*:
+  - **The Unfolding** (close-range). A closed square, armoured and still. To attack it unfolds into a star of triangles and lunges, then folds back up. Wrong geometry: it can only be hurt while it's open.
+  - **Choir Lantern** (ranged). A floating hexagon cage with a candle inside. It sings, firing rings of sound in rhythm, and several Lanterns sync up to fire as one volley. Ritual / choir.
+  - **Void Mass** (heavy). A shifting dark polygon that eats light: your light shrinks near it. Slow and soaks up bullets, so it has to be dashed and stomped. Darkness.
+  - **Summoning Circle** (support / summoner). A glowing dodecagon on the floor that calls in the swarm, tended by a hooded keeper. Break the circle or kill the keeper. Ritual.
+  - **Motes** (swarm). Tiny circles with triangle wings, like little moths, moving as a cloud. They're drawn to light, swirl around yours, and **smother candles: they're the world's light-takers**.
 - *Implementation notes:*
   - Enemies need a "lost you / searching" behaviour, because they currently always know where the player is.
   - Light needs per-room light sources, not just the pool around the player.
@@ -783,6 +789,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 91 | 2026-11-15T00:39:51+00:00 | Bosses | Each world: 3 mini bosses (ending sections 1–3) and 1 major boss (ending section 4). 16 bosses in total: 12 mini, 4 major. Mini bosses are handcrafted together (Q&A as with the enemies) and less flashy than the major boss. |
 | 92 | 2026-11-15T00:41:11+00:00 | Art | Leaning into compound shapes, especially for bosses: stacking and combining triangles, circles, squares and many-sided polygons (dodecagons and so on). Any straight-edged polygon counts as geometric (like Godot's Polygon2D; Phaser draws arbitrary polygons too). |
 | 93 | 2026-11-15T00:44:50+00:00 | World: Celestial Gothic Horror | Five all-new enemy types (none of melee/ranged/tank carried over). Roles: close-range attacker, ranged, heavy, support/summoner, swarm. Signatures blended across all five: darkness, being watched, wrong geometry, ritual/choir. Darkness: light can be taken; an enemy snuffs candles, relight them by touching, kills give light. Eyes in the room: destroyable for good; while an eye sees you, enemies know where you are and are tougher. Hazards: crumbling floors, pits, wind. |
+| 94 | 2026-11-15T00:49:27+00:00 | World: Celestial Gothic Horror | Roster picked from Claude's options. Close-range: **The Unfolding**. Ranged: **Choir Lantern**. Heavy: **Void Mass**. Support: **Summoning Circle**. Swarm: **Motes**, which also snuff candles. Details still to design. |
 
 ---
 
