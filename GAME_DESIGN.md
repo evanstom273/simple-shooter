@@ -97,6 +97,7 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
   - **The Unfolding** (close-range). A closed square, armoured and still. To attack it unfolds into a star of triangles and lunges, then folds back up. Wrong geometry: it can only be hurt while it's open.
     - **Look: The Jaw** *(2026-11-15T00:53:43+00:00, #95)*. A bone-white box with a seam and studs across the middle. To attack, the lid hinges open like a mouth: rows of triangle teeth top and bottom, and one red-irised eye down in the dark. *(Options were drawn on the world mockup canvas: A The Net, B The Bloom, C The Jaw, D Nested.)*
   - **Choir Lantern** (ranged). A floating hexagon cage with a candle inside. It sings, firing rings of sound in rhythm, and several Lanterns sync up to fire as one volley. Ritual / choir.
+    - **Look: The Cage** *(2026-11-15T00:56:57+00:00, #96)*. A plain iron lantern hanging on a chain: an elongated hexagon of dark glass with bars, a cap and a finial, and a candle inside. When it sings, the flame flares and gold rings of sound pulse outwards. *(Options were A The Cage, B The Choirboy, C The Reliquary, D The Halo.)*
   - **Void Mass** (heavy). A shifting dark polygon that eats light: your light shrinks near it. Slow and soaks up bullets, so it has to be dashed and stomped. Darkness.
   - **Summoning Circle** (support / summoner). A glowing dodecagon on the floor that calls in the swarm, tended by a hooded keeper. Break the circle or kill the keeper. Ritual.
   - **Motes** (swarm). Tiny circles with triangle wings, like little moths, moving as a cloud. They're drawn to light, swirl around yours, and **smother candles: they're the world's light-takers**.
@@ -792,6 +793,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 93 | 2026-11-15T00:44:50+00:00 | World: Celestial Gothic Horror | Five all-new enemy types (none of melee/ranged/tank carried over). Roles: close-range attacker, ranged, heavy, support/summoner, swarm. Signatures blended across all five: darkness, being watched, wrong geometry, ritual/choir. Darkness: light can be taken; an enemy snuffs candles, relight them by touching, kills give light. Eyes in the room: destroyable for good; while an eye sees you, enemies know where you are and are tougher. Hazards: crumbling floors, pits, wind. |
 | 94 | 2026-11-15T00:49:27+00:00 | World: Celestial Gothic Horror | Roster picked from Claude's options. Close-range: **The Unfolding**. Ranged: **Choir Lantern**. Heavy: **Void Mass**. Support: **Summoning Circle**. Swarm: **Motes**, which also snuff candles. Details still to design. |
 | 95 | 2026-11-15T00:53:43+00:00 | Enemy visual | The Unfolding's look: **C, The Jaw** (Lyra, from four drawn options). |
+| 96 | 2026-11-15T00:56:57+00:00 | Enemy visual | The Choir Lantern's look: **A, The Cage** (Lyra, from four drawn options). |
 
 ---
 
