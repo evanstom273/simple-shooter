@@ -126,6 +126,7 @@ Designed with Lyra through rounds of questions.
 - **Not in scope:** unnecessary simulation systems, crafting, elaborate skill trees or complex progression mechanics.
 
 ### Art direction: Stylised Geometry *(2026-11-14T20:00:20+00:00 — History #61)*
+- **Environments can be less geometric** *(2026-11-15T00:32:16+00:00, #90)*: Stylised Geometry is for the characters; worlds can be looser and more organic around them.
 - **"Stylised Geometry"** (Lyra's term): every character is still a recognisable simple shape, but **bright, bold characters** with features: **eyes, faces, floating hands, feet**.
 - **The player:** the square with **two oval eyes and a smile**, **floating circle hands** (not attached), and **L-shaped feet**, from Lyra's sketch. Concept sheet: `concepts/player-concept.svg` (idle, running, dash, hurt, stomp). Approved by Lyra.
 - Art is drawn as **SVG**. Hands, feet and faces are visual only: hitboxes stay as they are.
@@ -761,6 +762,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 87 | 2026-11-15T00:17:51+00:00 | Worlds | (Superseded by #88: Claude misread Lyra's idea as four single genres.) |
 | 88 | 2026-11-15T00:19:58+00:00 | Worlds | Each world fuses two looks. Working set (not locked): **Celestial Gothic Horror** (cosmic horror: a gothic cathedral under a wrong sky), **Frozen Sci-fi**, **Volcanic Industrial** (a forge-city running on magma), **Overgrown Solarpunk**. They pair as opposites: volcanic industrial and overgrown solarpunk (technology against nature vs technology with nature); frozen sci-fi and celestial gothic horror (the measured universe vs the unknowable). Open: solarpunk's tone (hopeful, or eerily abandoned), the order of the worlds, the portal mapping. |
 | 89 | 2026-11-15T00:23:07+00:00 | Worlds | Overgrown Solarpunk's tone: a breath of fresh air, the one world that feels almost kind. Worlds written up in §B with the discussion notes (marked as notes, not decisions); unchosen ideas kept in §D. |
+| 90 | 2026-11-15T00:32:16+00:00 | Art | Environments don't have to be strictly geometric: they can be looser and more organic. Characters stay Stylised Geometry (#61). World style mockups made as a design canvas (four scenes, one per world). |
 
 ---
 
