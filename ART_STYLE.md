@@ -2,6 +2,8 @@
 
 The art style of simple-shooter: what it looks like, why, and how to make new art that fits.
 
+This is the game's own application of **Stylised Geometry**. The game-agnostic version of the style, for use in other games, is in `stylised-geometry/` (`STYLISED_GEOMETRY.md` plus SVG reference sheets).
+
 Everything here comes from decisions already made (the History numbers in `GAME_DESIGN.md` are given in brackets) or from the code and mockups as they stand. Where a rule is my reading of a pattern in those decisions rather than something Lyra decided, it's marked **(Claude)**, so it can be overruled without arguing with a decision.
 
 Where things live:
