@@ -30,6 +30,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Generation decluttered: sparser zigzag air layers, merged platforms, bigger air chunks (#84). *(2026-11-15T00:04:29+00:00)*
 - [x] Step 13: wall jumping, level generator + starter chunks, hazards and environment pieces, in-game chunk editor (#79–#83). *(2026-11-14T23:55:09+00:00)*
 - [x] Portals need a press to enter, with a prompt and an ENTER touch button (#76). *(2026-11-14T23:21:05+00:00)*
 - [x] Transitions: fades between places, player beam-in on arrival, portal pull and beam-out on leaving (#75). *(2026-11-14T23:04:37+00:00)*
