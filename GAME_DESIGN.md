@@ -472,6 +472,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ---
 
 ## D. Future Possibilities
+- **Handcrafted layouts** *(#86)*: replace or mix with generation; possibly by extending the chunk editor to whole rooms.
 
 *Proposals only — not confirmed features.*
 
@@ -714,6 +715,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 83 | 2026-11-14T23:55:09+00:00 | Build | Steps 1–4 of the generation plan built: wall jumping, the generator with the starter chunks, all hazards and environment pieces, and the in-game chunk editor. |
 | 84 | 2026-11-15T00:04:29+00:00 | Generation | Less cluttered (Lyra: too many small platforms). Floating layers are sparser (about a quarter of the width) and zigzag up the room as a readable route. Close platforms at the same height are joined, and the floating chunks are bigger. |
 | 85 | 2026-11-15T00:07:50+00:00 | Endless | Endless rebuilds every wave (step 5). A fixed-size generated room: after a wave, the old pieces sink and fade in a sweep across the room and the new ones rise into place. Floor, walls and ceiling stay; hazards pause; a moment of grace afterwards; a block rising under you lifts you. Claude's choices: no pits in endless; hazards ramp by wave (section-1 chunks for waves 1–2, section 2 for 3–5, section 3 for 6–8, everything from 9). |
+| 86 | 2026-11-15T00:11:51+00:00 | Generation | Lyra, after playing: procedural generation is good but not great for this sort of game. Keep it for now; handcrafted layouts are a strong possibility (learnable spaces suit a Soulslike). The chunk editor could grow into a whole-room editor. |
 
 ---
 

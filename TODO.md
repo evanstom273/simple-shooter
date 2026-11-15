@@ -14,6 +14,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 - Tune the ranged enemy and tank in play.
 - Next (Lyra): enemy and boss designs, and each world's theme.
+- Possibility (#86): handcrafted layouts instead of / alongside generation (the editor could grow into a room editor).
 - Generation, remaining steps (#79):
   6. World palettes and the per-section ramp, once worlds have identities.
 - Lyra to play: wall jump feel, generated sections, each hazard, the chunk editor (Testing → Test room / Random room / Chunk editor).
