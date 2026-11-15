@@ -812,6 +812,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 98 | 2026-11-15T01:03:55+00:00 | Enemy visual | The Summoning Circle's look: **D, The Gate** (Lyra, from four drawn options). |
 | 99 | 2026-11-15T01:07:56+00:00 | Enemy visual | The Motes' look: **B, Eyelets** (Lyra, from four drawn options). All five Celestial Gothic Horror enemies now have a look. |
 | 100 | 2026-11-15T01:14:48+00:00 | Levels | **No procedural generation for story arenas** (Lyra, replacing #79's per-section generation). Arenas go back to how they were at the start: a few stylised platforms per world that you climb between (wall jumping, double jump, dash). Hazards and moving platforms are mixed in occasionally. Each section's arena is designed by hand. Open: what endless does (currently generated every wave, #85). The generator code stays for now. |
+| 101 | 2026-11-15T01:18:01+00:00 | Endless | Endless recycles the hand-built story rooms from every world in a random order, instead of generating rooms. The existing sink-and-rise transition (#85) swaps between them. Open: whether enemies match each room's world or mix; whether world rules (darkness, eyes, candles) come along with the room. |
 
 ---
 
