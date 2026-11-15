@@ -109,7 +109,10 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
       - Summoning: the ring blazes, the triangles twist, a black hole opens in the middle and the Motes pour out sideways.
       - Upright suits the side-on camera; a floor circle would be seen edge-on.
       - *(Options were A The Rite, B The Three, C The Altar, D The Gate.)*
-  - **Motes** (swarm). Tiny circles with triangle wings, like little moths, moving as a cloud. They're drawn to light, swirl around yours, and **smother candles: they're the world's light-takers**.
+  - **Motes** (swarm). Tiny winged things (Eyelets, #99), moving as a cloud. They're drawn to light, swirl around yours, and **smother candles: they're the world's light-takers**.
+    - **Look: Eyelets** *(2026-11-15T01:07:56+00:00, #99)*. Each Mote is a little black triangle with a single pale eye and faint violet wings. In the dark, the swarm reads as a cloud of tiny glints watching you.
+      - *Open:* whether their eyes count as eyes for the watching rule (Claude flagged this: they look like watchers, but the rule is about eyes in the room).
+      - *(Options were A Moths, B Eyelets, C Ash, D Star Moths.)*
 - *Implementation notes:*
   - Enemies need a "lost you / searching" behaviour, because they currently always know where the player is.
   - Light needs per-room light sources, not just the pool around the player.
@@ -805,6 +808,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 96 | 2026-11-15T00:56:57+00:00 | Enemy visual | The Choir Lantern's look: **A, The Cage** (Lyra, from four drawn options). |
 | 97 | 2026-11-15T01:00:18+00:00 | Enemy visual | The Void Mass's look: **A, The Hole, with the eye from C, The Stack** (Lyra). |
 | 98 | 2026-11-15T01:03:55+00:00 | Enemy visual | The Summoning Circle's look: **D, The Gate** (Lyra, from four drawn options). |
+| 99 | 2026-11-15T01:07:56+00:00 | Enemy visual | The Motes' look: **B, Eyelets** (Lyra, from four drawn options). All five Celestial Gothic Horror enemies now have a look. |
 
 ---
 
