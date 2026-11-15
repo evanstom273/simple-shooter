@@ -66,6 +66,34 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
 - **Death: you lose all the currency you're carrying, with no way to recover it.** Levels, upgrades and weapons are kept. (Souls-like progression; the unrecoverable currency keeps a roguelike edge.)
 - **Endless waves and the high score stay as a separate mode.**
 
+### Worlds *(2026-11-15T00:23:07+00:00 — History #88, #89)*
+**Each world fuses two looks** (Lyra). This is a working set, not locked; it may shift as enemies and bosses take shape. Notes under each world come from the conversation. Only the bold parts are decisions; the rest are ideas to react to.
+
+- **Celestial Gothic Horror.** Cosmic horror: a gothic cathedral under a wrong sky.
+  - *Notes:* stained glass, candlelight and long shadows inside; constellations that move, or a moon with an eye in it, outside.
+  - *Notes:* Lovecraft's "wrong angles". Asymmetric shapes, things that are almost a circle, too many eyes. That is unsettling precisely because the rest of the game is neat geometry.
+  - *Notes:* the existing darkness and pool of light suit it. A natural last world, where everything you've learned stops applying.
+- **Frozen Sci-fi.**
+  - *Notes:* clean lines, hard edges, hexagons, neon on dark. Drones and constructs: symmetrical, precise, with glowing seams. Cold and clinical.
+  - *Notes:* for example, an abandoned research station buried in ice, with drones still running and nobody left. Possibly slippery floors as a new hazard. Quiet and minimal.
+- **Volcanic Industrial.** A forge-city: machinery running on magma.
+  - *Notes:* heat, smoke, slag, furnaces, brass and iron. Jets, conveyors and saws fit naturally.
+- **Overgrown Solarpunk.** Technology grown together with nature: glass, gardens, sunlight. **Tone: a breath of fresh air** (Lyra), the one world that feels almost kind.
+  - *Notes:* bounce pads as fungus, wind as spores; warm, lush, alive.
+
+**The worlds pair as opposites:**
+- **Volcanic Industrial and Overgrown Solarpunk:** technology that tears the world open for fuel, against technology that grows with the world.
+- **Frozen Sci-fi and Celestial Gothic Horror:** the measured, understood universe, against the cosmos that can't be understood.
+- *Note:* three worlds are about humanity's relationship with technology (clinical, brutal, harmonious); the fourth is what lies beyond all of it.
+
+**Open:**
+- The order of the worlds.
+- Which portal goes to which world. *Note:* the amber triangle suits Volcanic Industrial and the violet diamond suits the cosmic horror; the cyan hexagon and pink circle are left for Frozen Sci-fi and Solarpunk, or the portals change to match.
+- World and section names.
+- Each world's hazards.
+- Each world's enemy roster and four bosses.
+- What becomes of the existing melee, ranged and tank enemies: World 1's natives, or a common baseline every world builds on.
+
 ### The hub *(2026-11-14T21:46:15+00:00 — History #70)*
 Designed with Lyra through rounds of questions.
 - **A place you walk around, not a menu, and it's the main menu too:** the game starts there (after the first-time tutorial), and endless mode is entered from it rather than from a separate button.
@@ -472,9 +500,23 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 ---
 
 ## D. Future Possibilities
-- **Handcrafted layouts** *(#86)*: replace or mix with generation; possibly by extending the chunk editor to whole rooms.
 
 *Proposals only — not confirmed features.*
+
+- **Handcrafted layouts** *(#86)*: replace or mix with generation; possibly by extending the chunk editor to whole rooms.
+- **World ideas floated but not chosen** *(#87–#88, for reference)*.
+  - *Claude's mechanical directions:*
+    - The Foundry: machines, conveyors, a production line.
+    - The Hollow: underground, crystal, the light shrinks, ambushes.
+    - The Orrery: everything on cycles, rotating rooms, celestial bosses.
+    - The Glasshouse: shapes that grow, split and spread.
+    - The Signal: a corrupted world, platforms flickering, enemies teleporting.
+    - The Spire: pure vertical, wind, long falls.
+    - The Choir: enemies attack in time with the music; bosses sing.
+  - *Looks offered:* ancient / mythic (temples, trap rooms, guardians), celestial dream, overgrown nature, infernal, industrial / steampunk, frozen.
+  - *Pairings offered:* volcanic ancient with overgrown industrial; overgrown ancient.
+  - *Other:* sci-fi as the game's frame (the hub, the portals, what the player is) rather than a world.
+  - Several of these could still live inside the chosen worlds (e.g. the Orrery or the Choir inside Celestial Gothic Horror).
 
 - **Moving to Cloudflare** if the game outgrows GitHub Pages (#6).
 - **More weapons** beyond pistol, automatic and shotgun (Lyra: kept light for now, #28).
@@ -485,7 +527,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 
 1. **Title.** Deferred: Lyra will think of something.
 1i. **Hub (#70), open:** tutorial room contents and whether it can be replayed; how the drop down to endless works (a hole in the floor?); the training dummy's look; reroll and healing prices; where settings/testing live once the hub is the menu.
-1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; ~~unique enemies per world~~ (fully unique, #65); whether the existing melee/ranged/tank become world 1's roster, endless mode's, or both; how many worlds and sections to start with, and their names and themes; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; the hub itself (a walkable space, or a menu?); boss designs.
+1h. **Structure (#62), open:** the game's own name for the portals (not "archstone") and world/section names; ~~unique enemies per world~~ (fully unique, #65); whether the existing melee/ranged/tank become world 1's roster, endless mode's, or both; how many worlds and sections to start with (four worlds × four sections, #64, #66), ~~their themes~~ (working set, #88–#89), their names; whether currency carries between sections while you're alive (assumed yes: only death takes it); how waves scale from section to section; the hub itself (a walkable space, or a menu?); boss designs.
 1g. **Waves (#60), open:** what makes waves harder past ~wave 13 (size and on-screen caps stop growing; only gold keeps scaling); whether gold should land on platforms rather than sinking to the floor; the currency's real name; resuming a run after closing the browser (#17) isn't built yet (comes with the shop).
 1f. **Stomp (#59), open:** bounce height, flatten length, how far the enemy is knocked away, and how "from above" is judged (falling, feet above the enemy's middle).
 1e. **Tank (#58), open:** numbers (walk speed, jump height, wind-up and recovery length, shockwave speed and height, which part hurts: the slam, the wave, or both), what happens to a shockwave on a platform you're not on, whether its own landings (not slams) hurt, and how hard your dash bounces you off.
@@ -718,6 +760,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 86 | 2026-11-15T00:11:51+00:00 | Generation | Lyra, after playing: procedural generation is good but not great for this sort of game. Keep it for now; handcrafted layouts are a strong possibility (learnable spaces suit a Soulslike). The chunk editor could grow into a whole-room editor. |
 | 87 | 2026-11-15T00:17:51+00:00 | Worlds | (Superseded by #88: Claude misread Lyra's idea as four single genres.) |
 | 88 | 2026-11-15T00:19:58+00:00 | Worlds | Each world fuses two looks. Working set (not locked): **Celestial Gothic Horror** (cosmic horror: a gothic cathedral under a wrong sky), **Frozen Sci-fi**, **Volcanic Industrial** (a forge-city running on magma), **Overgrown Solarpunk**. They pair as opposites: volcanic industrial and overgrown solarpunk (technology against nature vs technology with nature); frozen sci-fi and celestial gothic horror (the measured universe vs the unknowable). Open: solarpunk's tone (hopeful, or eerily abandoned), the order of the worlds, the portal mapping. |
+| 89 | 2026-11-15T00:23:07+00:00 | Worlds | Overgrown Solarpunk's tone: a breath of fresh air, the one world that feels almost kind. Worlds written up in §B with the discussion notes (marked as notes, not decisions); unchosen ideas kept in §D. |
 
 ---
 
