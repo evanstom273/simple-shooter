@@ -128,6 +128,7 @@ Designed with Lyra through rounds of questions.
 - **Not in scope:** unnecessary simulation systems, crafting, elaborate skill trees or complex progression mechanics.
 
 ### Art direction: Stylised Geometry *(2026-11-14T20:00:20+00:00 — History #61)*
+- **Compound shapes** *(2026-11-15T00:41:11+00:00, #92)*: characters, and bosses above all, can be built by stacking and combining shapes: triangles, circles, squares, many-sided polygons. Any straight-edged polygon counts as geometric.
 - **Environments can be less geometric** *(2026-11-15T00:32:16+00:00, #90)*: Stylised Geometry is for the characters; worlds can be looser and more organic around them.
 - **"Stylised Geometry"** (Lyra's term): every character is still a recognisable simple shape, but **bright, bold characters** with features: **eyes, faces, floating hands, feet**.
 - **The player:** the square with **two oval eyes and a smile**, **floating circle hands** (not attached), and **L-shaped feet**, from Lyra's sketch. Concept sheet: `concepts/player-concept.svg` (idle, running, dash, hurt, stomp). Approved by Lyra.
@@ -766,6 +767,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 89 | 2026-11-15T00:23:07+00:00 | Worlds | Overgrown Solarpunk's tone: a breath of fresh air, the one world that feels almost kind. Worlds written up in §B with the discussion notes (marked as notes, not decisions); unchosen ideas kept in §D. |
 | 90 | 2026-11-15T00:32:16+00:00 | Art | Environments don't have to be strictly geometric: they can be looser and more organic. Characters stay Stylised Geometry (#61). World style mockups made as a design canvas (four scenes, one per world). |
 | 91 | 2026-11-15T00:39:51+00:00 | Bosses | Each world: 3 mini bosses (ending sections 1–3) and 1 major boss (ending section 4). 16 bosses in total: 12 mini, 4 major. Mini bosses are handcrafted together (Q&A as with the enemies) and less flashy than the major boss. |
+| 92 | 2026-11-15T00:41:11+00:00 | Art | Leaning into compound shapes, especially for bosses: stacking and combining triangles, circles, squares and many-sided polygons (dodecagons and so on). Any straight-edged polygon counts as geometric (like Godot's Polygon2D; Phaser draws arbitrary polygons too). |
 
 ---
 
