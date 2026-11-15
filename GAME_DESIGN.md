@@ -99,6 +99,11 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
   - **Choir Lantern** (ranged). A floating hexagon cage with a candle inside. It sings, firing rings of sound in rhythm, and several Lanterns sync up to fire as one volley. Ritual / choir.
     - **Look: The Cage** *(2026-11-15T00:56:57+00:00, #96)*. A plain iron lantern hanging on a chain: an elongated hexagon of dark glass with bars, a cap and a finial, and a candle inside. When it sings, the flame flares and gold rings of sound pulse outwards. *(Options were A The Cage, B The Choirboy, C The Reliquary, D The Halo.)*
   - **Void Mass** (heavy). A shifting dark polygon that eats light: your light shrinks near it. Slow and soaks up bullets, so it has to be dashed and stomped. Darkness.
+    - **Look: The Hole, with the Stack's eye** *(2026-11-15T01:00:18+00:00, #97)*. A jagged eleven-sided hole in the world: pure black with a violet rim and stars visible inside, and an eye in the middle looking out.
+      - Idle: the eye is half-lidded.
+      - Feeding: it swells, the rim brightens, candle flames bend into it, and the eye opens wide with a red iris.
+      - About twice the player's height.
+      - *(Options were A The Hole, B The Eclipse, C The Stack, D The Thorn Crown; the combined design is drawn on the canvas.)*
   - **Summoning Circle** (support / summoner). A glowing dodecagon on the floor that calls in the swarm, tended by a hooded keeper. Break the circle or kill the keeper. Ritual.
   - **Motes** (swarm). Tiny circles with triangle wings, like little moths, moving as a cloud. They're drawn to light, swirl around yours, and **smother candles: they're the world's light-takers**.
 - *Implementation notes:*
@@ -794,6 +799,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 94 | 2026-11-15T00:49:27+00:00 | World: Celestial Gothic Horror | Roster picked from Claude's options. Close-range: **The Unfolding**. Ranged: **Choir Lantern**. Heavy: **Void Mass**. Support: **Summoning Circle**. Swarm: **Motes**, which also snuff candles. Details still to design. |
 | 95 | 2026-11-15T00:53:43+00:00 | Enemy visual | The Unfolding's look: **C, The Jaw** (Lyra, from four drawn options). |
 | 96 | 2026-11-15T00:56:57+00:00 | Enemy visual | The Choir Lantern's look: **A, The Cage** (Lyra, from four drawn options). |
+| 97 | 2026-11-15T01:00:18+00:00 | Enemy visual | The Void Mass's look: **A, The Hole, with the eye from C, The Stack** (Lyra). |
 
 ---
 
