@@ -104,7 +104,11 @@ Lyra's restructure, inspired by Demon's Souls' archstones. Adds structure around
       - Feeding: it swells, the rim brightens, candle flames bend into it, and the eye opens wide with a red iris.
       - About twice the player's height.
       - *(Options were A The Hole, B The Eclipse, C The Stack, D The Thorn Crown; the combined design is drawn on the canvas.)*
-  - **Summoning Circle** (support / summoner). A glowing dodecagon on the floor that calls in the swarm, tended by a hooded keeper. Break the circle or kill the keeper. Ritual.
+  - **Summoning Circle** (support / summoner). A glowing dodecagon (now standing upright as a gate, #98) that calls in the swarm, tended by a hooded keeper. Break the circle or kill the keeper. Ritual.
+    - **Look: The Gate** *(2026-11-15T01:03:55+00:00, #98)*. The circle stands upright: a dodecagon ring on a small plinth, with two triangles inside turning in opposite directions. The keeper is hooded and faceless, with two pinpoint eyes and a crown of stars joined like a constellation.
+      - Summoning: the ring blazes, the triangles twist, a black hole opens in the middle and the Motes pour out sideways.
+      - Upright suits the side-on camera; a floor circle would be seen edge-on.
+      - *(Options were A The Rite, B The Three, C The Altar, D The Gate.)*
   - **Motes** (swarm). Tiny circles with triangle wings, like little moths, moving as a cloud. They're drawn to light, swirl around yours, and **smother candles: they're the world's light-takers**.
 - *Implementation notes:*
   - Enemies need a "lost you / searching" behaviour, because they currently always know where the player is.
@@ -800,6 +804,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 95 | 2026-11-15T00:53:43+00:00 | Enemy visual | The Unfolding's look: **C, The Jaw** (Lyra, from four drawn options). |
 | 96 | 2026-11-15T00:56:57+00:00 | Enemy visual | The Choir Lantern's look: **A, The Cage** (Lyra, from four drawn options). |
 | 97 | 2026-11-15T01:00:18+00:00 | Enemy visual | The Void Mass's look: **A, The Hole, with the eye from C, The Stack** (Lyra). |
+| 98 | 2026-11-15T01:03:55+00:00 | Enemy visual | The Summoning Circle's look: **D, The Gate** (Lyra, from four drawn options). |
 
 ---
 
