@@ -15,7 +15,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 - Tune the ranged enemy and tank in play.
 - Next (Lyra): enemy and boss designs. Bosses: 3 mini + 1 major per world (#91). Worlds (working set, #88–#89, see §B Worlds): Celestial Gothic Horror, Frozen Sci-fi, Volcanic Industrial, Overgrown Solarpunk (a breath of fresh air). Open: order, portal mapping, names, hazards per world, rosters, bosses.
 - Lyra to play the Celestial Gothic Horror rooms (Testing → Celestial Gothic Horror rooms) and say what to change (#103).
-- Lyra to decide: should walking enemies be able to reach every perch (Nave lofts, arches, pillar tops; the Breach's right ledge), or are a few climb-only refuges OK?
+- Watch in play: whether respite perches get camped (#106).
 - Next design: Celestial Gothic Horror mini bosses (3) and major boss; they use their section's room (#103).
 - Hand-designed arenas (#100). Endless will recycle story rooms in random order (#101); open: matching enemies, world rules. Decide whether to remove the generator.
 - Generation, remaining steps (#79):
