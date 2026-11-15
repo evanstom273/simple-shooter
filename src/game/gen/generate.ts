@@ -99,22 +99,45 @@ export function generate(o: GenOptions): Level {
     cursor += cw + snap(between(60, 260))
   }
 
-  // Air bands above, each within reach of the one below.
+  // Air bands above, each within reach of the one below. Sparse (about a
+  // quarter of the width each), and laid out as a zigzag: each band's main
+  // chunk steps across from the last one, so climbing has a readable route
+  // instead of a scatter of platforms.
+  let anchor = { x: W / 2 - 200, w: 400 } // the spawn area of the floor
+  let goRight = r() < 0.5
   for (let base = floorY - BAND; base > 260 && air.length; base -= BAND) {
-    const target = (W - WALL * 2) * 0.5
+    const target = (W - WALL * 2) * 0.25
     let used = 0
-    for (let tries = 0; tries < 40 && used < target; tries++) {
+    let main = true
+    for (let tries = 0; tries < 30 && used < target; tries++) {
       const c = pick(air)
       const cw = c.w * TILE
       const ch = c.h * TILE
-      const y = snap(base + between(-40, 40)) - ch
-      const x = snap(between(WALL + 20, W - WALL - 20 - cw))
+      const y = snap(base + between(-30, 30)) - ch
+      let x: number
+      if (main) {
+        // Step across from the band below: overlap its end a little, or leave a short gap.
+        const step = between(-cw * 0.3, 180)
+        x = goRight ? anchor.x + anchor.w + step : anchor.x - cw - step
+        if (x < WALL + 20 || x + cw > W - WALL - 20) {
+          goRight = !goRight
+          x = goRight ? anchor.x + anchor.w + step : anchor.x - cw - step
+        }
+        x = snap(Math.max(WALL + 20, Math.min(W - WALL - 20 - cw, x)))
+      } else {
+        x = snap(between(WALL + 20, W - WALL - 20 - cw))
+      }
       const rect = { x, y, w: cw, h: ch }
-      if (y < WALL + 140) continue
-      if (occupied.some((q) => overlaps(rect, q, 70))) continue
+      if (y < WALL + 140) break
+      if (occupied.some((q) => overlaps(rect, q, main ? 40 : 160))) continue
       placed.push({ chunk: c, x, y, id: placed.length })
       occupied.push(rect)
       used += cw
+      if (main) {
+        anchor = { x, w: cw }
+        goRight = !goRight
+        main = false
+      }
     }
   }
 
@@ -125,6 +148,8 @@ export function generate(o: GenOptions): Level {
   for (const pl of placed) {
     for (const pc of pl.chunk.pieces) addPiece(pc, pl, platforms, env, pits)
   }
+
+  mergePlatforms(platforms)
 
   // Floor, broken by pits; walls and ceiling.
   const floorPieces: LevelPlat[] = []
@@ -220,6 +245,33 @@ export function chunkTestLevel(c: Chunk): Level & { unreachable: number } {
     spawn: { x: Math.min(x - 160, 300), y: floorY - 40 },
     unreachable: platforms.length - platforms.filter((_, i) => reached.has(floorPieces.length + i)).length,
   }
+}
+
+/**
+ * Join plain one-way platforms at the same height with only a small gap
+ * between them into one longer platform (fewer tiny separate bits).
+ */
+function mergePlatforms(platforms: (LevelPlat & { from?: number })[]) {
+  const plain = (p: LevelPlat) => !p.solid && !p.crumble && !p.conveyor && !p.edge && !p.floor
+  const sorted = platforms.filter(plain).sort((a, b) => a.y - b.y || a.x - b.x)
+  const gone = new Set<LevelPlat>()
+  for (let i = 0; i < sorted.length; i++) {
+    const a = sorted[i]
+    if (gone.has(a)) continue
+    for (let j = i + 1; j < sorted.length; j++) {
+      const b = sorted[j]
+      if (gone.has(b) || Math.abs(b.y - a.y) > 20) continue
+      const gap = b.x - (a.x + a.w)
+      if (gap < 140 && b.x + b.w > a.x) {
+        const right = Math.max(a.x + a.w, b.x + b.w)
+        a.x = Math.min(a.x, b.x)
+        a.w = right - a.x
+        a.y = Math.min(a.y, b.y)
+        gone.add(b)
+      }
+    }
+  }
+  for (let i = platforms.length - 1; i >= 0; i--) if (gone.has(platforms[i])) platforms.splice(i, 1)
 }
 
 function addPiece(pc: Piece, pl: Placed, platforms: (LevelPlat & { from?: number })[], env: (LevelEnv & { from?: number })[], pits: { x: number; w: number }[]) {

@@ -191,11 +191,13 @@ export const STARTER_CHUNKS: Chunk[] = [
   },
 
   // ---- Air ----
-  { id: 'slab', name: 'Slab', kind: 'air', w: 14, h: 1, pieces: [p('plat', 0, 0, 14, 1)] },
-  { id: 'stagger', name: 'Stagger', kind: 'air', w: 22, h: 5, pieces: [p('plat', 0, 4, 9, 1), p('plat', 13, 0, 9, 1)] },
-  { id: 'perch', name: 'Perch', kind: 'air', w: 12, h: 8, pieces: [p('block', 5, 1, 2, 7), p('plat', 0, 0, 12, 1)] },
+  { id: 'slab', name: 'Slab', kind: 'air', w: 22, h: 1, pieces: [p('plat', 0, 0, 22, 1)] },
+  { id: 'stagger', name: 'Stagger', kind: 'air', w: 26, h: 5, pieces: [p('plat', 0, 4, 14, 1), p('plat', 12, 0, 14, 1)] },
+  { id: 'perch', name: 'Perch', kind: 'air', w: 16, h: 8, pieces: [p('block', 7, 1, 2, 7), p('plat', 0, 0, 16, 1)] },
   { id: 'island', name: 'Island', kind: 'air', w: 16, h: 6, pieces: [p('block', 2, 3, 12, 3), p('plat', 0, 0, 4, 1), p('plat', 12, 0, 4, 1)] },
-  { id: 'twin', name: 'Twins', kind: 'air', w: 24, h: 1, pieces: [p('plat', 0, 0, 8, 1), p('plat', 16, 0, 8, 1)] },
+  { id: 'bridge', name: 'Bridge', kind: 'air', w: 30, h: 5, pieces: [p('plat', 0, 0, 30, 1), p('block', 0, 1, 3, 4), p('block', 27, 1, 3, 4)] },
+  { id: 'shelf-step', name: 'Shelf step', kind: 'air', w: 26, h: 7, pieces: [p('block', 0, 4, 12, 3), p('plat', 0, 3, 12, 1), p('plat', 10, 0, 16, 1)] },
+  { id: 'ledge', name: 'Long ledge', kind: 'air', w: 28, h: 3, pieces: [p('block', 0, 1, 28, 2), p('plat', 0, 0, 28, 1)] },
   {
     id: 'spiked-shelf',
     name: 'Spiked shelf',
