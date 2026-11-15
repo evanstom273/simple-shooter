@@ -18,8 +18,18 @@ import { runStore } from '../state/run.ts'
 import { navStore } from '../state/nav.ts'
 import { arriveInHub, buy as shopBuy, progressStore, reroll as shopReroll, storyStats } from '../state/progress.ts'
 import { Hub } from './Hub.ts'
-import { ARENA_LEVEL, HUB_LEVEL, type Level } from './levels.ts'
+import { HUB_LEVEL, type Level } from './levels.ts'
 import { generate } from './gen/generate.ts'
+
+/**
+ * Endless rooms (#79): one fixed size, no pits, chunks from every world.
+ * Hazards ramp with the wave (Claude): waves 1–2 use section-1 chunks, 3–5
+ * section 2, 6–8 section 3, 9 on everything.
+ */
+function endlessLevel(wave: number): Level {
+  const section = wave <= 2 ? 1 : wave <= 5 ? 2 : wave <= 8 ? 3 : 4
+  return generate({ world: 0, section, size: { w: 2600, h: 1500 }, noPits: true, extra: customChunks() })
+}
 import { ENV, Environment } from './Environment.ts'
 import { customChunks } from '../state/chunks.ts'
 import { loadScores, recordRun } from '../persist/scores.ts'
@@ -77,6 +87,13 @@ export class GameScene extends Phaser.Scene {
   private knocked = 0
   /** Sideways carry from conveyors, moving platforms and wind this frame, px/s. */
   private carry = 0
+  /** Static platforms (all pieces of the level, including the shell). */
+  private platformGroup!: Phaser.Physics.Arcade.StaticGroup
+  /** Display objects of the level's inside (not floor/walls/ceiling): what an endless rebuild swaps (#79). */
+  private levelObjects: Phaser.GameObjects.GameObject[] = []
+  private moverColliders: Phaser.Physics.Arcade.Collider[] = []
+  /** Endless: the room is rebuilding between waves; hazards and moving bits are paused. */
+  private rebuilding = false
   private lookAhead = 0
   private stepTimer = 0
   private motes: { o: Phaser.GameObjects.Rectangle; vx: number; vy: number; phase: number }[] = []
@@ -96,7 +113,7 @@ export class GameScene extends Phaser.Scene {
   private sinceWall = 1
   private wallLock = 0
   private slideDust = 0
-  private solids: { x: number; y: number; w: number; h: number }[] = []
+  private solids: Level["platforms"] = []
   /** Dash and stomp damage multiplier: the shop's new dash/stomp upgrade (#69) raises it. */
   impactBonus = 1
   /** Health in stages (#48). */
@@ -105,7 +122,7 @@ export class GameScene extends Phaser.Scene {
   private mode: 'hub' | 'section' | 'endless' | 'sandbox' = 'endless'
   private world: 1 | 2 | 3 | 4 = 1
   private section = 1
-  private level: Level = ARENA_LEVEL
+  private level: Level = HUB_LEVEL
   private hub: Hub | null = null
   /** Arriving (beam-in) or leaving (beam-out / portal pull) (#75): no control, can't be hurt, waves wait. */
   private cine: 'arrive' | 'leave' | null = 'arrive'
@@ -186,7 +203,7 @@ export class GameScene extends Phaser.Scene {
           ? dest.level
           : dest.mode === 'section'
             ? generate({ world: dest.world, section: dest.section, extra: customChunks() })
-            : ARENA_LEVEL
+            : endlessLevel(1)
     this.solids = this.level.platforms.filter((p) => p.solid)
     ARENA.width = this.level.width
     ARENA.height = this.level.height
@@ -200,25 +217,11 @@ export class GameScene extends Phaser.Scene {
 
     this.createMotes()
 
-    this.env = new Environment(this, this.level)
-    const platforms = this.physics.add.staticGroup()
-    for (const p of this.level.platforms) {
-      const colour = this.mode === 'hub' && p.solid ? 0x1b1c2a : p.edge ? 0x1f2030 : p.solid && !p.floor ? 0x353852 : COLOURS.platform
-      const r = this.add.rectangle(p.x, p.y, p.w, p.h, colour).setOrigin(0)
-      // A lit top edge so blocks and ledges read against the dark (#79).
-      if (this.mode !== 'hub' && !p.edge && !p.crumble && !p.conveyor) this.add.rectangle(p.x, p.y, p.w, 3, 0x6a6e96).setOrigin(0).setDepth(1)
-      platforms.add(r)
-      r.setData('baseY', p.y)
-      if (p.crumble || p.conveyor) this.env.addPlatform(r, p)
-      if (!p.solid) {
-        // One-way: only the top is solid, so you can jump up through from below.
-        const pb = r.body as Phaser.Physics.Arcade.StaticBody
-        pb.checkCollision.down = false
-        pb.checkCollision.left = false
-        pb.checkCollision.right = false
-        r.setData('oneWay', true)
-      }
-    }
+    // The room's shell (floor, walls, ceiling) stays; its inside can be swapped (endless, #79).
+    this.platformGroup = this.physics.add.staticGroup()
+    const platforms = this.platformGroup
+    for (const p of this.level.platforms) if (p.floor || p.edge) this.addPlatform(p)
+    this.levelObjects = this.buildInterior(this.level)
 
     // Physics box: invisible. What you see is PlayerView, which squashes and stretches.
     this.darkness = this.createDarkness()
@@ -289,16 +292,7 @@ export class GameScene extends Phaser.Scene {
     this.body_.setCollideWorldBounds(true)
     // Pits (#81) are bottomless: no floor at the bottom of the world.
     if (this.level.pits?.length) this.physics.world.setBoundsCollision(true, true, true, false)
-    // Moving platforms: ride them; drop through like other one-way platforms.
-    this.physics.add.collider(
-      this.player,
-      this.env.moverGroup,
-      (_pl, m) => {
-        if (this.body_.touching.down) this.standingOn = m as Phaser.GameObjects.Rectangle
-      },
-      () => !(this.dropTime > 0) && this.body_.velocity.y >= -1,
-    )
-    this.physics.add.collider(this.enemyGroup, this.env.moverGroup)
+    this.hookMovers()
     this.physics.add.collider(
       this.player,
       platforms,
@@ -575,6 +569,10 @@ export class GameScene extends Phaser.Scene {
    * crumbling, pits, and the rule that hits can't knock you into a pit.
    */
   private updateEnvironment(dt: number) {
+    if (this.rebuilding) {
+      this.carry = 0
+      return
+    }
     const env = this.env
     env.update(dt)
     const b = this.body_
@@ -662,6 +660,105 @@ export class GameScene extends Phaser.Scene {
     this.health = 0
     hudStore.set({ health: 0 })
     this.endRun()
+  }
+
+  /** One platform of the level: a static rectangle (one-way unless solid), with its lit top edge. */
+  private addPlatform(p: Level['platforms'][number]) {
+    const colour = this.mode === 'hub' && p.solid ? 0x1b1c2a : p.edge ? 0x1f2030 : p.solid && !p.floor ? 0x353852 : COLOURS.platform
+    const r = this.add.rectangle(p.x, p.y, p.w, p.h, colour).setOrigin(0)
+    // A lit top edge so blocks and ledges read against the dark (#79).
+    if (this.mode !== 'hub' && !p.edge && !p.crumble && !p.conveyor) this.add.rectangle(p.x, p.y, p.w, 3, 0x6a6e96).setOrigin(0).setDepth(1)
+    this.platformGroup.add(r)
+    r.setData('baseY', p.y)
+    if (p.crumble || p.conveyor) this.env.addPlatform(r, p)
+    if (!p.solid) {
+      // One-way: only the top is solid, so you can jump up through from below.
+      const pb = r.body as Phaser.Physics.Arcade.StaticBody
+      pb.checkCollision.down = false
+      pb.checkCollision.left = false
+      pb.checkCollision.right = false
+      r.setData('oneWay', true)
+    }
+  }
+
+  /** Hazards, moving bits and every platform that isn't the shell. Returns the display objects made. */
+  private buildInterior(level: Level): Phaser.GameObjects.GameObject[] {
+    const before = new Set(this.children.list)
+    this.env = new Environment(this, level)
+    for (const p of level.platforms) if (!p.floor && !p.edge) this.addPlatform(p)
+    return this.children.list.filter((o) => !before.has(o))
+  }
+
+  /** Moving platforms: ride them; drop through like other one-way platforms. */
+  private hookMovers() {
+    for (const c of this.moverColliders) c.destroy()
+    this.moverColliders = [
+      this.physics.add.collider(
+        this.player,
+        this.env.moverGroup,
+        (_pl, m) => {
+          if (this.body_.touching.down) this.standingOn = m as Phaser.GameObjects.Rectangle
+        },
+        () => !(this.dropTime > 0) && this.body_.velocity.y >= -1,
+      ),
+      this.physics.add.collider(this.enemyGroup, this.env.moverGroup),
+    ]
+  }
+
+  /**
+   * Endless (#79): a new room every wave. The old pieces sink and fade in a
+   * sweep across the room, then the new ones rise into place. The floor, walls
+   * and ceiling stay; hazards are paused until it's done.
+   */
+  private rebuildEndless(wave: number) {
+    const next = endlessLevel(wave)
+    this.rebuilding = true
+    this.standingOn = null
+    const W = ARENA.width
+    type Movable = Phaser.GameObjects.GameObject & { x: number; y: number; alpha: number; body?: { enable: boolean } | null }
+    for (const o of this.levelObjects as Movable[]) {
+      this.tweens.killTweensOf(o)
+      if (o.body) o.body.enable = false
+      this.tweens.add({ targets: o, y: o.y + 90, alpha: 0, duration: 450, delay: (o.x / W) * 350, ease: 'Quad.easeIn', onComplete: () => o.destroy() })
+    }
+    sfx.rebuild()
+    this.time.delayedCall(950, () => {
+      this.env.destroy()
+      this.level = next
+      this.solids = next.platforms.filter((p) => p.solid)
+      this.nav = buildNav(next.platforms.filter((p) => !p.edge))
+      this.levelObjects = this.buildInterior(next)
+      this.hookMovers()
+      for (const o of this.levelObjects as Movable[]) {
+        if (o.body) o.body.enable = false
+        const y = o.y
+        const a = o.alpha
+        o.y = y + 90
+        o.alpha = 0
+        this.tweens.add({ targets: o, y, alpha: a, duration: 500, delay: (o.x / W) * 400, ease: 'Back.easeOut' })
+      }
+      this.time.delayedCall(950, () => {
+        for (const o of this.levelObjects as Movable[]) {
+          const b = o.body as Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | null | undefined
+          if (!b) continue
+          b.enable = true
+          if (b instanceof Phaser.Physics.Arcade.StaticBody) b.updateFromGameObject()
+          else b.reset(o.x + b.width / 2, o.y + b.height / 2)
+        }
+        // A block rose where you're standing: it lifts you onto its top.
+        const pb = this.body_
+        for (const s of this.solids) {
+          if (s.floor || s.edge) continue
+          if (pb.right > s.x && pb.left < s.x + s.w && pb.bottom > s.y && pb.top < s.y + s.h) {
+            pb.reset(this.player.x, s.y - PLAYER.size / 2 - 1)
+            break
+          }
+        }
+        // A moment's grace so nothing that just appeared can catch you.
+        this.dashGrace = 1.2
+        this.rebuilding = false
+      })
+    })
   }
 
   /** Is there a wall right beside the player? -1 left, 1 right, 0 none (solid blocks and the arena's sides). */
@@ -916,6 +1013,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.countdownShown = -1
     runStore.set({ phase: 'intermission', wave: run.wave + 1, countdown: WAVES.intermission, left: 0 })
+    if (this.mode === 'endless') this.rebuildEndless(run.wave + 1)
   }
 
   private collectGold(v: number) {

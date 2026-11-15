@@ -713,6 +713,7 @@ The player square in an arena, moving and jumping, on desktop and on Lyra's Pixe
 | 82 | 2026-11-14T23:33:06+00:00 | Movement | Wall jump: you can climb the same wall; a slow slide while holding towards it; it refreshes the double jump, not the dash. |
 | 83 | 2026-11-14T23:55:09+00:00 | Build | Steps 1–4 of the generation plan built: wall jumping, the generator with the starter chunks, all hazards and environment pieces, and the in-game chunk editor. |
 | 84 | 2026-11-15T00:04:29+00:00 | Generation | Less cluttered (Lyra: too many small platforms). Floating layers are sparser (about a quarter of the width) and zigzag up the room as a readable route. Close platforms at the same height are joined, and the floating chunks are bigger. |
+| 85 | 2026-11-15T00:07:50+00:00 | Endless | Endless rebuilds every wave (step 5). A fixed-size generated room: after a wave, the old pieces sink and fade in a sweep across the room and the new ones rise into place. Floor, walls and ceiling stay; hazards pause; a moment of grace afterwards; a block rising under you lifts you. Claude's choices: no pits in endless; hazards ramp by wave (section-1 chunks for waves 1–2, section 2 for 3–5, section 3 for 6–8, everything from 9). |
 
 ---
 

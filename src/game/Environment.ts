@@ -459,6 +459,11 @@ export class Environment {
     }
   }
 
+  /** Remove the moving platforms' physics group (their display objects are destroyed by the scene). */
+  destroy() {
+    this.moverGroup.destroy(false)
+  }
+
   /** Hook up a platform rectangle from the level (crumbling / conveyor). */
   addPlatform(rect: Phaser.GameObjects.Rectangle, p: { crumble?: boolean; conveyor?: number }) {
     rect.setData('baseX', rect.x)

@@ -188,6 +188,11 @@ export const sfx = {
   jet: () => noise('bandpass', 900, 400, 0.9, 0.12, 0.6),
   /** A crumbling platform starting to go. */
   crumble: () => noise('lowpass', 700, 200, 0.45, 0.14, 1.2),
+  /** Endless: the room rebuilding between waves (#79), a low rumble. */
+  rebuild: () => {
+    noise('lowpass', 300, 80, 1.6, 0.18, 1)
+    tone('sine', 70, 50, 1.6, 0.08)
+  },
   /** A piece of you popping into place. */
   assemble: () => tone('square', vary(700), vary(1100), 0.05, 0.045),
   /** Into a portal: a sucking swoop down. */

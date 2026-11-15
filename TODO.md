@@ -13,8 +13,8 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 **Priority (Lyra, #67):** ~~1. player shooting~~ (done) · ~~2. hub + shop~~ (done, #74) · 3. randomly generated platforms (designed: #79–#82). Then worlds and art.
 
 - Tune the ranged enemy and tank in play.
+- Next (Lyra): enemy and boss designs, and each world's theme.
 - Generation, remaining steps (#79):
-  5. Endless: a new layout every wave, sliding into place.
   6. World palettes and the per-section ramp, once worlds have identities.
 - Lyra to play: wall jump feel, generated sections, each hazard, the chunk editor (Testing → Test room / Random room / Chunk editor).
 - Grapple, bought in the shop (#77, #78): design it. Never gating: the platform generator builds for the base kit only (base jump, double jump, dash, wall jump).
@@ -30,6 +30,7 @@ Living to-do list. Timestamps are Europe/London, ISO 8601 with UTC offset. Desig
 
 ## Done
 
+- [x] Endless rebuilds every wave: sink-and-rise sweep, fixed room size, no pits, hazards ramp by wave (#85). *(2026-11-15T00:07:50+00:00)*
 - [x] Generation decluttered: sparser zigzag air layers, merged platforms, bigger air chunks (#84). *(2026-11-15T00:04:29+00:00)*
 - [x] Step 13: wall jumping, level generator + starter chunks, hazards and environment pieces, in-game chunk editor (#79–#83). *(2026-11-14T23:55:09+00:00)*
 - [x] Portals need a press to enter, with a prompt and an ENTER touch button (#76). *(2026-11-14T23:21:05+00:00)*

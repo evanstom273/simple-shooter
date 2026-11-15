@@ -26,6 +26,10 @@ export interface GenOptions {
   /** Only these chunks (for testing one chunk). */
   only?: Chunk[]
   shape?: Shape
+  /** Fixed room size (endless keeps one size so only the inside changes). */
+  size?: { w: number; h: number }
+  /** Leave out chunks with pits (endless: the floor stays whole while the room rebuilds). */
+  noPits?: boolean
   seed?: number
 }
 
@@ -64,7 +68,11 @@ export function generate(o: GenOptions): Level {
   const between = (lo: number, hi: number) => lo + r() * (hi - lo)
 
   const pool = (o.only ?? [...STARTER_CHUNKS, ...(o.extra ?? [])]).filter(
-    (c) => !c.off && (!c.worlds?.length || c.worlds.includes(o.world)) && (c.minSection ?? 1) <= o.section,
+    (c) =>
+      !c.off &&
+      (o.world === 0 || !c.worlds?.length || c.worlds.includes(o.world)) &&
+      (c.minSection ?? 1) <= o.section &&
+      !(o.noPits && c.pieces.some((pc) => pc.t === 'pit')),
   )
   const ground = pool.filter((c) => c.kind === 'ground')
   const air = pool.filter((c) => c.kind === 'air')
@@ -72,8 +80,8 @@ export function generate(o: GenOptions): Level {
   // Size varies per layout (#79): wide, standard or tall.
   const shape: Shape = o.shape ?? pick<Shape>(['wide', 'standard', 'standard', 'tall'])
   const snap = (v: number) => Math.round(v / TILE) * TILE
-  const W = snap(shape === 'wide' ? between(3000, 3600) : shape === 'tall' ? between(1800, 2100) : between(2400, 2800))
-  const H = snap(shape === 'wide' ? between(1250, 1400) : shape === 'tall' ? between(2200, 2500) : between(1450, 1650))
+  const W = o.size?.w ?? snap(shape === 'wide' ? between(3000, 3600) : shape === 'tall' ? between(1800, 2100) : between(2400, 2800))
+  const H = o.size?.h ?? snap(shape === 'wide' ? between(1250, 1400) : shape === 'tall' ? between(2200, 2500) : between(1450, 1650))
   const floorY = H - FLOOR_H
 
   const placed: Placed[] = []
